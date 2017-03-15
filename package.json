@@ -8,6 +8,12 @@
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
 	"atomTestRunner": "atom-mocha",
+	"atom-mocha": {
+		"mocha": {
+			"auto-it": true,
+			"require": "chai/should"
+		}
+	},
 	"devDependencies": {
 		"atom-mocha": "*"
 	}

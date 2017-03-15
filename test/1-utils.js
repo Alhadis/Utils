@@ -1,5 +1,12 @@
 "use strict";
 
+const Chai = require("chai");
+Chai.should();
+
+if("function" !== typeof global.expect)
+	global.expect = Chai.expect;
+
+
 describe("Utility functions", () => {
 	const utils = require("../index.js");
 	

@@ -1,3 +1,1 @@
---auto-it
---require chai/should
 --spec-pattern /[\\\/]\d+-\w+\.js$/

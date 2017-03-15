@@ -412,6 +412,7 @@ describe("Utility classes", () => {
 		});
 	});
 
+	if("object" === typeof global.atom && global.atom.specMode)
 	describe("Atom-specific", () => {
 		describe("MappedDisposable", () => {
 			const MappedDisposable = require("../lib/classes/mapped-disposable.js");
