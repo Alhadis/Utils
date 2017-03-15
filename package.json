@@ -1,6 +1,7 @@
 {
 	"name": "@Alhadis/Utils",
 	"version": "v0.0.0",
+	"files": ["./index.js"],
 	"description": "Battle-hardened suite of self-contained utility functions.",
 	"keywords": ["utility", "helper", "functional", "utils", "browser", "atom"],
 	"repository": "https://github.com/Alhadis/Utils",
