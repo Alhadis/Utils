@@ -5,5 +5,9 @@
 	"keywords": ["utility", "helper", "functional", "utils", "browser", "atom"],
 	"repository": "https://github.com/Alhadis/Utils",
 	"author": "John Gardner <gardnerjohng@gmail.com>",
-	"license": "ISC"
+	"license": "ISC",
+	"atomTestRunner": "atom-mocha",
+	"devDependencies": {
+		"atom-mocha": "*"
+	}
 }
