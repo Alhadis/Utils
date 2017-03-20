@@ -3,11 +3,12 @@ Change Log
 
 This project honours [Semantic Versioning](http://semver.org/).
 
-[Unpublished]: ../../compare/v0.1.0...HEAD
+[Unpublished]: ../../compare/v0.1.1...HEAD
 
 
-[Unpublished]
+[v0.1.1]
 ------------------------------------------------------------------------
+**March 20th, 2017**  
 * [[`0bfefb9`][]] Added [`browser.js`][] to distributed files
 * [[`3ee8eba`][]] Added [`MappedDisposable`][] to main exports
 
@@ -15,6 +16,7 @@ This project honours [Semantic Versioning](http://semver.org/).
 [`MappedDisposable`]: ./lib/classes/mapped-disposable.js
 [`0bfefb9`]: ../../commit/0bfefb9b7b3a245aa8fdfd105a3531
 [`3ee8eba`]: ../../commit/3ee8eba93293bd32545275fc09776a
+[v0.1.1]: https://github.com/Alhadis/Utils/releases/tag/v0.1.1
 
 
 [v0.1.0]
