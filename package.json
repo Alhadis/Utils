@@ -17,5 +17,9 @@
 	},
 	"devDependencies": {
 		"atom-mocha": "*"
+	},
+	"scripts": {
+		"preversion": "exit 1",
+		"test": "make test"
 	}
 }

@@ -22,7 +22,19 @@ browser.js: $(browser)
 	@echo '"use strict";' > $@
 	@cat $^ | sed -Ee '/"use strict";$$/d' >> $@
 
+
+# Run tests
+test: test-node test-atom
+
+test-node:
+	@mocha test
+
+test-atom:
+	@atom -t test
+
+
+# Delete all generated targets
 clean:
 	@rm -f $(targets)
 
-.PHONY: clean
+.PHONY: clean test test-node test-atom
