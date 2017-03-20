@@ -412,10 +412,10 @@ describe("Utility classes", () => {
 		});
 	});
 
-	if("object" === typeof global.atom && global.atom.specMode)
+	if("object" === typeof global.atom)
 	describe("Atom-specific", () => {
 		describe("MappedDisposable", () => {
-			const MappedDisposable = require("../lib/classes/mapped-disposable.js");
+			const {MappedDisposable} = require("../index.js");
 			const {CompositeDisposable, Disposable} = require("atom");
 			
 			it("can be constructed with an iterable", () => {
