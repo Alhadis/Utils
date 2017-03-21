@@ -1,6 +1,6 @@
 {
-	"name": "@alhadis/utils",
-	"version": "v0.1.1",
+	"name": "alhadis.utils",
+	"version": "v0.1.2",
 	"main": "./index.js",
 	"files": ["./index.js", "./browser.js"],
 	"description": "Battle-hardened suite of self-contained utility functions.",

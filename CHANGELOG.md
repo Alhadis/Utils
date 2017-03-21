@@ -6,6 +6,16 @@ This project honours [Semantic Versioning](http://semver.org/).
 [Unpublished]: ../../compare/v0.1.1...HEAD
 
 
+[v0.1.2]
+------------------------------------------------------------------------
+**March 22nd, 2017**  
+Reregistered package without scoped-name due to [`atom/apm#702`][].
+
+[`atom/apm#702`]: https://github.com/atom/apm/issues/702
+[v0.1.2]: https://github.com/Alhadis/Utils/releases/tag/v0.1.2
+
+
+
 [v0.1.1]
 ------------------------------------------------------------------------
 **March 20th, 2017**  
