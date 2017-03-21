@@ -1,3 +1,4 @@
+\t := $$'\t'
 \n := $$'\n'
 ob := (
 
@@ -15,7 +16,12 @@ index.js: $(wildcard lib/*.js) $(wildcard lib/classes/*.js)
 	@perl -0777 -ne 'print "$$&\n" while /^(?:function|class)\s+\K(\w+)/gm' $^ \
 	| sort --ignore-case \
 	| sed -e 's/^/\t/g; s/$$/,/g;' >> $@;
-	@printf "};"$(\n) >> $@;
+	@printf "};"$(\n) >> $@; \
+	echo $(\n)"// Generate non-breaking fs functions" >> $@; \
+	echo "Object.assign(module.exports, {"            >> $@; \
+	echo $(\t)"lstat:     nerf(fs.lstatSync),"        >> $@; \
+	echo $(\t)"realpath:  nerf(fs.realpathSync),"     >> $@; \
+	echo "});" >> $@
 
 # Generate browser-compatible version of function suite
 browser.js: $(browser)
