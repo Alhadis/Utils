@@ -18,6 +18,7 @@ and remote resource paths in tandem. See [`Alhadis/Atom-FS#1`][].
 * [[`9168bb3`][]] Add function to retrieve all property descriptors
 
 [`Alhadis/Atom-FS#1`]: https://github.com/Alhadis/Atom-FS/pull/1
+[`file-icons`]: https://github.com/file-icons/atom
 [`120f059`]: ../../commit/120f05906bb5653b90badb3eba4b09
 [`09b8eaf`]: ../../commit/09b8eafd72d090832cb40b57514eae
 [`9168bb3`]: ../../commit/9168bb357bc60ee2924d2f0f445285
