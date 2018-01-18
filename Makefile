@@ -12,13 +12,13 @@ index.js: $(wildcard lib/*.js) $(wildcard lib/classes/*.js)
 	printf '\nmodule.exports = {\n' >> $@; \
 	perl -0777 -ne 'print "$$&\n" while /^(?:function|class)\s+\K(\w+)/gm' $^ \
 	| sort --ignore-case \
-	| perl -pe 's/^/\t/g; s/$$/,/g;' >> $@; \
+	| sed -Ee "s/^/$$(printf '\t')/g; s/$$/,/g;" >> $@; \
 	printf '};\n\n' >> $@; \
 	printf '// Generate non-breaking fs functions\n' >> $@; \
 	printf 'Object.assign(module.exports, {\n'       >> $@; \
 	printf '\tlstat:     nerf(fs.lstatSync),\n'      >> $@; \
-	printf '\trealpath:  nerf(fs.realpathSync)\n'    >> $@; \
-	printf '});' >> $@
+	printf '\trealpath:  nerf(fs.realpathSync),\n'   >> $@; \
+	printf '});\n' >> $@
 
 # Generate browser-compatible version of function suite
 browser.js: $(browser)
