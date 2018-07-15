@@ -10,7 +10,7 @@ index.js: $(wildcard lib/*.js) $(wildcard lib/classes/*.js)
 	printf '"use strict";\n' > $@; \
 	cat $^ | sed -Ee '/"use strict";$$/d' >> $@; \
 	printf '\nmodule.exports = {\n' >> $@; \
-	perl -0777 -ne 'print "$$&\n" while /^(?:function|class)\s+\K(\w+)/gm' $^ \
+	perl -0777 -ne 'print "$$&\n" while /^(?:(?:async\s+)?function|class)\s+\K(\w+)/gm' $^ \
 	| sort --ignore-case \
 	| sed -Ee "s/^/$$(printf '\t')/g; s/$$/,/g;" >> $@; \
 	printf '};\n\n' >> $@; \
