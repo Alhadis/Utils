@@ -299,6 +299,62 @@ describe("Utility functions", () => {
 	
 	describe("Node-specific", () => {
 		const fs = require("fs");
+
+		describe("exec()", function(){
+			const {exec, wait} = utils;
+			this.slow(1000);
+
+			it("executes external commands asynchronously", () =>
+				expect(exec("true")).to.be.a("promise"));
+
+			it("captures their standard output streams", async () =>
+				expect(await exec("printf", ["<%03x>\\n", "255"]))
+				.	to.have.property("stdout")
+				.	that.is.a("string")
+				.	and.that.equals("<0ff>\n"));
+
+			it("captures their standard error streams", async () =>
+				expect(await exec("node", ["-e", `process.stderr.write("Foo")`]))
+				.	to.have.property("stderr")
+				.	that.is.a("string")
+				.	and.that.equals("Foo"));
+
+			it("captures the command's exit code", async () =>
+				expect(await exec("node", ["-e", "process.exit(3)"]))
+				.	to.have.property("code")
+				.	that.is.a("number")
+				.	and.that.equals(3));
+
+			it("resolves with an object that includes each property", async () =>
+				expect(await exec("node", ["-e", `
+					process.stdout.write("ABC");
+					process.stderr.write("XYZ");
+					process.exit(1);
+				`])).to.eql({
+					stdout: "ABC",
+					stderr: "XYZ",
+					code: 1,
+				}));
+
+			it("always includes each property with the resolved object", async () => {
+				expect(await exec("echo"))  .to.eql({stdout: "\n", stderr: "", code: 0});
+				expect(await exec("true"))  .to.eql({stdout: "",   stderr: "", code: 0});
+				expect(await exec("false")) .to.eql({stdout: "",   stderr: "", code: 1});
+			});
+
+			it("can pipe arbitrary data to standard input", async () =>
+				expect(await exec("sed", ["-e", "s/in/out/"], "input")).to.eql({
+					stdout: "output",
+					stderr: "",
+					code: 0,
+				}));
+
+			it("can pipe empty input without hanging process", () =>
+				Promise.race([
+					wait(750).then(() => Promise.reject()),
+					exec("sed", ["-e", "s/A/B/g"], ""),
+				]));
+		});
 		
 		describe("statify()", () => {
 			const {statify} = utils;
