@@ -447,5 +447,33 @@ describe("Utility functions", () => {
 				expect(dataSample).to.have.lengthOf(42);
 			});
 		});
+
+		describe("which()", () => {
+			const {which} = utils;
+			let firstNode = "";
+
+			it("returns the path of the first matching executable", async () => {
+				expect(firstNode = await which("node")).to.not.be.empty;
+				const stats = fs.lstatSync(firstNode);
+				expect(stats.isFile()).to.be.true;
+				expect(!!(0o111 & stats.mode)).to.be.true;
+			});
+
+			it("returns an empty value if nothing was matched", async () =>
+				expect(await which("wegfjekrwg")).to.equal(""));
+
+			describe("when the `all` parameter is set", () => {
+				it("returns an array of every match", async () => {
+					const result = await which("node", true);
+					expect(result).to.be.an("array");
+					expect(result[0]).to.be.a("string").and.to.equal(firstNode);
+				});
+
+				it("returns an empty array if nothing was found", async () => {
+					const result = await which("wegfjekrwg", true);
+					expect(result).to.be.an("array").with.lengthOf(0);
+				});
+			});
+		});
 	});
 });
