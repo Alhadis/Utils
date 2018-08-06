@@ -6,7 +6,7 @@ browser   := $(filter-out $(node-only),$(wildcard lib/*.js))
 all: $(targets)
 
 # Generate a compiled suite of functions from lib/*.js. Assumes Node environment.
-index.js: $(wildcard lib/*.js) $(wildcard lib/classes/*.js)
+index.js: $(wildcard lib/*.js) $(filter-out %/shell-cache.js,$(wildcard lib/classes/*.js))
 	printf '"use strict";\n' > $@; \
 	cat $^ | sed -Ee '/"use strict";$$/d' >> $@; \
 	printf '\nmodule.exports = {\n' >> $@; \

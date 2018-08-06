@@ -1,10 +1,6 @@
 "use strict";
 
-const Chai = require("chai");
-Chai.should();
-
-if("function" !== typeof global.expect)
-	global.expect = Chai.expect;
+const {expect} = require("chai");
 
 
 describe("Utility functions", () => {
@@ -124,7 +120,7 @@ describe("Utility functions", () => {
 				const target = {foo: 0, bar: 0};
 				const tweenA = tween(target, "foo", 10, {duration});
 				const tweenB = tween(target, "bar", 10, {duration});
-				await wait(duration / 4).then(() => expect(target.foo).to.be.above(0))
+				await wait(duration / 4).then(() => expect(target.foo).to.be.above(0));
 				await wait(duration / 2).then(() => tweenA.stop());
 				valuesWhenStopped.A = target.foo;
 				valuesWhenStopped.B = target.bar;
