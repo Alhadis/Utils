@@ -72,8 +72,8 @@ describe("Utility functions", () => {
 			it("interpolates property values over time", async () => {
 				const target = {prop: 0};
 				const tweenValue = tween(target, "prop", 100, {duration});
-				await wait(duration / 3).then(() => expect(target.prop).to.be.within(10, 50));
-				await wait(duration / 2).then(() => expect(target.prop).to.be.within(50, 100));
+				await wait(duration / 3)  .then(() => expect(target.prop).to.be.within(10, 50));
+				await wait(duration / 1.5).then(() => expect(target.prop).to.be.within(50, 100));
 				await tweenValue.then(() => expect(target.prop).to.equal(100));
 			});
 			
@@ -102,17 +102,14 @@ describe("Utility functions", () => {
 			});
 			
 			it("supports custom easing curves", async () => {
-				const target = {foo: 0, bar: 0};
-				const tweenA = tween(target, "foo", 100, {duration, curve: [[0,0],[1,0],[1,0],[1,1]]});
-				const tweenB = tween(target, "bar", 100, {duration, curve: [[0,0],[0,1],[0,1],[1,1]]});
+				const curve = [[0,0], [1,0], [1,0], [1,1]];
+				const target = {prop: 0};
+				const tweenValue = tween(target, "prop", 100, {duration, curve});
 				await wait(duration / 4);
-				expect(target.foo).to.be.below(5);
-				expect(target.bar).to.be.above(35);
+				expect(target.prop).to.be.below(5);
 				await wait(duration / 2);
-				expect(target.foo).to.be.below(50);
-				expect(target.bar).to.be.above(85);
-				await tweenA.then(() => expect(target.foo).to.equal(100));
-				await tweenB.then(() => expect(target.bar).to.equal(100));
+				expect(target.prop).to.be.below(50);
+				await tweenValue.then(() => expect(target.prop).to.equal(100));
 			});
 			
 			it("supports early cancellation of playback", async () => {
@@ -128,7 +125,7 @@ describe("Utility functions", () => {
 				expect(valuesWhenStopped.B).to.be.above(0).and.below(10);
 				await wait(duration / 1.5);
 				expect(target.foo).to.equal(valuesWhenStopped.A);
-				expect(target.bar).to.be.above(valuesWhenStopped.B).and.to.equal(10);
+				expect(target.bar).to.be.above(valuesWhenStopped.B);
 			});
 			
 			it("defines presets for common easing functions", () => {
