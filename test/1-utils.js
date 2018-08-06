@@ -351,6 +351,40 @@ describe("Utility functions", () => {
 					exec("sed", ["-e", "s/A/B/g"], ""),
 				]));
 		});
+
+		describe("execString()", () => {
+			const {execString:$} = utils;
+			
+			it("executes ordinary arguments", async () =>
+				expect(await $("echo Foo")).to.eql("Foo\n"));
+
+			it("joins multiple arguments together before executing", async () =>
+				expect(await $("echo", "Foo", "Bar")).to.eql("Foo Bar\n"));
+
+			it("executes tagged template literals", async () =>
+				expect(await $ `echo Foo Bar`).to.eql("Foo Bar\n"));
+
+			it("executes tagged templates with interpolation", async () => {
+				expect(await $ `echo Foo ${2 + 4} Baz`).to.eql("Foo 6 Baz\n");
+				expect(await $ `echo F${2}o Bar ${"Baz"}`).to.eql("F2o Bar Baz\n");
+				expect(await $ `${"ec" + "ho"} Foo`).to.eql("Foo\n");
+			});
+
+			it("executes multiple commands", async () =>
+				expect(await $ `echo Foo; echo Bar;`).to.eql("Foo\nBar\n"));
+
+			it("executes piped commands", async () =>
+				expect(await $ `echo Foo | sed s/Foo/Bar/ | tr B b`).to.eql("bar\n"));
+
+			it("stores stdout and stderr on thrown error objects", async () => {
+				let error = null;
+				try      { await $ `echo Foo; echo >&2 Bar; false`; }
+				catch(e) { error = e; }
+				expect(error).to.be.an.instanceOf(Error);
+				expect(error).to.have.property("stdout", "Foo\n");
+				expect(error).to.have.property("stderr", "Bar\n");
+			});
+		});
 		
 		describe("statify()", () => {
 			const {statify} = utils;
