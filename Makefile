@@ -1,43 +1,29 @@
-ob := (
-targets   := index.js browser.js
-node-only := $(shell grep -irwF lib -e 'require$(ob)' | cut -d : -f 1 | uniq)
-browser   := $(filter-out $(node-only),$(wildcard lib/*.js))
+targets := index.js browser.js
+sources := $(wildcard lib/*.js)
 
 all: $(targets)
 
 # Generate a compiled suite of functions from lib/*.js. Assumes Node environment.
-index.js: $(wildcard lib/*.js) $(filter-out %/shell-cache.js,$(wildcard lib/classes/*.js))
+index.js: $(wildcard lib/*.js)
 	printf '"use strict";\n' > $@; \
 	cat $^ | sed -Ee '/"use strict";$$/d' >> $@; \
 	printf '\nmodule.exports = {\n' >> $@; \
 	perl -0777 -ne 'print "$$&\n" while /^(?:(?:async\s+)?function|class)\s+\K(\w+)/gm' $^ \
 	| sort --ignore-case \
 	| sed -Ee "s/^/$$(printf '\t')/g; s/$$/,/g;" >> $@; \
-	printf '};\n\n' >> $@; \
-	printf '// Generate non-breaking fs functions\n' >> $@; \
-	printf 'Object.assign(module.exports, {\n'       >> $@; \
-	printf '\tlstat:     nerf(fs.lstatSync),\n'      >> $@; \
-	printf '\trealpath:  nerf(fs.realpathSync),\n'   >> $@; \
-	printf '});\n' >> $@
+	printf '};\n' >> $@;
 
 # Generate browser-compatible version of function suite
-browser.js: $(browser)
+browser.js: $(filter-out lib/node.js,$(sources))
 	printf '"use strict";\n' > $@; \
 	cat $^ | sed -Ee '/"use strict";$$/d' >> $@
 
-
-# Run tests
-test: test-node test-atom
-
-test-node:
+# Run unit tests
+test:
 	mocha test
-
-test-atom:
-	atom -t test
-
 
 # Delete all generated targets
 clean:
 	rm -f $(targets)
 
-.PHONY: clean test test-node test-atom
+.PHONY: clean test

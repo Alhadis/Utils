@@ -4,19 +4,13 @@
 	"main": "./index.js",
 	"files": ["./index.js", "./browser.js"],
 	"description": "Battle-hardened suite of self-contained utility functions.",
-	"keywords": ["utility", "helper", "functional", "utils", "browser", "atom"],
+	"keywords": ["utility", "helper", "functional", "utils", "browser"],
 	"repository": "https://github.com/Alhadis/Utils",
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
-	"atomTestRunner": "atom-mocha",
-	"atom-mocha": {
-		"mocha": {
-			"auto-it": true,
-			"require": "chai/should"
-		}
-	},
 	"devDependencies": {
-		"atom-mocha": "*"
+		"mocha": "*",
+		"chai": "*"
 	},
 	"scripts": {
 		"preversion": "exit 1",
