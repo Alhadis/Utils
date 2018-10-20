@@ -253,8 +253,8 @@ describe("Utility functions", () => {
 			});
 
 			it("can pipe arbitrary data to standard input", async () =>
-				expect(await exec("sed", ["-e", "s/in/out/"], "input")).to.eql({
-					stdout: "output",
+				expect(await exec("sed", ["-e", "s/in/out/"], "input\n")).to.eql({
+					stdout: "output\n",
 					stderr: "",
 					code: 0,
 				}));
@@ -306,7 +306,7 @@ describe("Utility functions", () => {
 
 			it("returns the path of the first matching executable", async () => {
 				expect(firstNode = await which("node")).to.not.be.empty;
-				const stats = fs.lstatSync(firstNode);
+				const stats = fs.statSync(firstNode);
 				expect(stats.isFile()).to.be.true;
 				expect(!!(0o111 & stats.mode)).to.be.true;
 			});
