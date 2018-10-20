@@ -342,5 +342,143 @@ describe("Utility functions", () => {
 				expect(new RegExp(source).test(pattern.source)).to.be.true;
 			});
 		});
+		
+		describe("smartSplit()", () => {
+			const {smartSplit} = utils;
+			describe("Delimiters", () => {
+				const list = ["foo", "bar", "baz"];
+				it("uses space, tab and newline as defaults", () => {
+					expect(smartSplit("foo bar baz")).to.eql(list);
+					expect(smartSplit("foo\tbar\tbaz")).to.eql(list);
+					expect(smartSplit("foo\nbar\nbaz")).to.eql(list);
+				});
+				it("allows them to be changed", () => {
+					expect(smartSplit("foo|bar|baz", {delimiters: "|"})).to.eql(list);
+					expect(smartSplit("foo.bar|baz", {delimiters: "|."})).to.eql(list);
+					expect(smartSplit("foo bar|baz", {delimiters: "|"})).to.eql(["foo bar", "baz"]);
+				});
+				it("treats contiguous delimiters as one", () => {
+					expect(smartSplit("foo  bar   baz")).to.eql(list);
+					expect(smartSplit("foo\t\tbar\t\t\tbaz")).to.eql(list);
+					expect(smartSplit("foo\n\nbar\n\n\nbaz")).to.eql(list);
+				});
+				it("allows different delimiters to be used interchangeably", () => {
+					expect(smartSplit("foo \tbar \tbaz")).to.eql(list);
+					expect(smartSplit("foo\t\nbar\t\nbaz")).to.eql(list);
+					expect(smartSplit("foo \t\n \n\t\n bar \n\t\tbaz")).to.eql(list);
+					expect(smartSplit("foo | . bar . | . baz", {delimiters: ".| "})).to.eql(list);
+				});
+				it("skips leading and trailing delimiters", () => {
+					expect(smartSplit(" foo")).to.eql(["foo"]);
+					expect(smartSplit("  foo")).to.eql(["foo"]);
+					expect(smartSplit("foo ")).to.eql(["foo"]);
+					expect(smartSplit("foo  ")).to.eql(["foo"]);
+					expect(smartSplit(" foo ")).to.eql(["foo"]);
+					expect(smartSplit("|foo", {delimiters: "|"})).to.eql(["foo"]);
+					expect(smartSplit("| foo", {delimiters: "|"})).to.eql([" foo"]);
+					expect(smartSplit("||foo||bar||", {delimiters: "|"})).to.eql(["foo", "bar"]);
+				});
+			});
+			
+			describe("Quotes", () => {
+				it("defaults to single-quotes, double-quotes and backticks", () => {
+					expect(smartSplit("'foo'")).to.eql(["foo"]);
+					expect(smartSplit('"foo"')).to.eql(["foo"]);
+					expect(smartSplit("`foo`")).to.eql(["foo"]);
+					expect(smartSplit('"foo bar" baz')).to.eql(['foo bar', "baz"]);
+					expect(smartSplit("'foo bar' baz")).to.eql(["foo bar", "baz"]);
+					expect(smartSplit("`foo bar` baz")).to.eql(["foo bar", "baz"]);
+				});
+				
+				it("avoids splitting on delimiters between quote pairs", () => {
+					expect(smartSplit("foo 'bar baz' qux")).to.eql(["foo", "bar baz", "qux"]);
+					expect(smartSplit("'foo bar ' baz qux")).to.eql(["foo bar ", "baz", "qux"]);
+					expect(smartSplit("foo bar ' baz qux'")).to.eql(["foo", "bar", " baz qux"]);
+					expect(smartSplit("foo 'bar baz qux'")).to.eql(["foo", "bar baz qux"]);
+				});
+				
+				it("includes quotes if `keepQuotes` is set", () =>
+					expect(smartSplit("'foo'", {keepQuotes: true})).to.eql(["'foo'"]));
+				
+				it("recognises them without an adjacent delimiter", () => {
+					const list = ["foo", "bar baz", "qux"];
+					expect(smartSplit("foo b'ar ba'z qux")).to.eql(list);
+					expect(smartSplit("foo b'ar baz' qux")).to.eql(list);
+					expect(smartSplit("foo 'bar ba'z qux")).to.eql(list);
+				});
+				
+				it("allows the quote characters to be changed", () => {
+					const opts = {quoteChars: "/"};
+					expect(smartSplit("foo /bar baz/ qux", opts)).to.eql(["foo", "bar baz", "qux"]);
+					expect(smartSplit("/foo bar  baz / qux", opts)).to.eql(["foo bar  baz ", "qux"]);
+					expect(smartSplit("/foo bar/ 'baz qux'", opts)).to.eql(["foo bar", "'baz", "qux'"]);
+					expect(smartSplit("~foo bar~ /baz qux/", {quoteChars: "~/"})).to.eql(["foo bar", "baz qux"]);
+				});
+
+				it("doesn't get confused by nested quotes", () => {
+					let test = "a 'b `c' `d e'` f";
+					expect(smartSplit(test)).to.eql(["a", "b `c", "d e'", "f"]);
+					expect(smartSplit(test, {keepQuotes: true})).to.eql(["a", "'b `c'", "`d e'`", "f"]);
+					test = "a /b `c/ `d e/` f";
+					expect(smartSplit(test, {quoteChars: "/`"})).to.eql(["a", "b `c", "d e/", "f"]);
+					expect(smartSplit(test, {quoteChars: "/`", keepQuotes: true})).to.eql(["a", "/b `c/", "`d e/`", "f"]);
+				});
+				
+				it("treats empty quote pairs as empty elements", () => {
+					expect(smartSplit("foo '' bar")).to.eql(["foo", "", "bar"]);
+					expect(smartSplit("foo '''' bar")).to.eql(["foo", "", "bar"]);
+					expect(smartSplit("foo ''`` bar")).to.eql(["foo", "", "bar"]);
+					expect(smartSplit("foo '' `` bar")).to.eql(["foo", "", "", "bar"]);
+					expect(smartSplit("foo ''' bar")).to.eql(["foo", " bar"]);
+					expect(smartSplit("foo '' ``")).to.eql(["foo", "", ""]);
+					expect(smartSplit("''")).to.eql([""]);
+					expect(smartSplit(" '' ")).to.eql([""]);
+					expect(smartSplit("''' ")).to.eql([" "]);
+					expect(smartSplit("'' ``")).to.eql(["", ""]);
+					expect(smartSplit("'' `` ")).to.eql(["", ""]);
+					expect(smartSplit("'' `` foo")).to.eql(["", "", "foo"]);
+					expect(smartSplit("''", {keepQuotes: true})).to.eql(["''"]);
+					expect(smartSplit("foo '' bar", {keepQuotes: true})).to.eql(["foo", "''", "bar"]);
+					expect(smartSplit("foo '''' bar", {keepQuotes: true})).to.eql(["foo", "''''", "bar"]);
+					expect(smartSplit("foo ''`` bar", {keepQuotes: true})).to.eql(["foo", "''``", "bar"]);
+					expect(smartSplit("foo '' `` bar", {keepQuotes: true})).to.eql(["foo", "''", "``", "bar"]);
+				});
+			});
+		
+			describe("Escapes", () => {
+				it("ignores delimiters preceded by an escape", () =>
+					expect(smartSplit("foo\\ bar")).to.eql(["foo bar"]));
+				
+				it("ignores quotes preceded by an escape", () =>
+					expect(smartSplit("foo \\'bar baz\\' qux")).to.eql(["foo", "'bar", "baz'", "qux"]));
+				
+				it("ignores escape characters preceded by another escape", () =>
+					expect(smartSplit("foo\\\\ bar")).to.eql(["foo\\", "bar"]));
+				
+				it("doesn't require escapes to be used on special characters", () =>
+					expect(smartSplit("foo\\bar")).to.eql(["foobar"]));
+				
+				it("includes them if `keepEscapes` is set", () =>
+					expect(smartSplit("foo\\ bar", {keepEscapes: true})).to.eql(["foo\\ bar"]));
+			
+				it("allows different escape characters to be used", () => {
+					expect(smartSplit("foo% bar", {escapeChars: "%"})).to.eql(["foo bar"]);
+					expect(smartSplit("foo% bar", {escapeChars: "%", keepEscapes: true})).to.eql(["foo% bar"]);
+				});
+				
+				it("allows different escape characters to be mixed", () => {
+					expect(smartSplit("foo%\\ bar", {escapeChars: "%\\"})).to.eql(["foo\\", "bar"]);
+					expect(smartSplit("foo%\\ bar", {escapeChars: "%\\", keepEscapes: true})).to.eql(["foo%\\", "bar"]);
+				});
+				
+				it("recognises them inside quoted regions", () => {
+					expect(smartSplit("foo 'bar\\'s baz' qux")).to.eql(["foo", "bar's baz", "qux"]);
+					expect(smartSplit("foo 'bar\\\\'s baz qux'")).to.eql(["foo", "bar\\s", "baz", "qux"]);
+				});
+				
+				it("does nothing if input terminates early", () =>
+					expect(smartSplit("foo \\")).to.eql(["foo"]));
+			});
+		});
 	});
 });
