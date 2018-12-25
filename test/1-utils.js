@@ -1,8 +1,5 @@
 "use strict";
 
-const {expect} = require("chai");
-
-
 describe("Utility functions", () => {
 	const utils = require("../index.js");
 	

@@ -1,19 +1,20 @@
 {
 	"name": "alhadis.utils",
 	"version": "v0.1.3",
-	"main": "./index.js",
-	"files": ["./index.js", "./browser.js"],
+	"files": ["lib", "index.js", "index.mjs"],
 	"description": "Battle-hardened suite of self-contained utility functions.",
 	"keywords": ["utility", "helper", "functional", "utils", "browser"],
 	"repository": "https://github.com/Alhadis/Utils",
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
 	"devDependencies": {
-		"mocha": "*",
-		"chai": "*"
+		"rollup": "^0.68.2",
+		"eslint": "^5.11.0",
+		"mocha":  ">=5.2.0",
+		"chai":   ">=4.2.0"
 	},
 	"scripts": {
-		"preversion": "exit 1",
+		"prepare": "make",
 		"test": "make test"
 	}
 }

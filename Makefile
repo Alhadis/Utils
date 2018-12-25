@@ -1,29 +1,30 @@
-targets := index.js browser.js
-sources := $(wildcard lib/*.js)
+all: lint index.js test
 
-all: $(targets)
+# Generate a CommonJS version of ESM libraries
+index.js: index.mjs lib/*.mjs
+	npx rollup \
+		--no-interop \
+		--format cjs \
+		--input $< \
+		--file $@
 
-# Generate a compiled suite of functions from lib/*.js. Assumes Node environment.
-index.js: $(wildcard lib/*.js)
-	printf '"use strict";\n' > $@; \
-	cat $^ | sed -Ee '/"use strict";$$/d' >> $@; \
-	printf '\nmodule.exports = {\n' >> $@; \
-	perl -0777 -ne 'print "$$&\n" while /^(?:(?:async\s+)?function|class)\s+\K(\w+)/gm' $^ \
-	| sort --ignore-case \
-	| sed -Ee "s/^/$$(printf '\t')/g; s/$$/,/g;" >> $@; \
-	printf '};\n' >> $@;
 
-# Generate browser-compatible version of function suite
-browser.js: $(filter-out lib/node.js,$(sources))
-	printf '"use strict";\n' > $@; \
-	cat $^ | sed -Ee '/"use strict";$$/d' >> $@
-
-# Run unit tests
-test:
-	mocha test
-
-# Delete all generated targets
+# Nuke generated CJS bundle
 clean:
-	rm -f $(targets)
+	rm -f index.js
 
-.PHONY: clean test
+.PHONY: clean
+
+
+# Check source for errors and style violations
+lint:
+	npx eslint --ext mjs,js .
+
+.PHONY: lint
+
+
+# Run unit-tests
+test: index.js
+	npx mocha --require chai/register-expect
+
+.PHONY: test
