@@ -35,28 +35,13 @@ describe("Utility functions", () => {
 						super(source, flags);
 						
 						Object.defineProperty(this, "source", {
-							get: () => source
+							get: () => source,
 						});
 					}
 				}
 				const regexp = new ExtendedRegExp("^ A B C $");
 				expect("ABC").to.match(regexp);
 				expect(isRegExp(regexp)).to.be.true;
-			});
-		});
-		
-		describe("isNumeric()", () => {
-			const {isNumeric} = utils;
-			it("allows numeric arguments",      () => void expect(isNumeric(0xBABEFACE)).to.be.true);
-			it("recognises positive integers",  () => void expect(isNumeric("45")).to.be.true);
-			it("recognises negative integers",  () => void expect(isNumeric("-5")).to.be.true);
-			it("recognises positive floats",    () => void expect(isNumeric("2.5")).to.be.true);
-			it("recognises negative floats",    () => void expect(isNumeric("-2.5")).to.be.true);
-			it("recognises basic numbers only", () => {
-				expect(isNumeric("0b10100100")).to.be.false;
-				expect(isNumeric("0xBABEFACE")).to.be.false;
-				expect(isNumeric("3.1536e+10")).to.be.false;
-				expect(isNumeric("0xAF")).to.be.false;
 			});
 		});
 	
@@ -99,7 +84,7 @@ describe("Utility functions", () => {
 			});
 			
 			it("supports custom easing curves", async () => {
-				const curve = [[0,0], [1,0], [1,0], [1,1]];
+				const curve = [[0, 0], [1, 0], [1, 0], [1, 1]];
 				const target = {prop: 0};
 				const tweenValue = tween(target, "prop", 100, {duration, curve});
 				await wait(duration / 4);
@@ -112,10 +97,10 @@ describe("Utility functions", () => {
 			it("supports early cancellation of playback", async () => {
 				const valuesWhenStopped = {A: 0, B: 0};
 				const target = {foo: 0, bar: 0};
-				const tweenA = tween(target, "foo", 10, {duration});
-				const tweenB = tween(target, "bar", 10, {duration});
+				const tween = tween(target, "foo", 10, {duration});
+				tween(target, "bar", 10, {duration});
 				await wait(duration / 4).then(() => expect(target.foo).to.be.above(0));
-				await wait(duration / 2).then(() => tweenA.stop());
+				await wait(duration / 2).then(() => tween.stop());
 				valuesWhenStopped.A = target.foo;
 				valuesWhenStopped.B = target.bar;
 				expect(valuesWhenStopped.A).to.be.above(0).and.below(10);
@@ -216,21 +201,21 @@ describe("Utility functions", () => {
 
 			it("captures their standard output streams", async () =>
 				expect(await exec("printf", ["<%03x>\\n", "255"]))
-				.	to.have.property("stdout")
-				.	that.is.a("string")
-				.	and.that.equals("<0ff>\n"));
+					.to.have.property("stdout")
+					.that.is.a("string")
+					.and.that.equals("<0ff>\n"));
 
 			it("captures their standard error streams", async () =>
-				expect(await exec("node", ["-e", `process.stderr.write("Foo")`]))
-				.	to.have.property("stderr")
-				.	that.is.a("string")
-				.	and.that.equals("Foo"));
+				expect(await exec("node", ["-e", 'process.stderr.write("Foo")']))
+					.to.have.property("stderr")
+					.that.is.a("string")
+					.and.that.equals("Foo"));
 
 			it("captures the command's exit code", async () =>
 				expect(await exec("node", ["-e", "process.exit(3)"]))
-				.	to.have.property("code")
-				.	that.is.a("number")
-				.	and.that.equals(3));
+					.to.have.property("code")
+					.that.is.a("number")
+					.and.that.equals(3));
 
 			it("resolves with an object that includes each property", async () =>
 				expect(await exec("node", ["-e", `
@@ -278,7 +263,7 @@ describe("Utility functions", () => {
 			it("executes tagged templates with interpolation", async () => {
 				expect(await $ `echo Foo ${2 + 4} Baz`).to.eql("Foo 6 Baz\n");
 				expect(await $ `echo F${2}o Bar ${"Baz"}`).to.eql("F2o Bar Baz\n");
-				expect(await $ `${"ec" + "ho"} Foo`).to.eql("Foo\n");
+				expect(await $ `${"echo"} Foo`).to.eql("Foo\n");
 			});
 
 			it("executes multiple commands", async () =>
@@ -382,7 +367,7 @@ describe("Utility functions", () => {
 					expect(smartSplit("'foo'")).to.eql(["foo"]);
 					expect(smartSplit('"foo"')).to.eql(["foo"]);
 					expect(smartSplit("`foo`")).to.eql(["foo"]);
-					expect(smartSplit('"foo bar" baz')).to.eql(['foo bar', "baz"]);
+					expect(smartSplit('"foo bar" baz')).to.eql(["foo bar", "baz"]);
 					expect(smartSplit("'foo bar' baz")).to.eql(["foo bar", "baz"]);
 					expect(smartSplit("`foo bar` baz")).to.eql(["foo bar", "baz"]);
 				});

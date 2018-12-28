@@ -8,6 +8,7 @@
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
 	"devDependencies": {
+		"@alhadis/eslint-config": "^1.2.0",
 		"rollup": "^0.68.2",
 		"eslint": "^5.11.0",
 		"mocha":  ">=5.2.0",
