@@ -4,7 +4,10 @@
 		"files": ["lib/dom.mjs"],
 		"rules": {"brace-style": 0}
 	},{
-		"files": ["lib/functions.mjs"],
+		"files": [
+			"index.js",
+			"lib/functions.mjs"
+		],
 		"rules": {
 			"consistent-this": 0,
 			"keyword-spacing": 0

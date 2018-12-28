@@ -7,6 +7,8 @@ index.js: index.mjs lib/*.mjs
 		--format cjs \
 		--input $< \
 		--file $@
+	npx eslint --fix --no-ignore $@
+	sed -i~ -e '/__esModule/ s/{ \(value: true\) }/{\1}/' $@ && rm -f $@~
 
 
 # Nuke generated CJS bundle
