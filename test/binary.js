@@ -34,6 +34,38 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	// Byte-arrays shared by base64-related functions
+	const bytesFoo  = [0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72];
+	const bytesCafe = [0x63, 0xE1, 0x66, 0xE9, 0x62, 0xE1, 0x62, 0xE9];
+	const bytesRaw  = [0x89, 0x01, 0x00, 0x8F, 0xFF, 0xFE, 0x00];
+	const stringRaw = "\x89\x01\0\x8F\xFF\xFE\0";
+	
+	describe("base64Decode()", () => {
+		const {base64Decode} = utils;
+		it("decodes 7-bit ASCII strings",    () => expect(base64Decode("Rm9vQmFy")).to.equal("FooBar"));
+		it("decodes 7-bit ASCII bytes",      () => expect(base64Decode("Rm9vQmFy", true)).to.eql(bytesFoo));
+		it("decodes extended ASCII strings", () => expect(base64Decode("Y+Fm6WLhYuk=")).to.equal("cáfébábé"));
+		it("decodes extended ASCII bytes",   () => expect(base64Decode("Y+Fm6WLhYuk=", true)).to.eql(bytesCafe));
+		it("decodes raw binary strings",     () => expect(base64Decode("iQEAj//+AA==")).to.equal(stringRaw));
+		it("decodes raw binary bytes",       () => expect(base64Decode("iQEAj//+AA==", true)).to.eql(bytesRaw));
+		it("decodes UTF-8 as Latin-1",       () => expect(base64Decode("Y8OhZsOpYsOhYsOp")).to.equal("cÃ¡fÃ©bÃ¡bÃ©"));
+	});
+	
+	describe("base64Encode()", () => {
+		const {base64Encode} = utils;
+		it("encodes 7-bit ASCII strings",    () => expect(base64Encode("FooBar")).to.equal("Rm9vQmFy"));
+		it("encodes 7-bit ASCII bytes",      () => expect(base64Encode(bytesFoo)).to.equal("Rm9vQmFy"));
+		it("encodes extended ASCII strings", () => expect(base64Encode("cáfébábé")).to.equal("Y+Fm6WLhYuk="));
+		it("encodes extended ASCII bytes",   () => expect(base64Encode(bytesCafe)).to.equal("Y+Fm6WLhYuk="));
+		it("encodes raw binary strings",     () => expect(base64Encode(stringRaw)).to.equal("iQEAj//+AA=="));
+		it("encodes raw binary bytes",       () => expect(base64Encode(bytesRaw)).to.equal("iQEAj//+AA=="));
+		it("encodes PNG images correctly",   () => {
+			const json = JSON.parse(file("base64/rgba.json"));
+			for(const key in json)
+				expect(base64Encode(file(key))).to.equal(json[key]);
+		});
+	});
+	
 	describe("crc32()", () => {
 		const {crc32} = utils;
 		it("computes CRCs of string values", () => {
@@ -91,5 +123,25 @@ describe("Byte-level functions", () => {
 			it("generates #BBFFDD pixels", () => expect(rgba(0xBB, 0xFF, 0xDD, 0x00)).to.equal(file("rgba/bbffdd00.png")));
 			it("generates #BBAAFF pixels", () => expect(rgba(0xBB, 0xAA, 0xFF, 0x00)).to.equal(file("rgba/bbaaff00.png")));
 		});
+	});
+	
+	// Cuneiform sequences shared by UTF8-related functions
+	const astralChars    = "𒀻𒀰";
+	const decodedAstrals = "\xED\xA0\x88\xED\xB0\xBB\xED\xA0\x88\xED\xB0\xB0";
+	
+	describe("utf8Decode()", () => {
+		const {utf8Decode} = utils;
+		it("preserves 7-bit ASCII",     () => expect(utf8Decode("Foo\0Bar")).to.equal("Foo\0Bar"));
+		it("decodes extended ASCII",    () => expect(utf8Decode("cáfébábé")).to.equal("cÃ¡fÃ©bÃ¡bÃ©"));
+		it("decodes multibyte UTF-8",   () => expect(utf8Decode("→│λ")).to.equal("\xE2\x86\x92\xE2\x94\x82\xCE\xBB"));
+		it("decodes astral characters", () => expect(utf8Decode(astralChars)).to.equal(decodedAstrals));
+	});
+	
+	describe("utf8Encode()", () => {
+		const {utf8Encode} = utils;
+		it("preserves 7-bit ASCII",     () => expect(utf8Encode("Foo\0Bar")).to.equal("Foo\0Bar"));
+		it("encodes extended ASCII",    () => expect(utf8Encode("cÃ¡fÃ©bÃ¡bÃ©")).to.equal("cáfébábé"));
+		it("encodes multibyte UTF-8",   () => expect(utf8Encode("\xE2\x86\x92\xE2\x94\x82\xCE\xBB")).to.equal("→│λ"));
+		it("encodes astral characters", () => expect(utf8Encode(decodedAstrals)).to.equal(astralChars));
 	});
 });

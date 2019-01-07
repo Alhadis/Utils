@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><body><script>
+"use strict";
+(async () => {
+	const data = JSON.parse(await fetch("rgba.json").then(req => req.text()));
+	for(const key in data){
+		const img = document.createElement("img");
+		img.alt = key;
+		img.src = `data:image/png;base64,${data[key]}`;
+		img.width = 40;
+		document.body.appendChild(img);
+	}
+})();
+</script></body></html>

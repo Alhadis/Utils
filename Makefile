@@ -30,3 +30,14 @@ test: index.js
 	npx mocha --require chai/register-expect
 
 .PHONY: test
+
+
+# Regenerate a base64-encoded list of PNG fixtures
+pngs = test/fixtures/rgba/*.png
+test/fixtures/base64/rgba.json:
+	@ command -v base64 2>&1 >/dev/null || { echo "base64 command not found"; exit 1; };
+	printf \{ > $@
+	for i in $(pngs); do \
+		printf '\n\t"%s": "%s",' "$${i#test/fixtures/}" `base64 $$i` >> $@; \
+	done
+	perl -0 -pi -e 's/,\z/\n}\n/' $@
