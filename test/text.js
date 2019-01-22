@@ -3,6 +3,14 @@
 describe("Text-related functions", () => {
 	const utils = require("../index.js");
 	
+	describe("escapeHTML()", () => {
+		const {escapeHTML} = utils;
+		it("escapes angle brackets", () => void expect(escapeHTML("< < > >")).to.equal("&#60; &#60; &#62; &#62;"));
+		it("escapes ampersands",     () => void expect(escapeHTML("A & B & Z")).to.equal("A &#38; B &#38; Z"));
+		it("escapes double-quotes",  () => void expect(escapeHTML('A \\"B" Z')).to.equal("A \\&#34;B&#34; Z"));
+		it("escapes single-quotes",  () => void expect(escapeHTML("A \\'B' Z")).to.equal("A \\&#39;B&#39; Z"));
+	});
+	
 	describe("escapeRegExp()", () => {
 		const {escapeRegExp} = utils;
 		it("escapes backslashes",       () => void expect(escapeRegExp("\\")).to.equal("\\\\"));
