@@ -1,5 +1,6 @@
 export * from "./lib/binary.mjs";
 export * from "./lib/canvas.mjs";
+export * from "./lib/colours.mjs";
 export * from "./lib/dom.mjs";
 export * from "./lib/functions.mjs";
 export * from "./lib/math.mjs";
