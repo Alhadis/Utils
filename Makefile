@@ -5,7 +5,7 @@ index.js: index.mjs lib/*.mjs
 	npx rollup \
 		--no-interop \
 		--format cjs \
-		--input $< \
+		--input index.mjs \
 		--file $@
 	npx eslint --fix --no-ignore $@
 	sed -i~ -e '/__esModule/ s/{ \(value: true\) }/{\1}/' $@ && rm -f $@~
