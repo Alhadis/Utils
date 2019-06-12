@@ -24,6 +24,175 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("formatTime()", () => {
+		const {formatTime} = utils;
+		it("formats milliseconds",    () => expect(formatTime(945))      .to.equal("00:00:00.945"));
+		it("formats seconds",         () => expect(formatTime(1753))     .to.equal("00:00:01.753"));
+		it("formats minutes",         () => expect(formatTime(90999))    .to.equal("00:01:30.999"));
+		it("formats hours",           () => expect(formatTime(12625000)) .to.equal("03:30:25.000"));
+		it("formats hours over 99",   () => expect(formatTime(432000000)).to.equal("120:00:00.000"));
+		it("ignores negative values", () => expect(formatTime(-500))     .to.equal("00:00:00.000"));
+		it("ignores invalid input",   () => {
+			const zero = "00:00:00.000";
+			expect(formatTime(NaN)) .to.equal(zero);
+			expect(formatTime({}))  .to.equal(zero);
+			expect(formatTime())    .to.equal(zero);
+		});
+		it("rounds off fractional values", () => {
+			expect(formatTime(504.45)).to.equal("00:00:00.504");
+			expect(formatTime(504.65)).to.equal("00:00:00.505");
+		});
+		it("coerces non-numeric values", () => {
+			expect(formatTime({valueOf: () => 450}))    .to.equal("00:00:00.450");
+			expect(formatTime({valueOf: () => 450.75})) .to.equal("00:00:00.451");
+		});
+	});
+	
+	describe("parseTime()", () => {
+		const {parseTime} = utils;
+		const expectError = input => {
+			const escaped = String(input).replace(/\./g, "\\.");
+			const message = new RegExp(`^Invalid timecode: "${escaped}"$`);
+			expect(() => parseTime(input)).to.throw(SyntaxError, message);
+		};
+		
+		describe("Milliseconds", () => {
+			it("allows the component to be omitted", () => {
+				expect(parseTime("00:00:00")).to.equal(0);
+				expect(parseTime("00;00;00")).to.equal(0);
+			});
+			
+			describe("Dot-separated", () => {
+				it("parses 1-digit values",    () => expect(parseTime("00:00:00.1"))    .to.equal(100));
+				it("parses 2-digit values",    () => expect(parseTime("00:00:00.25"))   .to.equal(250));
+				it("parses 3-digit values",    () => expect(parseTime("00:00:00.200"))  .to.equal(200));
+				it("parses leading zeroes",    () => expect(parseTime("00:00:00.03"))   .to.equal(30));
+				it("parses trailing zeroes",   () => expect(parseTime("00:00:00.40"))   .to.equal(400));
+				it("discards excess digits",   () => expect(parseTime("00:00:00.5009")) .to.equal(500));
+				it("expects at least 1 digit", () => expectError("00:00:00."));
+			});
+			
+			describe("Comma-separated", () => {
+				it("parses 1-digit values",    () => expect(parseTime("00:00:00,1"))    .to.equal(100));
+				it("parses 2-digit values",    () => expect(parseTime("00:00:00,25"))   .to.equal(250));
+				it("parses 3-digit values",    () => expect(parseTime("00:00:00,200"))  .to.equal(200));
+				it("parses leading zeroes",    () => expect(parseTime("00:00:00,03"))   .to.equal(30));
+				it("parses trailing zeroes",   () => expect(parseTime("00:00:00,40"))   .to.equal(400));
+				it("discards excess digits",   () => expect(parseTime("00:00:00,5009")) .to.equal(500));
+				it("expects at least 1 digit", () => expectError("00:00:00,"));
+			});
+		});
+		
+		describe("Seconds", () => {
+			describe("Colon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("00:00:1.000"))   .to.equal(1000));
+				it("parses 2-digit values",     () => expect(parseTime("00:00:25.000"))  .to.equal(25000));
+				it("parses values over 60",     () => expect(parseTime("00:00:90.000"))  .to.equal(90000));
+				it("parses 3-digit values",     () => expect(parseTime("00:00:180.000")) .to.equal(180000));
+				it("parses 4-digit values",     () => expect(parseTime("00:00:1024.000")).to.equal(1024000));
+				it("parses leading zeroes",     () => expect(parseTime("00:00:0001.000")).to.equal(1000));
+				it("parses trailing zeroes",    () => expect(parseTime("00:00:1000.000")).to.equal(1000000));
+				it("forbids missing values",    () => expectError("00:00:.000"));
+				it("forbids fractional values", () => expectError("00:00:1.5,000"));
+			});
+			
+			describe("Semicolon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("00;00;1.000"))   .to.equal(1000));
+				it("parses 2-digit values",     () => expect(parseTime("00;00;25.000"))  .to.equal(25000));
+				it("parses values over 60",     () => expect(parseTime("00;00;90.000"))  .to.equal(90000));
+				it("parses 3-digit values",     () => expect(parseTime("00;00;180.000")) .to.equal(180000));
+				it("parses 4-digit values",     () => expect(parseTime("00;00;1024.000")).to.equal(1024000));
+				it("parses leading zeroes",     () => expect(parseTime("00;00;0001.000")).to.equal(1000));
+				it("parses trailing zeroes",    () => expect(parseTime("00;00;1000.000")).to.equal(1000000));
+				it("allows mixed delimiters",   () => expect(parseTime("00:00;09.000"))  .to.equal(9000));
+				it("forbids missing values",    () => expectError("00;00;.000"));
+				it("forbids fractional values", () => expectError("00;00;1.5,000"));
+			});
+		});
+		
+		describe("Minutes", () => {
+			describe("Colon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("00:1:00.000"))   .to.equal(60000));
+				it("parses 2-digit values",     () => expect(parseTime("00:25:00.000"))  .to.equal(1500000));
+				it("parses values over 60",     () => expect(parseTime("00:90:00.000"))  .to.equal(5400000));
+				it("parses 3-digit values",     () => expect(parseTime("00:180:00.000")) .to.equal(10800000));
+				it("parses 4-digit values",     () => expect(parseTime("00:1024:00.000")).to.equal(61440000));
+				it("parses leading zeroes",     () => expect(parseTime("00:0001:00.000")).to.equal(60000));
+				it("parses trailing zeroes",    () => expect(parseTime("00:1000:00.000")).to.equal(60000000));
+				it("forbids missing values",    () => expectError("00::00.000"));
+				it("forbids fractional values", () => expectError("00:1.5:00,000"));
+			});
+			
+			describe("Semicolon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("00;1;00.000"))   .to.equal(60000));
+				it("parses 2-digit values",     () => expect(parseTime("00;25;00.000"))  .to.equal(1500000));
+				it("parses values over 60",     () => expect(parseTime("00;90;00.000"))  .to.equal(5400000));
+				it("parses 3-digit values",     () => expect(parseTime("00;180;00.000")) .to.equal(10800000));
+				it("parses 4-digit values",     () => expect(parseTime("00;1024;00.000")).to.equal(61440000));
+				it("parses leading zeroes",     () => expect(parseTime("00;0001;00.000")).to.equal(60000));
+				it("parses trailing zeroes",    () => expect(parseTime("00;1000;00.000")).to.equal(60000000));
+				it("allows mixed delimiters",   () => expect(parseTime("00:09;00.000"))  .to.equal(540000));
+				it("forbids missing values",    () => expectError("00;;00.000"));
+				it("forbids fractional values", () => expectError("00;1.5;00,000"));
+			});
+		});
+		
+		describe("Hours", () => {
+			describe("Colon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("1:00:00.000"))   .to.equal(3600000));
+				it("parses 2-digit values",     () => expect(parseTime("25:00:00.000"))  .to.equal(90000000));
+				it("parses values over 24",     () => expect(parseTime("48:00:00.000"))  .to.equal(172800000));
+				it("parses 3-digit values",     () => expect(parseTime("180:00:00.000")) .to.equal(648000000));
+				it("parses 4-digit values",     () => expect(parseTime("1024:00:00.000")).to.equal(3686400000));
+				it("parses leading zeroes",     () => expect(parseTime("0001:00:00.000")).to.equal(3600000));
+				it("parses trailing zeroes",    () => expect(parseTime("1000:00:00.000")).to.equal(3600000000));
+				it("forbids fractional values", () => expectError("1.5:00:00,000"));
+				it("allows missing values",     () => {
+					expect(parseTime("15:00.000")).to.equal(900000);
+					expect(parseTime("15:25"))    .to.equal(925000);
+				});
+				it("expects at least 1 digit", () => {
+					expectError(":15:00.000");
+					expectError(":15:25");
+				});
+			});
+			
+			describe("Semicolon-delimited", () => {
+				it("parses 1-digit values",     () => expect(parseTime("1;00;00.000"))   .to.equal(3600000));
+				it("parses 2-digit values",     () => expect(parseTime("25;00;00.000"))  .to.equal(90000000));
+				it("parses values over 24",     () => expect(parseTime("48;00;00.000"))  .to.equal(172800000));
+				it("parses 3-digit values",     () => expect(parseTime("180;00;00.000")) .to.equal(648000000));
+				it("parses 4-digit values",     () => expect(parseTime("1024;00;00.000")).to.equal(3686400000));
+				it("parses leading zeroes",     () => expect(parseTime("0001;00;00.000")).to.equal(3600000));
+				it("parses trailing zeroes",    () => expect(parseTime("1000;00;00.000")).to.equal(3600000000));
+				it("allows mixed delimiters",   () => expect(parseTime("09:00;00.000"))  .to.equal(32400000));
+				it("forbids fractional values", () => expectError("1.5;00;00,000"));
+				it("allows missing values",     () => {
+					expect(parseTime("15;00.000")).to.equal(900000);
+					expect(parseTime("15;25"))    .to.equal(925000);
+				});
+				it("expects at least 1 digit", () => {
+					expectError(";15;00.000");
+					expectError(";15;25");
+				});
+			});
+		});
+		
+		describe("Invalid input", () => {
+			it("rejects invalid formats",     () => expectError("Invalid"));
+			it("rejects empty strings",       () => expectError(""));
+			it("rejects non-string values",   () => expectError(false));
+			it("trims leading whitespace",    () => expect(parseTime(" \t\n00:00:01.000")).to.equal(1000));
+			it("trims trailing whitespace",   () => expect(parseTime("00:00:02.000 \t\n")).to.equal(2000));
+			it("rejects embedded whitespace", () => expectError("00:00: 04.000"));
+			it("rejects too many components", () => expectError("00:00:00:01.456"));
+			it("stringifies before parsing",  () => {
+				expect(parseTime({toString: () => "0:1.567"}))         .to.equal(1567);
+				expect(parseTime({toString: () => "\n\t0:1.567\t\n"})) .to.equal(1567);
+			});
+		});
+	});
+	
 	describe("smartSplit()", () => {
 		const {smartSplit} = utils;
 		describe("Delimiters", () => {
