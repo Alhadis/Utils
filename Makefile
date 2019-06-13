@@ -27,7 +27,7 @@ lint:
 
 # Run unit-tests
 test: index.js
-	npx mocha --require chai/register-expect
+	npx mocha
 
 .PHONY: test
 

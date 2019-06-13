@@ -9,13 +9,15 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@alhadis/eslint-config": "^1.2.0",
-		"rollup": "^0.68.2",
-		"eslint": "^5.11.0",
-		"mocha":  ">=5.2.0",
-		"chai":   ">=4.2.0"
+		"mocha-when": "^1.0.0",
+		"rollup":     "^1.15.1",
+		"eslint":     "^5.16.0",
+		"mocha":      "^6.1.4",
+		"chai":       "^4.2.0"
 	},
 	"scripts": {
-		"prepare": "make",
-		"test": "make test"
+		"lint":    "make lint",
+		"test":    "make test",
+		"prepare": "make"
 	}
 }
