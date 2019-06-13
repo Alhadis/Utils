@@ -4,6 +4,9 @@
 		"files": ["lib/dom.mjs"],
 		"rules": {"brace-style": 0}
 	},{
+		"files": ["index.js"],
+		"rules": {"no-underscore-dangle": 0}
+	},{
 		"files": [
 			"index.js",
 			"lib/functions.mjs"

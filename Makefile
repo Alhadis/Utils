@@ -3,7 +3,6 @@ all: lint index.js test
 # Generate a CommonJS version of ESM libraries
 index.js: index.mjs lib/*.mjs
 	npx rollup \
-		--no-interop \
 		--format cjs \
 		--input index.mjs \
 		--file $@
