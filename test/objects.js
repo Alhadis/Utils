@@ -146,4 +146,38 @@ describe("Object-related functions", () => {
 			expect(target.prop).to.equal("Size: 30cm × 15cm");
 		});
 	});
+	
+	describe("uint()", () => {
+		const {uint} = utils;
+		
+		it("coerces values to integers", () => {
+			const obj = {valueOf: () => 630};
+			expect(uint(obj)) .to.equal(630);
+			expect(uint("48")).to.equal(48);
+			expect(uint(null)).to.equal(0);
+		});
+		
+		it("discards decimal components", () => {
+			expect(uint(2.4)).to.equal(2);
+			expect(uint(3.6)).to.equal(3);
+		});
+		
+		it("clamps negative values to zero", () => {
+			expect(uint(-1)).to.equal(0);
+			expect(uint(-4)).to.equal(0);
+			expect(uint(Number.NEGATIVE_INFINITY)).to.equal(0);
+		});
+		
+		it("returns NaN for non-numeric input", () => {
+			expect(uint(NaN)).to.be.NaN;
+			expect(uint({})).to.be.NaN;
+			expect(uint("Invalid")).to.be.NaN;
+		});
+		
+		it("strips the sign from negative zero", () => {
+			const sign = Math.sign(uint(-0));
+			expect(Object.is(sign,  0)).to.equal(true);
+			expect(Object.is(sign, -0)).to.equal(false);
+		});
+	});
 });
