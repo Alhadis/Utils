@@ -1,4 +1,4 @@
-all: lint index.js test
+all: lint index.js index.d.ts test
 
 # Generate a CommonJS version of ESM libraries
 index.js: index.mjs lib/*.mjs
@@ -13,6 +13,7 @@ index.js: index.mjs lib/*.mjs
 # Nuke generated CJS bundle
 clean:
 	rm -f index.js
+	rm -f index.d.ts
 
 .PHONY: clean
 
@@ -29,6 +30,14 @@ test: index.js
 	npx mocha
 
 .PHONY: test
+
+
+# Generate TypeScript declarations from JSDoc
+types: index.d.ts
+index.d.ts: index.js
+	extra='export declare const BlendModes:{[key: string]: (...args: number[]) => number};'; \
+	(`npx jg -p jsdoc/to-typescript.js` $^; printf '%s\n' "$$extra") | sort > $@
+	jg lint -t $@
 
 
 # Regenerate a base64-encoded list of PNG fixtures

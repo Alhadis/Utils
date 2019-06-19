@@ -1,12 +1,13 @@
 {
 	"name": "alhadis.utils",
 	"version": "v0.1.3",
-	"files": ["lib", "index.js", "index.mjs"],
+	"files": ["lib", "index.*"],
 	"description": "Battle-hardened suite of self-contained utility functions.",
 	"keywords": ["utility", "helper", "functional", "utils", "browser"],
 	"repository": "https://github.com/Alhadis/Utils",
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
+	"types": "./index.d.ts",
 	"devDependencies": {
 		"@alhadis/eslint-config": "^1.2.0",
 		"mocha-when": "^1.0.0",
