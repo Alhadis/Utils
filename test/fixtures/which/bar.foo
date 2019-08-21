@@ -1,0 +1,2 @@
+:: -*- bat -*- vim: ft=dosbatch
+@echo bar.foo

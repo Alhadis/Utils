@@ -3,6 +3,7 @@
 describe("Node-specific functions", () => {
 	const utils = require("../index.js");
 	const fs = require("fs");
+	const path = require("path");
 
 	describe("exec()", function(){
 		const {exec, wait} = utils;
@@ -274,28 +275,120 @@ describe("Node-specific functions", () => {
 
 	describe("which()", () => {
 		const {which} = utils;
-		let firstNode = "";
+		const pathKey = "win32" === process.platform ? "Path" : "PATH";
+		const fixtures = path.join(__dirname, "fixtures", "which");
+		const tmpClean = () => fs.readdirSync(fixtures).forEach(file =>
+			/^tmp\./i.test(file) && fs.unlinkSync(path.join(fixtures, file)));
+		
+		let env, firstNode = "";
+		before(() => tmpClean(env = process.env));
+		after(() => tmpClean(process.env = env));
+		beforeEach(() => process.env = {...env});
 
 		it("returns the path of the first matching executable", async () => {
 			expect(firstNode = await which("node")).to.not.be.empty;
-			const stats = fs.statSync(firstNode);
-			expect(stats.isFile()).to.be.true;
-			expect(!!(0o111 & stats.mode)).to.be.true;
+			expect(fs.statSync(firstNode).isFile()).to.be.true;
+		});
+		
+		it("returns every matching path if the `all` parameter is set", async () => {
+			const result = await which("node", true);
+			expect(result).to.be.an("array");
+			expect(result[0]).to.be.a("string").and.to.equal(firstNode);
+			process.env[pathKey] = fixtures + path.delimiter + process.env[pathKey];
+			const nodeExe = "win32" === process.platform ? "node.exe" : "node";
+			expect(await which("node", true)).to.eql([path.join(fixtures, nodeExe), ...result]);
 		});
 
-		it("returns an empty value if nothing was matched", async () =>
-			expect(await which("wegfjekrwg")).to.equal(""));
+		it("returns an empty value if nothing was matched", async () => {
+			expect(await which("wegfjekrwg")).to.equal("");
+			expect(await which("wegfjekrwg", true)).to.be.an("array").with.lengthOf(0);
+		});
+		
+		it("locates programs with names containing whitespace", async () => {
+			process.env[pathKey] = fixtures;
+			"win32" === process.platform
+				? expect(await which("APP DATA")).to.equal(path.join(fixtures, "APP DATA.bat"))
+				: expect(await which("foo bar")).to.equal(path.join(fixtures, "foo bar"));
+		});
 
-		describe("when the `all` parameter is set", () => {
-			it("returns an array of every match", async () => {
-				const result = await which("node", true);
-				expect(result).to.be.an("array");
-				expect(result[0]).to.be.a("string").and.to.equal(firstNode);
+		it("doesn't break when passed empty input", async () => {
+			expect(await which(""))          .to.equal("");
+			expect(await which())            .to.equal("");
+			expect(await which(null))        .to.equal("");
+			expect(await which(false))       .to.equal("");
+			expect(await which("",    true)) .to.eql([]);
+			expect(await which(null,  true)) .to.eql([]);
+			expect(await which(false, true)) .to.eql([]);
+		});
+		
+		it("doesn't break if $PATH is empty", async () => {
+			// HACK: CMD.EXE resolves variable-names case-insensitively
+			for(const key in process.env)
+				if(/^PATH(?:EXT)?$/i.test(key))
+					delete process.env[key];
+			expect(await which("node"))       .to.equal("");
+			expect(await which("node", true)) .to.eql([]);
+		});
+		
+		// Windows-specific specs
+		"win32" === process.platform && describe("Windows-specific", () => {
+			beforeEach(() => process.env = {...env, Path: fixtures});
+			before(async () => {
+				process.env.Path    = __dirname;
+				process.env.PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.WSF;.WSH;.MSC";
+				expect(await which("bar"))       .to.equal("");
+				expect(await which("tmp.1.foo")) .to.equal("");
+				expect(await which("tmp.2.foo")) .to.equal("");
 			});
-
-			it("returns an empty array if nothing was found", async () => {
-				const result = await which("wegfjekrwg", true);
-				expect(result).to.be.an("array").with.lengthOf(0);
+			
+			it("tests %PATHEXT% case-insensitively", async () => {
+				process.env.Path    = fixtures + path.delimiter + __dirname;
+				process.env.PATHEXT += ";.FOO";
+				fs.writeFileSync(path.join(fixtures, "tmp.1.foo"), "");
+				fs.writeFileSync(path.join(fixtures, "tmp.2.FOO"), "");
+				expect(await which("bar"))   .to.equal(path.join(fixtures, "bar.foo"));
+				expect(await which("tmp.1")) .to.equal(path.join(fixtures, "tmp.1.foo"));
+				expect(await which("tmp.2")) .to.equal(path.join(fixtures, "tmp.2.foo"));
+			});
+			
+			it('defaults to ".COM;.EXE;.BAT" if %PATHEXT% is unset', async () => {
+				process.env.PATHEXT = "";
+				for(const ext of "vbs vbe js wsf wsh msc".split(" ")){
+					fs.writeFileSync(path.join(fixtures, "tmp." + ext), "");
+					expect(await which("tmp"))       .to.equal("");
+					expect(await which("tmp", true)) .to.eql([]);
+				}
+				const batFile = path.join(fixtures, "tmp.bat");
+				fs.writeFileSync(batFile, "");
+				expect(await which("tmp"))       .to.equal(batFile);
+				expect(await which("tmp", true)) .to.eql([batFile]);
+				
+				const exeFile = path.join(fixtures, "tmp.exe");
+				fs.writeFileSync(exeFile, "");
+				expect(await which("tmp"))       .to.equal(exeFile);
+				expect(await which("tmp", true)) .to.eql([exeFile, batFile]);
+				
+				const comFile = path.join(fixtures, "tmp.com");
+				fs.writeFileSync(comFile, "");
+				expect(await which("tmp"))       .to.equal(comFile);
+				expect(await which("tmp", true)) .to.eql([comFile, exeFile, batFile]);
+			});
+			
+			it("doesn't interpolate variables", async () => {
+				expect(await which("%APPDATA%")) .to.equal(path.join(fixtures, "%APPDATA%.bat"));
+				expect(await which("%APPDATA%")) .to.equal(path.join(fixtures, "%APPDATA%.bat"));
+				expect(await which("%DATE%"))    .to.equal(path.join(fixtures, "%DATE%.bat"));
+				expect(await which("%EMPTY%"))   .to.equal("");
+				expect(await which("%EMPTY"))    .to.equal("");
+			});
+			
+			it("doesn't split on delimiters", async () =>
+				expect(await which("APP;DATA")).to.equal(path.join(fixtures, "APP;DATA.bat")));
+			
+			it("treats escape sequences literally", async () => {
+				expect(await which("^%APPDATA%"))   .to.equal(path.join(fixtures, "^%APPDATA%.bat"));
+				expect(await which("^%APPDATA^^%")) .to.equal(path.join(fixtures, "^%APPDATA^^%.bat"));
+				expect(await which("%APP DATA%"))   .to.equal(path.join(fixtures, "%APP DATA%.bat"));
 			});
 		});
 	});

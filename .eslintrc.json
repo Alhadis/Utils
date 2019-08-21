@@ -16,9 +16,6 @@
 			"keyword-spacing": 0
 		}
 	},{
-		"files": ["lib/node.mjs"],
-		"rules": {"quotes": 0}
-	},{
 		"files": ["test/*.js"],
 		"rules": {"keyword-spacing": 0},
 		"globals": {"expect": true}

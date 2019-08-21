@@ -1,0 +1,3 @@
+# Disable EOL normalisation in Windows batchfiles
+*.bat autocrlf=false
+*.cmd autocrlf=false

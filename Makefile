@@ -6,7 +6,7 @@ index.js: index.mjs lib/*.mjs
 		--format cjs \
 		--input index.mjs \
 		--file $@
-	npx eslint --fix --no-ignore $@
+	npx eslint --fix --no-ignore $@ 2>/dev/null || true
 	sed -i~ -e '/__esModule/ s/{ \(value: true\) }/{\1}/' $@ && rm -f $@~
 
 
