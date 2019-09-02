@@ -1,7 +1,9 @@
 .DS_Store
 node_modules
 *.log
+*.map
 *.tgz
 /index.js
+/index.mjs
 /test.*
 tmp.*
