@@ -90,6 +90,7 @@ export declare function rgbToHSL(input: RGBColour): HSLColour;
 export declare function rgbToHSV(input: RGBColour): HSVColour;
 export declare function rgbToHex(input: RGBColour, asString?: boolean): string;
 export declare function rgba(r: number, g: number, b: number, a: number): string;
+export declare function rmrf(paths: string | string[], ignoreErrors?: boolean): Promise<void>;
 export declare function slug(name: string): string;
 export declare function smartSplit(input: string, options?: {delimiters?: string; quoteChars?: string; escapeChars?: string; keepQuotes?: boolean; keepEscapes?: boolean}): string[];
 export declare function supportsCSSProperty(name: string): boolean;
