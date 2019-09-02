@@ -1,6 +1,6 @@
 "use strict";
 
-describe("Node-specific functions", () => {
+describe("Shell-specific functions", () => {
 	const utils = require("../index.js");
 	const fs = require("fs");
 	const path = require("path");
