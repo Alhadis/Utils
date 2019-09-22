@@ -1,20 +1,14 @@
 {
 	"extends": "@alhadis",
 	"overrides": [{
+		"files": ["lib/*.mjs"],
+		"rules": {"require-atomic-updates": 0}
+	},{
 		"files": ["lib/dom.mjs"],
 		"rules": {"brace-style": 0}
 	},{
-		"files": ["index.js"],
-		"rules": {"no-underscore-dangle": 0}
-	},{
-		"files": [
-			"index.js",
-			"lib/functions.mjs"
-		],
-		"rules": {
-			"consistent-this": 0,
-			"keyword-spacing": 0
-		}
+		"files": ["lib/functions.mjs"],
+		"rules": {"keyword-spacing": 0}
 	},{
 		"files": ["test/*.js"],
 		"rules": {"keyword-spacing": 0},

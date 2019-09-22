@@ -22,7 +22,6 @@ describe("Object-related functions", () => {
 	describe("isRegExp()", () => {
 		const {isRegExp} = utils;
 		it("identifies literals",   () => void expect(isRegExp(/A/)).to.be.true);
-		it("identifies objects",    () => void expect(isRegExp(new RegExp("A"))).to.be.true);
 		it("identifies subclasses", () => {
 			class ExtendedRegExp extends RegExp {
 				constructor(source, flags){
