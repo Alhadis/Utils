@@ -7,6 +7,9 @@
 		"files": ["lib/*.mjs"],
 		"rules": {"require-atomic-updates": 0}
 	},{
+		"files": ["lib/env.mjs"],
+		"parser": "babel-eslint"
+	},{
 		"files": ["lib/{dom,misc}.mjs"],
 		"rules": {"brace-style": 0}
 	},{
