@@ -2,6 +2,29 @@
 
 describe("Miscellaneous functions", () => {
 	const utils = require("../index.js");
+	const htmlAllFn = "function HTMLAllCollection() { [native code] }";
+	const isBrowser = (
+		"object"    === typeof window &&
+		"undefined" === typeof module &&
+		"function"  === typeof window.HTMLAllCollection &&
+		htmlAllFn   === Function.prototype.toString.call(window.HTMLAllCollection)
+	);
+	
+	describe("isNativeDOM()", () => {
+		const {isNativeDOM} = utils;
+		if(isBrowser)
+			it("returns `true` for browser environments", () =>
+				expect(isNativeDOM()).to.be.true);
+		else{
+			afterEach(() => unspoofBrowser());
+			it("returns `false` for non-browser environments", () =>
+				expect(isNativeDOM()).to.be.false);
+			it("isn't fooled by user-created globals", () => {
+				spoofBrowser();
+				expect(isNativeDOM()).to.be.false;
+			});
+		}
+	});
 	
 	describe("isPrimitive()", () => {
 		const {isPrimitive} = utils;
@@ -109,30 +132,9 @@ describe("Miscellaneous functions", () => {
 		// is impossible to reliably test without a host-provided exotic object (meaning
 		// the function won't be fooled by spoofed or emulated browser globals).
 		describe("When identifying `document.all`", () => {
-			const fnString = "function HTMLAllCollection() { [native code] }";
-			const isBrowser = (
-				"object"    === typeof window &&
-				"undefined" === typeof module &&
-				"function"  === typeof window.HTMLAllCollection &&
-				fnString    === Function.prototype.toString.call(window.HTMLAllCollection)
-			);
 			if(!isBrowser){
-				before(() => {
-					class HTMLAllCollection{
-						constructor(){ return undefined; }
-						valueOf(){ return undefined; }
-					}
-					HTMLAllCollection.toString = function toString(){ return fnString; };
-					const document = {all: new HTMLAllCollection()};
-					global.HTMLAllCollection = HTMLAllCollection;
-					global.window = {HTMLAllCollection, document};
-					global.document = document;
-				});
-				after(() => {
-					delete global.HTMLAllCollection;
-					delete global.window;
-					delete global.document;
-				});
+				before(() => spoofBrowser());
+				after(() => unspoofBrowser());
 			}
 			it("uses its [[IsHTMLDDA]] internal slot", () => {
 				if(isBrowser){
@@ -325,4 +327,33 @@ describe("Miscellaneous functions", () => {
 			expect(Object.is(sign, -0)).to.equal(false);
 		});
 	});
+	
+	
+	/**
+	 * Globalise a fake `document.all` for non-browser environments.
+	 * @internal
+	 */
+	function spoofBrowser(){
+		if(isBrowser) return;
+		class HTMLAllCollection{
+			constructor(){ return undefined; }
+			valueOf(){ return undefined; }
+		}
+		HTMLAllCollection.toString = function toString(){ return htmlAllFn; };
+		const document = {all: new HTMLAllCollection()};
+		global.HTMLAllCollection = HTMLAllCollection;
+		global.window = {HTMLAllCollection, document};
+		global.document = document;
+	}
+	
+	/**
+	 * Undo the effects of calling {@link spoofBrowser}.
+	 * @internal
+	 */
+	function unspoofBrowser(){
+		if(isBrowser) return;
+		delete global.HTMLAllCollection;
+		delete global.window;
+		delete global.document;
+	}
 });
