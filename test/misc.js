@@ -3,6 +3,152 @@
 describe("Miscellaneous functions", () => {
 	const utils = require("../index.js");
 	
+	describe("isPrimitive()", () => {
+		const {isPrimitive} = utils;
+		it("identifies `undefined`", () => {
+			expect(isPrimitive(undefined)).to.be.true;
+			expect(isPrimitive()).to.be.true;
+		});
+		it("identifies `null`", () => {
+			expect(isPrimitive(null)).to.be.true;
+			expect(isPrimitive(Object.create(null))).to.be.false;
+		});
+		it("identifies booleans", () => {
+			expect(isPrimitive(false)).to.be.true;
+			expect(isPrimitive(true)) .to.be.true;
+			expect(isPrimitive(new Boolean(false))).to.be.false;
+			expect(isPrimitive(new Boolean(true))) .to.be.false;
+		});
+		it("identifies numbers", () => {
+			expect(isPrimitive(0)).to.be.true;
+			expect(isPrimitive(1)).to.be.true;
+			expect(isPrimitive(85)).to.be.true;
+			expect(isPrimitive(4.5)).to.be.true;
+			expect(isPrimitive(-0)).to.be.true;
+			expect(isPrimitive(-2)).to.be.true;
+			expect(isPrimitive(-4.53)).to.be.true;
+			expect(isPrimitive(NaN)).to.be.true;
+			expect(isPrimitive(Infinity)).to.be.true;
+			expect(isPrimitive(-Infinity)).to.be.true;
+			expect(isPrimitive(Number.POSITIVE_INFINITY)).to.be.true;
+			expect(isPrimitive(Number.NEGATIVE_INFINITY)).to.be.true;
+			expect(isPrimitive(new Number(54))).to.be.false;
+			expect(isPrimitive(new Number(0))).to.be.false;
+			expect(isPrimitive(new Number(NaN))).to.be.false;
+		});
+		it("identifies bigints", () => {
+			expect(isPrimitive(450n)).to.be.true;
+			expect(isPrimitive(-450n)).to.be.true;
+		});
+		it("identifies strings", () => {
+			expect(isPrimitive("")).to.be.true;
+			expect(isPrimitive("abc")).to.be.true;
+			expect(isPrimitive("xyz")).to.be.true;
+			expect(isPrimitive(new String(""))).to.be.false;
+			expect(isPrimitive(new String("abc"))).to.be.false;
+			expect(isPrimitive(new String("xyz"))).to.be.false;
+			class ExtendedString extends String {}
+			expect(isPrimitive(new ExtendedString(""))).to.be.false;
+			expect(isPrimitive(new ExtendedString("abc"))).to.be.false;
+			expect(isPrimitive(new ExtendedString("xyz"))).to.be.false;
+		});
+		it("identifies symbols", () => {
+			expect(isPrimitive(Symbol("foo"))).to.be.true;
+			expect(isPrimitive(Symbol.iterator)).to.be.true;
+			expect(isPrimitive(Symbol.toStringTag)).to.be.true;
+			expect(isPrimitive(new Object(Symbol("bar")))).to.be.false;
+			expect(isPrimitive(new Object(Symbol.iterator))).to.be.false;
+			expect(isPrimitive(new Object(Symbol.toStringTag))).to.be.false;
+		});
+		it("identifies objects", () => {
+			expect(isPrimitive({})).to.be.false;
+			expect(isPrimitive([])).to.be.false;
+			expect(isPrimitive([1, 3])).to.be.false;
+			expect(isPrimitive({a: 1})).to.be.false;
+			expect(isPrimitive({valueOf: () => true})).to.be.false;
+			expect(isPrimitive(Object.create(null))).to.be.false;
+			expect(isPrimitive(new Object(false))).to.be.false;
+			expect(isPrimitive(new Array(500))).to.be.false;
+			expect(isPrimitive(Number.prototype)).to.be.false;
+			expect(isPrimitive(/abc/)).to.be.false;
+			expect(isPrimitive(new Date())).to.be.false;
+			expect(isPrimitive(new Date("1975-04-02T00:00:00Z"))).to.be.false;
+			expect(isPrimitive(new Date("Invalid date"))).to.be.false;
+			expect(isPrimitive(new Error("Whoops"))).to.be.false;
+			expect(isPrimitive(Promise.resolve())).to.be.false;
+			class ExtendedObject extends Object {}
+			class ExtendedDate extends Date {}
+			expect(isPrimitive(new ExtendedObject())).to.be.false;
+			expect(isPrimitive(new ExtendedDate())).to.be.false;
+			expect(isPrimitive(new ExtendedDate(40))).to.be.false;
+		});
+		it("identifies functions", () => {
+			expect(isPrimitive(function(){ return this; })).to.be.false;
+			expect(isPrimitive(function foo(){ return this; })).to.be.false;
+			expect(isPrimitive(function * foo(){ yield 520; })).to.be.false;
+			expect(isPrimitive(async function(){ return this; })).to.be.false;
+			expect(isPrimitive(async function foo(){ return 86; })).to.be.false;
+			expect(isPrimitive(async function * foo(){ yield 52; })).to.be.false;
+			expect(isPrimitive(() => 4 + 62 * -150)).to.be.false;
+			expect(isPrimitive(() => { console.log("Foo"); })).to.be.false;
+			expect(isPrimitive(async () => undefined)).to.be.false;
+			expect(isPrimitive(async () => { console.log("Foo"); })).to.be.false;
+			expect(isPrimitive(class {})).to.be.false;
+			expect(isPrimitive(Function)).to.be.false;
+			expect(isPrimitive(Object)).to.be.false;
+			expect(isPrimitive(Number)).to.be.false;
+			expect(isPrimitive(Number.prototype)).to.be.false;
+			expect(isPrimitive(Function.prototype)).to.be.false;
+			class ExtendedFunction extends Function {}
+			expect(isPrimitive(ExtendedFunction)).to.be.false;
+			expect(isPrimitive(new ExtendedFunction())).to.be.false;
+			expect(isPrimitive(new ExtendedFunction("4 + 2"))).to.be.false;
+		});
+		
+		// NOTE: The following suite contains weird-looking tests, because `document.all`
+		// is impossible to reliably test without a host-provided exotic object (meaning
+		// the function won't be fooled by spoofed or emulated browser globals).
+		describe("When identifying `document.all`", () => {
+			const fnString = "function HTMLAllCollection() { [native code] }";
+			const isBrowser = (
+				"object"    === typeof window &&
+				"undefined" === typeof module &&
+				"function"  === typeof window.HTMLAllCollection &&
+				fnString    === Function.prototype.toString.call(window.HTMLAllCollection)
+			);
+			if(!isBrowser){
+				before(() => {
+					class HTMLAllCollection{
+						constructor(){ return undefined; }
+						valueOf(){ return undefined; }
+					}
+					HTMLAllCollection.toString = function toString(){ return fnString; };
+					const document = {all: new HTMLAllCollection()};
+					global.HTMLAllCollection = HTMLAllCollection;
+					global.window = {HTMLAllCollection, document};
+					global.document = document;
+				});
+				after(() => {
+					delete global.HTMLAllCollection;
+					delete global.window;
+					delete global.document;
+				});
+			}
+			it("uses its [[IsHTMLDDA]] internal slot", () => {
+				if(isBrowser){
+					expect(isPrimitive(document.all)).to.be.false;
+					expect("undefined" === typeof document.all).to.be.true;
+					expect(window.HTMLAllCollection === document.all.constructor).to.be.true;
+				}
+				else{
+					expect(isPrimitive(document.all)).to.be.false;
+					expect("object" === typeof document.all).to.be.true;
+					expect(window.HTMLAllCollection === document.all.constructor).to.be.true;
+				}
+			});
+		});
+	});
+	
 	describe("isString()", () => {
 		const {isString} = utils;
 		it("identifies literals",   () => void expect(isString("foo")).to.be.true);
