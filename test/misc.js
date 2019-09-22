@@ -1,6 +1,6 @@
 "use strict";
 
-describe("Object-related functions", () => {
+describe("Miscellaneous functions", () => {
 	const utils = require("../index.js");
 	
 	describe("isString()", () => {
