@@ -95,6 +95,7 @@ export declare function rgba(r: number, g: number, b: number, a: number): string
 export declare function rmrf(paths: string | string[], ignoreErrors?: boolean): Promise<void>;
 export declare function slug(name: string): string;
 export declare function smartSplit(input: string, options?: {delimiters?: string; quoteChars?: string; escapeChars?: string; keepQuotes?: boolean; keepEscapes?: boolean}): string[];
+export declare function splitOptions(argv: Array<Array<string>>, niladicShort?: string, monadicShort?: string, monadicLong?: string): string[];
 export declare function supportsCSSProperty(name: string): boolean;
 export declare function supportsCSSSelector(selector: string): boolean;
 export declare function supportsCSSUnit(name: string): boolean;
