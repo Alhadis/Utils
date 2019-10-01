@@ -1,8 +1,9 @@
-all: lint index.js test
+all: index.js lint test
 
 # Generate a CommonJS version of ESM libraries
 index.js: index.mjs
 	npx rollup \
+		--silent \
 		--format cjs \
 		--preferConst \
 		--no-interop \
@@ -26,6 +27,7 @@ index.mjs: lib/*.mjs
 	(for file in lib/*.mjs; do printf 'export * from "./%s";\n' "$$file"; done) | sort > $@
 	mv $@ tmp.$@
 	npx rollup \
+		--silent \
 		--format esm \
 		--sourcemap \
 		--sourcemapExcludeSources \

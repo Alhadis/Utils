@@ -5,6 +5,9 @@ declare type CommandList = Array<(string|Array<string>)>;
 declare type DrawTextResult = {x: number; y: number; remainder: string[]};
 declare type ExecOptions = string | {cwd?: string; encoding?: string[] | string; env?: object; outputPath?: string};
 declare type ExecResult = {code?: number; stdout?: string; stderr?: string};
+declare type FileSearchFilter = RegExp | FileSearchPredicate;
+declare type FileSearchOptions = {match?: FileSearchFilter; ignore?: FileSearchFilter; maxDepth?: number};
+declare type FileSearchPredicate = (path: string, stats: fs.Stats) => boolean;
 declare type FontStyle = {fontFamily: string; fontSize: string; fontVariant: string; fontWeight: string; lineHeight: string};
 declare type HSLColour = [number, number, number];
 declare type HSVColour = [number, number, number];
@@ -51,6 +54,7 @@ export declare function execChain(commands: CommandList, input?: string, options
 export declare function execString(input: string): Promise<string>;
 export declare function extractTableData(table: HTMLTableElement): object[];
 export declare function findBasePath(paths: string[]): string;
+export declare function findFiles(path: string, options?: FileSearchOptions, currentDepth?: number): Promise<Map<string, fs.Stats>>;
 export declare function formatBytes(bytes: number): string;
 export declare function formatTime(input: number): string;
 export declare function getCanvasFont(context: CanvasRenderingContext2D): FontStyle;
