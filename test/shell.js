@@ -273,183 +273,64 @@ describe("Shell-specific functions", () => {
 		});
 	});
 	
-	describe("findFiles()", () => {
-		const {findFiles} = utils;
-		const gitDir = path.join(__dirname, "fixtures", ".git");
-		const npmDir = path.join(__dirname, "fixtures", "node_modules");
-		const stripTimes = stats => Object.fromEntries(
-			Object.entries(stats).filter(key => /time(?:Ms)?$/i.test(key)));
-
-		let tests, files;
-		before("Preparing directory listings", async () => {
-			tests = fs.readdirSync(__dirname).map(name => path.join(__dirname, name));
-			files = await findFiles(__dirname);
-			fs.existsSync(gitDir) || fs.mkdirSync(gitDir);
-			fs.existsSync(npmDir) || fs.mkdirSync(npmDir);
-		});
+	describe("ls()", () => {
+		const {ls}     = utils;
+		const fixtures = path.join(__dirname, "fixtures", "ls");
+		const stripTimestamps = stats => Object.keys(stats)
+			.filter(key => /^(?:[amc]|birth)time(?:ms)?$/i.test(key) || stats[key] instanceof Date)
+			.forEach(timestamp => delete from[timestamp]);
 		
-		after("Removing fixtures", () => {
-			fs.rmdirSync(gitDir);
-			fs.rmdirSync(npmDir);
-		});
-		
-		it("returns a map of resolved filepaths", () => {
-			expect(files).to.be.an.instanceOf(Map);
-			expect(files.size).to.be.at.least(3);
-			const keys = [...files.keys()];
-			expect(keys.every(key => path.isAbsolute(key))).to.be.true;
-			expect(keys).to.include(__filename);
-		});
-		
-		it("maps each path to an `fs.Stats` instance", () => {
-			const values = [...files.values()];
-			expect(values).to.have.lengthOf(files.size);
-			expect(values.every(value => value instanceof fs.Stats)).to.be.true;
-			for(const [key, value] of files)
-				expect(value).to.include(stripTimes(fs.lstatSync(key)));
-		});
-		
-		it("maps paths absolutely", async () => {
-			expect([...(await findFiles(".")) .keys()].every(key => path.isAbsolute(key))).to.be.true;
-			expect([...(await findFiles("./")).keys()].every(key => path.isAbsolute(key))).to.be.true;
-		});
-		
-		it("includes files", () => {
-			expect(files).to.include.keys(...tests);
-			for(const testFile of tests){
-				expect(files).to.include.key(testFile);
-				expect(files.get(testFile)).to.be.an.instanceOf(fs.Stats);
-			}
-		});
-		
-		it("includes directories", () => {
-			const fixtures = path.join(__dirname, "fixtures");
-			const dirStats = stripTimes(fs.lstatSync(fixtures));
-			expect(files).to.include.key(fixtures);
-			expect(files.get(fixtures)).to.be.an.instanceOf(fs.Stats).and.include(dirStats);
-		});
-		
-		it("includes them recursively", async () => {
-			const fixtures = [
-				"fixtures/base64/rgba.html",
-				"fixtures/base64/rgba.json",
-				"fixtures/colours",
-				"fixtures/colours/cmyk-tests.js",
-				"fixtures/colours/hsl-tests.js",
-				"fixtures/colours/hsv-tests.js",
-				"fixtures/colours/mixed-tests.js",
-				"fixtures/rgba",
-				"fixtures/which",
-			].map(str => path.join(__dirname, ...str.split(/[\\/]/)));
-			expect(files).to.include.keys(...fixtures);
-			expect(await findFiles(path.resolve(__dirname, ".."))).to.include.keys(...fixtures);
-		});
-		
-		it("excludes the original search directory", () =>
-			expect([...files.keys()]).not.to.include(__dirname));
-		
-		describe("Options", () => {
-			describe(".ignore", () => {
-				it("excludes `.git` and `node_modules` by default", () =>
-					expect(files).not.to.include.keys(gitDir.toUpperCase(), npmDir));
-				
-				it("excludes paths using regular expressions", async () => {
-					const files = [...(await findFiles(__dirname, {ignore: /base64/})).keys()];
-					expect(files).not.to.include(path.join(__dirname, "fixtures", "base64"));
-					expect(files).not.to.include(path.join(__dirname, "fixtures", "base64", "rgba.html"));
-					expect(files).not.to.include(path.join(__dirname, "fixtures", "base64", "rgba.json"));
-					expect(files).to.include(gitDir);
-					expect(files).to.include(npmDir);
-				});
-				
-				it("excludes paths using callback functions", async () => {
-					const jsonFile = path.join(__dirname, "fixtures", "base64", "rgba.json");
-					const htmlFile = path.join(__dirname, "fixtures", "base64", "rgba.html");
-					let files = [...(await findFiles(__dirname, {ignore: path => path === jsonFile})).keys()];
-					expect(files).not.to.include(jsonFile);
-					expect(files).to.include(htmlFile);
-					expect(files).to.include(gitDir);
-					expect(files).to.include(npmDir);
-					files = [...(await findFiles(__dirname, {ignore: (path, stats) => stats.isFile()})).values()];
-					expect(files.every(value => value.isDirectory())).to.be.true;
-				});
-				
-				it("doesn't recurse into excluded directories", async () => {
-					const fixtures = path.join(__dirname, "fixtures");
-					const calledOn = [];
-					await findFiles(__dirname, {ignore: path => {
-						calledOn.push(path);
-						return path === fixtures;
-					}});
-					expect(calledOn).to.include(fixtures);
-					expect(calledOn).not.to.include(path.join(fixtures, "base64"));
-				});
+		describe("Default behaviour", () => {
+			let expected, result;
+			
+			before("Loading fixtures", async () => {
+				let paths = ".gitignore file.1 file.2 subdir.1 subdir.2 subdir.3 subdir.4".split(" ");
+				expected = new Map(paths.map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]));
+				expected.forEach(stripTimestamps);
 			});
 			
-			describe(".match", () => {
-				it("restricts matches using regular expressions", async () => {
-					const files = await findFiles(__dirname, {match: /[\\/](?:fixtures|base64|rgba)$/});
-					expect(files.size).to.equal(3);
-					expect([...files.keys()]).to.eql([
-						path.join(__dirname, "fixtures"),
-						path.join(__dirname, "fixtures", "base64"),
-						path.join(__dirname, "fixtures", "rgba"),
-					]);
-				});
-				
-				it("restricts matches using callback functions", async () => {
-					const statsList = [];
-					const whitelist = [
-						"fixtures",
-						"fixtures/base64",
-						"fixtures/base64/rgba.html",
-					].map(dir => path.join(__dirname, ...dir.split(/[\\/]/)));
-					const files = await findFiles(__dirname, {match: (path, stats) => {
-						statsList.push(stats);
-						return whitelist.includes(path);
-					}});
-					expect(files.size).to.equal(3);
-					expect([...files.keys()]).to.eql(whitelist);
-					expect(statsList.every(x => x instanceof fs.Stats)).to.be.true;
-				});
-				
-				it("filters results before `.ignore` is used", async () => {
-					expect((await findFiles(__dirname, {match: /\.git$/}))).to.eql(new Map());
-					const files = await findFiles(__dirname, {match: /(?:fixtures|\.git)$/, ignore: /(?=A)Z/});
-					expect(files.size).to.equal(2);
-					expect([...files.keys()]).to.eql([path.join(__dirname, "fixtures"), gitDir]);
-					const calledOn = [];
-					await findFiles(__dirname, {match: path => !!calledOn.push(path)});
-					expect(calledOn).to.include(path.join(__dirname, "fixtures", ".git"));
-					expect(calledOn).to.include(path.join(__dirname, "fixtures", "node_modules"));
-				});
+			it("runs asynchronously", async () => {
+				result = ls(fixtures);
+				expect(result).to.be.an.instanceOf(Promise);
+				let value = 0;
+				result.then(() => ++value); // XXX: Overkill?
+				expect(++value).to.equal(1);
+				return result;
 			});
-		
-			describe(".maxDepth", () => {
-				it("limits how many directories are descended through", async () => {
-					const fixturePath = path.join(__dirname, "fixtures");
-					const fixtureDirs = fs.readdirSync(fixturePath)
-						.filter(name => name !== ".git" && name !== "node_modules")
-						.map(name => path.join(fixturePath, name));
-					expect([...(await findFiles(__dirname, {maxDepth: 1})).keys()]).to.eql([...tests, ...fixtureDirs]);
-					expect([...(await findFiles(__dirname, {maxDepth: 0})).keys()]).to.eql([...tests]);
-				});
+			
+			it("resolves with a Map", async () =>
+				expect(result = await result).to.be.an.instanceOf(Map));
+			
+			it("lists only the immediate directory contents", async () => {
+				expect(result).to.have.size.equal.to(expected.size);
+				result.forEach(stripTimestamps):
+				expect(result).to.eql(expected);
+			});
+			
+			it.skip("excludes `.git` directories", async () => {
+				const repoRoot  = path.resolve(path.join(__dirname, ".."));
+				const gitDir    = path.join(repoRoot, ".git");
+				const rootFiles = new Map(fs.readdirSync(repoRoot).map(name => path.join(repoRoot, name)));
+				expect(rootFiles.has(gitDir)).to.be.true;
 				
-				it("enforces no limit if set to a negative/invalid number", async () => {
-					const keys = [...files.keys()];
-					expect([...(await findFiles(__dirname, {maxDepth: -2}))   .keys()]).to.eql(keys);
-					expect([...(await findFiles(__dirname, {maxDepth: NaN}))  .keys()]).to.eql(keys);
-					expect([...(await findFiles(__dirname, {maxDepth: "Foo"})).keys()]).to.eql(keys);
-				});
-				
-				it("ignores the decimal component of floating-point values", async () => {
-					expect([...(await findFiles(__dirname, {maxDepth: +0.75})).keys()]).to.eql(tests);
-					expect([...(await findFiles(__dirname, {maxDepth: -0.25})).keys()]).to.eql(tests);
+				const result = await ls(gitDir);
+				expect(result.has()
+			});
+			
+			it.skip("excludes `node_modules` directories", async () => {
+			});
+		});
+			
+				let result = ls(fixtures, {
+					recurse: -1,
+					filter: /\.m?js$/i,
+					ignore: /[\\/](?:\.git|node_modules)$/i,
+					followSymlinks: true,
 				});
 			});
 		});
 	});
-
+	
 	describe("which()", () => {
 		const {which} = utils;
 		const pathKey = "win32" === process.platform ? "Path" : "PATH";
