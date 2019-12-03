@@ -7,7 +7,21 @@
 	"repository": "https://github.com/Alhadis/Utils",
 	"author": "John Gardner <gardnerjohng@gmail.com>",
 	"license": "ISC",
+	"type": "commonjs",
 	"types": "./index.d.ts",
+	"exports": {
+		"./binary":    "./lib/binary.mjs",
+		"./canvas":    "./lib/canvas.mjs",
+		"./colours":   "./lib/colours.mjs",
+		"./dom":       "./lib/dom.mjs",
+		"./env":       "./lib/env.mjs",
+		"./functions": "./lib/functions.mjs",
+		"./math":      "./lib/math.mjs",
+		"./misc":      "./lib/misc.mjs",
+		"./shell":     "./lib/shell.mjs",
+		"./text":      "./lib/text.mjs",
+		".":           "./index.mjs"
+	},
 	"devDependencies": {
 		"@alhadis/eslint-config": "^2.1.0",
 		"mocha-when": "^1.0.1",

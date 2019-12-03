@@ -4,6 +4,5 @@ node_modules
 *.map
 *.tgz
 /index.js
-/index.mjs
 /test.*
 tmp.*

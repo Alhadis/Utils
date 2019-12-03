@@ -1,7 +1,7 @@
 all: index.js lint test
 
 # Generate a CommonJS version of ESM libraries
-index.js: index.mjs
+index.js: index.mjs lib/*.mjs
 	npx rollup \
 		--silent \
 		--format cjs \
@@ -23,26 +23,10 @@ index.js: index.mjs
 		--source-map "content=$@.map,url=$(@F).map" \
 		--output $@ $@
 
-index.mjs: lib/*.mjs
-	(for file in lib/*.mjs; do printf 'export * from "./%s";\n' "$$file"; done) | sort > $@
-	mv $@ tmp.$@
-	npx rollup \
-		--silent \
-		--format esm \
-		--sourcemap \
-		--sourcemapExcludeSources \
-		--file $@ tmp.$@
-	rm -f tmp.$@
-	perl -pi~ -E '\
-		s/new\s+Array\((\d+)\)/$$1<10?"[".","x$$1."]":$$&/ge; \
-		s/await import\(/require\(/g;' $@ && rm -f "$@~"
-
 
 # Nuke generated CJS bundle
 clean:
-	rm -f index.js
-	rm -f index.mjs
-	rm -f *.map
+	rm -f index.js*
 
 .PHONY: clean
 
