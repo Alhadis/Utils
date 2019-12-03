@@ -14,7 +14,7 @@ index.js: index.mjs lib/*.mjs
 	npx jg typewrite \
 		--exclude BlendModes \
 		--declare const BlendModes '{[key: string]: (...args: number[]) => number};' \
-		--header '// Generated file; run `make types` to update.' \
+		--header '// Generated file; run `make $@` to update.' \
 		--sort index.js
 	npx terser \
 		--keep-classnames \

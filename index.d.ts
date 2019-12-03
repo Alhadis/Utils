@@ -1,13 +1,10 @@
-// Generated file; run `make types` to update.
+// Generated file; run `make index.js` to update.
 declare type CMYColour = [number, number, number];
 declare type CMYKColour = [number, number, number, number];
 declare type CommandList = Array<(string|Array<string>)>;
 declare type DrawTextResult = {x: number; y: number; remainder: string[]};
 declare type ExecOptions = string | {cwd?: string; encoding?: string[] | string; env?: object; outputPath?: string};
 declare type ExecResult = {code?: number; stdout?: string; stderr?: string};
-declare type FileSearchFilter = RegExp | FileSearchPredicate;
-declare type FileSearchOptions = {match?: FileSearchFilter; ignore?: FileSearchFilter; maxDepth?: number};
-declare type FileSearchPredicate = (path: string, stats: fs.Stats) => boolean;
 declare type FontStyle = {fontFamily: string; fontSize: string; fontVariant: string; fontWeight: string; lineHeight: string};
 declare type HSLColour = [number, number, number];
 declare type HSVColour = [number, number, number];
@@ -15,8 +12,11 @@ declare type ParsedURL = {protocol: string; path: string; filename: string; quer
 declare type Point = [number, number];
 declare type RGBColour = [number, number, number];
 export declare const BlendModes:{[key: string]: (...args: number[]) => number};
+export declare const asap: (fn: Function) => void;
+export declare const haveHighResTiming: boolean;
 export declare const isElectron: boolean;
 export declare const isNode: boolean;
+export declare const self: object;
 export declare function New(type: string, attr?: object): Element;
 export declare function addTo(parent: Node): Function;
 export declare function adler32(data: string | number[]): number;
@@ -54,7 +54,6 @@ export declare function execChain(commands: CommandList, input?: string, options
 export declare function execString(input: string): Promise<string>;
 export declare function extractTableData(table: HTMLTableElement): object[];
 export declare function findBasePath(paths: string[]): string;
-export declare function findFiles(path: string, options?: FileSearchOptions, currentDepth?: number): Promise<Map<string, fs.Stats>>;
 export declare function formatBytes(bytes: number): string;
 export declare function formatTime(input: number): string;
 export declare function getCanvasFont(context: CanvasRenderingContext2D): FontStyle;
@@ -80,6 +79,7 @@ export declare function kebabToCamelCase(input: string): string;
 export declare function keyGrep(subject: object, pattern: RegExp | string): object;
 export declare function nearest(subject: Node, selector: string, ignoreSelf?: boolean): Element;
 export declare function nerf(fn: Function, context?: object): Function;
+export declare function now(): number;
 export declare function openExternal(uri: string): void;
 export declare function ordinalSuffix(n: number): string;
 export declare function parseCSSDuration(value: string): number;
