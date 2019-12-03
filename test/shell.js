@@ -278,13 +278,13 @@ describe("Shell-specific functions", () => {
 		const fixtures = path.join(__dirname, "fixtures", "ls");
 		const stripTimestamps = stats => Object.keys(stats)
 			.filter(key => /^(?:[amc]|birth)time(?:ms)?$/i.test(key) || stats[key] instanceof Date)
-			.forEach(timestamp => delete from[timestamp]);
+			.forEach(timestamp => delete stats[timestamp]);
 		
 		describe("Default behaviour", () => {
 			let expected, result;
 			
 			before("Loading fixtures", async () => {
-				let paths = ".gitignore file.1 file.2 subdir.1 subdir.2 subdir.3 subdir.4".split(" ");
+				const paths = ".gitignore file.1 file.2 subdir.1 subdir.2 subdir.3 subdir.4".split(" ");
 				expected = new Map(paths.map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]));
 				expected.forEach(stripTimestamps);
 			});
@@ -302,31 +302,9 @@ describe("Shell-specific functions", () => {
 				expect(result = await result).to.be.an.instanceOf(Map));
 			
 			it("lists only the immediate directory contents", async () => {
-				expect(result).to.have.size.equal.to(expected.size);
-				result.forEach(stripTimestamps):
+				expect(result.size).to.equal(expected.size);
+				result.forEach(stripTimestamps);
 				expect(result).to.eql(expected);
-			});
-			
-			it.skip("excludes `.git` directories", async () => {
-				const repoRoot  = path.resolve(path.join(__dirname, ".."));
-				const gitDir    = path.join(repoRoot, ".git");
-				const rootFiles = new Map(fs.readdirSync(repoRoot).map(name => path.join(repoRoot, name)));
-				expect(rootFiles.has(gitDir)).to.be.true;
-				
-				const result = await ls(gitDir);
-				expect(result.has()
-			});
-			
-			it.skip("excludes `node_modules` directories", async () => {
-			});
-		});
-			
-				let result = ls(fixtures, {
-					recurse: -1,
-					filter: /\.m?js$/i,
-					ignore: /[\\/](?:\.git|node_modules)$/i,
-					followSymlinks: true,
-				});
 			});
 		});
 	});

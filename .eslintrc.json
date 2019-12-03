@@ -4,13 +4,13 @@
 		"globalThis": true
 	},
 	"overrides": [{
-		"files": ["lib/*.mjs"],
+		"files": ["lib/*.mjs", "test/*.js"],
 		"rules": {"require-atomic-updates": 0}
 	},{
 		"files": ["lib/env.mjs"],
 		"parser": "babel-eslint"
 	},{
-		"files": ["lib/{dom,misc}.mjs"],
+		"files": ["lib/{dom,misc,shell}.mjs"],
 		"rules": {"brace-style": 0}
 	},{
 		"files": ["lib/functions.mjs"],
