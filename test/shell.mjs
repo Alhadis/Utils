@@ -1,10 +1,11 @@
-"use strict";
+import fs         from "fs";
+import path       from "path";
+import url        from "url";
+import * as utils from "../index.mjs";
 
 describe("Shell-specific functions", () => {
-	const utils = require("../index.js");
-	const fs = require("fs");
-	const path = require("path");
-
+	const dir = path.dirname(url.fileURLToPath(import.meta.url));
+	
 	describe("exec()", function(){
 		const {exec, wait} = utils;
 		this.slow(1000);
@@ -108,7 +109,7 @@ describe("Shell-specific functions", () => {
 
 		describe("Redirection", function(){
 			this.slow(5000);
-			const tempFile = require("path").join(__dirname, "fixtures", "temp.log");
+			const tempFile = path.join(dir, "fixtures", "temp.log");
 			after("Removing temporary file", () => fs.unlinkSync(tempFile));
 			
 			it("can write standard output to a file", async () => {
@@ -163,18 +164,17 @@ describe("Shell-specific functions", () => {
 			
 			let cwd = "";
 			afterEach(() => cwd && process.chdir(cwd));
-			beforeEach(() => { cwd = process.cwd(); process.chdir(__dirname); });
+			beforeEach(() => { cwd = process.cwd(); process.chdir(dir); });
 			
 			it("defaults to the parent process's working directory", async () => {
 				const {stdout} = await exec("node", echoCwd);
-				expect(stdout).to.equal(__dirname);
+				expect(stdout).to.equal(dir);
 			});
 			
 			it("can change the subprocess's working directory", async () => {
-				const {join} = require("path");
-				cwd = join(__dirname, "fixtures");
+				cwd = path.join(dir, "fixtures");
 				const {stdout} = await exec("node", echoCwd, null, {cwd});
-				expect(stdout).to.equal(join(__dirname, "fixtures"));
+				expect(stdout).to.equal(path.join(dir, "fixtures"));
 			});
 		});
 	});
@@ -223,8 +223,7 @@ describe("Shell-specific functions", () => {
 			}));
 		
 		it("can write the last command's output to a file", async () => {
-			const fs = require("fs");
-			const tmp = require("path").join(__dirname, "fixtures", "temp.log");
+			const tmp = path.join(dir, "fixtures", "temp.log");
 			fs.existsSync(tmp) && fs.unlinkSync(tmp);
 			expect(await execChain([
 				["node", "-e", "console.warn(123); console.log(456)"],
@@ -275,7 +274,7 @@ describe("Shell-specific functions", () => {
 	
 	describe("ls()", () => {
 		const {ls}     = utils;
-		const fixtures = path.join(__dirname, "fixtures", "ls");
+		const fixtures = path.join(dir, "fixtures", "ls");
 		const stripTimestamps = stats => Object.keys(stats)
 			.filter(key => /^(?:[amc]|birth)time(?:ms)?$/i.test(key) || stats[key] instanceof Date)
 			.forEach(timestamp => delete stats[timestamp]);
@@ -312,7 +311,7 @@ describe("Shell-specific functions", () => {
 	describe("which()", () => {
 		const {which} = utils;
 		const pathKey = "win32" === process.platform ? "Path" : "PATH";
-		const fixtures = path.join(__dirname, "fixtures", "which");
+		const fixtures = path.join(dir, "fixtures", "which");
 		const tmpClean = () => fs.readdirSync(fixtures).forEach(file =>
 			/^tmp\./i.test(file) && fs.unlinkSync(path.join(fixtures, file)));
 		
@@ -370,7 +369,7 @@ describe("Shell-specific functions", () => {
 		"win32" === process.platform && describe("Windows-specific", () => {
 			beforeEach(() => process.env = {...env, Path: fixtures});
 			before(async () => {
-				process.env.Path    = __dirname;
+				process.env.Path    = dir;
 				process.env.PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.WSF;.WSH;.MSC";
 				expect(await which("bar"))       .to.equal("");
 				expect(await which("tmp.1.foo")) .to.equal("");
@@ -378,7 +377,7 @@ describe("Shell-specific functions", () => {
 			});
 			
 			it("tests %PATHEXT% case-insensitively", async () => {
-				process.env.Path    = fixtures + path.delimiter + __dirname;
+				process.env.Path    = fixtures + path.delimiter + dir;
 				process.env.PATHEXT += ";.FOO";
 				fs.writeFileSync(path.join(fixtures, "tmp.1.foo"), "");
 				fs.writeFileSync(path.join(fixtures, "tmp.2.FOO"), "");

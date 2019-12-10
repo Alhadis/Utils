@@ -1,8 +1,6 @@
-"use strict";
+import * as utils from "../index.mjs";
 
 describe("Higher-order functions", () => {
-	const utils = require("../index.js");
-	
 	describe("punch()", () => {
 		const {punch} = utils;
 		

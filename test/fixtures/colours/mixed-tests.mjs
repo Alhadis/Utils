@@ -1,5 +1,4 @@
-"use strict";
-module.exports = [
+export default [
 	{
 		hexInt:  0xFFFFFF,
 		hexStr:  "#FFFFFF",

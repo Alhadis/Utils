@@ -1,11 +1,11 @@
-"use strict";
+import {readFileSync}  from "fs";
+import {dirname, join} from "path";
+import {fileURLToPath} from "url";
+import * as utils      from "../index.mjs";
 
 describe("Byte-level functions", () => {
-	const utils  = require("../index.js");
-	const {join} = require("path");
-	const fs     = require("fs");
-	const file   = path =>
-		fs.readFileSync(join(__dirname, "fixtures", ...path.split("/")), {encoding: "binary"});
+	const dir  = dirname(fileURLToPath(import.meta.url));
+	const file = path => readFileSync(join(dir, "fixtures", ...path.split("/")));
 	
 	describe("adler32()", () => {
 		const {adler32} = utils;

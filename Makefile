@@ -1,34 +1,17 @@
-all: index.js lint test
+all: lint types test
 
-# Generate a CommonJS version of ESM libraries
-index.js: index.mjs lib/*.mjs
-	npx rollup \
-		--silent \
-		--format cjs \
-		--preferConst \
-		--no-interop \
-		--sourcemap \
-		--sourcemapExcludeSources \
-		--input index.mjs \
-		--file $@
+
+# Generate TypeScript declarations from JSDoc
+types: index.d.ts
+index.d.ts: index.mjs lib/*.mjs
 	npx jg typewrite \
 		--exclude BlendModes \
 		--declare const BlendModes '{[key: string]: (...args: number[]) => number};' \
-		--header '// Generated file; run `make $@` to update.' \
-		--sort index.js
-	npx terser \
-		--keep-classnames \
-		--mangle \
-		--compress \
-		--source-map "content=$@.map,url=$(@F).map" \
-		--output $@ $@
-
-
-# Nuke generated CJS bundle
-clean:
-	rm -f index.js*
-
-.PHONY: clean
+		--header '// Generated file; run `make types` to update.' \
+		--sort $^
+	cat lib/*.d.ts | sort | uniq > $@
+	rm  lib/*.d.ts
+	npx jg lint -t
 
 
 # Check source for errors and style violations
@@ -39,7 +22,7 @@ lint:
 
 
 # Run unit-tests
-test: index.js
+test:
 	npx mocha
 
 .PHONY: test

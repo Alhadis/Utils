@@ -1,7 +1,6 @@
-"use strict";
+import * as utils from "../index.mjs";
 
 describe("Miscellaneous functions", () => {
-	const utils = require("../index.js");
 	const htmlAllFn = "function HTMLAllCollection() { [native code] }";
 	const isBrowser = (
 		"object"    === typeof window &&
@@ -341,9 +340,9 @@ describe("Miscellaneous functions", () => {
 		}
 		HTMLAllCollection.toString = function toString(){ return htmlAllFn; };
 		const document = {all: new HTMLAllCollection()};
-		global.HTMLAllCollection = HTMLAllCollection;
-		global.window = {HTMLAllCollection, document};
-		global.document = document;
+		globalThis.HTMLAllCollection = HTMLAllCollection;
+		globalThis.window = {HTMLAllCollection, document};
+		globalThis.document = document;
 	}
 	
 	/**
@@ -352,8 +351,8 @@ describe("Miscellaneous functions", () => {
 	 */
 	function unspoofBrowser(){
 		if(isBrowser) return;
-		delete global.HTMLAllCollection;
-		delete global.window;
-		delete global.document;
+		delete globalThis.HTMLAllCollection;
+		delete globalThis.window;
+		delete globalThis.document;
 	}
 });

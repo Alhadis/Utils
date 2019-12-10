@@ -1,5 +1,4 @@
-"use strict";
-module.exports = [
+export default [
 	{rgb: [0,   0,   0],     hsv: [0,   0,     0]},
 	{rgb: [0,   0,   32],    hsv: [240, 1,     0.125]},
 	{rgb: [0,   0,   64],    hsv: [240, 1,     0.251]},

@@ -1,8 +1,7 @@
-"use strict";
+import * as utils from "../index.mjs";
 
 describe("Colour-related functions", function(){
 	this.slow(1000);
-	const utils = require("../index.js");
 	
 	describe("Blending modes", () => {
 		// NB: Subtract is omitted because it's inconsistent with Photoshop's behaviour
@@ -418,10 +417,13 @@ describe("Colour-related functions", function(){
 	});
 	
 	describe("Colour conversion", () => {
-		const cmykTests  = require("./fixtures/colours/cmyk-tests.js");
-		const hslTests   = require("./fixtures/colours/hsl-tests.js");
-		const hsvTests   = require("./fixtures/colours/hsv-tests.js");
-		const mixedTests = require("./fixtures/colours/mixed-tests.js");
+		let cmykTests, hslTests, hsvTests, mixedTests;
+		before("Loading fixtures", async () => {
+			cmykTests  = await import("./fixtures/colours/cmyk-tests.mjs");
+			hslTests   = await import("./fixtures/colours/hsl-tests.mjs");
+			hsvTests   = await import("./fixtures/colours/hsv-tests.mjs");
+			mixedTests = await import("./fixtures/colours/mixed-tests.mjs");
+		});
 		
 		it("converts CMYK to CMY", () => {
 			const {cmykToCMY} = utils;

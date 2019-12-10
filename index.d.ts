@@ -1,4 +1,4 @@
-// Generated file; run `make index.js` to update.
+// Generated file; run `make types` to update.
 declare type CMYColour = [number, number, number];
 declare type CMYKColour = [number, number, number, number];
 declare type CommandList = Array<(string|Array<string>)>;
@@ -16,6 +16,8 @@ export declare const asap: (fn: Function) => void;
 export declare const haveHighResTiming: boolean;
 export declare const isElectron: boolean;
 export declare const isNode: boolean;
+export declare const now: Function;
+export declare const openExternal: (uri: string) => void;
 export declare const self: object;
 export declare function New(type: string, attr?: object): Element;
 export declare function addTo(parent: Node): Function;
@@ -79,8 +81,6 @@ export declare function kebabToCamelCase(input: string): string;
 export declare function keyGrep(subject: object, pattern: RegExp | string): object;
 export declare function nearest(subject: Node, selector: string, ignoreSelf?: boolean): Element;
 export declare function nerf(fn: Function, context?: object): Function;
-export declare function now(): number;
-export declare function openExternal(uri: string): void;
 export declare function ordinalSuffix(n: number): string;
 export declare function parseCSSDuration(value: string): number;
 export declare function parseHTMLFragment(input: string): Node[];

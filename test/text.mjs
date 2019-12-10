@@ -1,8 +1,6 @@
-"use strict";
+import * as utils from "../index.mjs";
 
 describe("Text-related functions", () => {
-	const utils = require("../index.js");
-	
 	describe("escapeHTML()", () => {
 		const {escapeHTML} = utils;
 		it("escapes angle brackets", () => void expect(escapeHTML("< < > >")).to.equal("&#60; &#60; &#62; &#62;"));

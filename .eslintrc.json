@@ -4,7 +4,7 @@
 		"globalThis": true
 	},
 	"overrides": [{
-		"files": ["lib/*.mjs", "test/*.js"],
+		"files": ["lib/*.mjs", "test/*.mjs"],
 		"rules": {"require-atomic-updates": 0}
 	},{
 		"files": ["index.mjs", "lib/env.mjs"],
@@ -16,7 +16,7 @@
 		"files": ["lib/functions.mjs"],
 		"rules": {"keyword-spacing": 0}
 	},{
-		"files": ["test/*.js"],
+		"files": ["test/*.mjs"],
 		"rules": {"keyword-spacing": 0},
 		"globals": {"expect": true}
 	}]
