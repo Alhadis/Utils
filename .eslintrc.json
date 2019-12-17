@@ -7,7 +7,7 @@
 		"files": ["lib/*.mjs", "test/*.mjs"],
 		"rules": {"require-atomic-updates": 0}
 	},{
-		"files": ["index.mjs", "lib/env.mjs"],
+		"files": ["index.mjs", "test/{binary,shell}.mjs"],
 		"parser": "babel-eslint"
 	},{
 		"files": ["lib/{dom,misc,shell}.mjs"],
