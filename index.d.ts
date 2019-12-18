@@ -107,6 +107,8 @@ export declare function tween(subject: object, propertyName: string, endValue: n
 export declare function uint(value: any): number;
 export declare function utf8Decode(data: string): string;
 export declare function utf8Encode(data: string): string;
+export declare function vlqDecode(input: string): number[];
+export declare function vlqEncode(input: number): string;
 export declare function wait(delay?: number): Promise<void>;
 export declare function which(name: string, all?: boolean): Promise<(string|Array<string>)>;
 export declare function wordCount(input: string, ignoreHyphens?: boolean): number;
