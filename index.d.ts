@@ -72,6 +72,7 @@ export declare function isValidCCNumber(input: string): boolean;
 export declare function isplit(input: string, pattern: RegExp | string): string[];
 export declare function kebabToCamelCase(input: string): string;
 export declare function keyGrep(subject: object, pattern: RegExp | string): object;
+export declare function ls(paths?: string[], options?: {filter?: RegExp | Function; ignore?: RegExp | Function; recurse?: number; followSymlinks?: boolean}): Promise<Map<string, fs.Stats>>;
 export declare function nearest(subject: Node, selector: string, ignoreSelf?: boolean): Element;
 export declare function nerf(fn: Function, context?: object): Function;
 export declare function ordinalSuffix(n: number): string;
