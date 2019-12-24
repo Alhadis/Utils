@@ -189,6 +189,31 @@ describe("Miscellaneous functions", () => {
 			expect(isRegExp(regexp)).to.be.true;
 		});
 	});
+	
+	describe("partition()", () => {
+		const {partition} = utils;
+		it("divides arrays", () => {
+			expect(partition(["A", "B", "C", "D"], [2])).to.eql([["A", "B"], ["C", "D"]]);
+			expect(partition(["A", "B", "C"], [2, 1]))  .to.eql([["A", "B"], ["C"]]);
+		});
+		
+		it("uses sparse arrays for incomplete sections", () => {
+			const parts = partition("AAAABB".split(""), [4]);
+			expect(parts).to.eql([["A", "A", "A", "A"], ["B", "B",,,]]);
+			let index = 0;
+			parts.pop().forEach(() => ++index);
+			expect(index).to.equal(2);
+		});
+		
+		it("divides generic iterables", () => {
+			expect(partition(new (class{
+				[Symbol.iterator](){
+					let i = 0;
+					return {next: () => ({value: ++i, done: i > 5})};
+				}
+			})(), [2])).to.eql([[1, 2], [3, 4], [5,,]]);
+		});
+	});
 
 	describe("tween()", function(){
 		const {tween, wait} = utils;
