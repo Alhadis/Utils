@@ -85,6 +85,7 @@ export declare function parseHTMLFragment(input: string): Node[];
 export declare function parseKeywords(keywords: string | string[]): {[key: string]: boolean};
 export declare function parseTime(input: string): number;
 export declare function parseURL(path: string): ParsedURL;
+export declare function partition(input: string | Iterable, sizes?: number | number[]): any[][];
 export declare function poll(fn: Function, opts?: {rate?: number; timeout?: number; negate?: boolean}): Promise<void>;
 export declare function punch(subject: object, methodName: string, handler: Function): Array<Function>;
 export declare function radToDeg(value: number): number;
