@@ -144,4 +144,82 @@ describe("Byte-level functions", () => {
 		it("encodes multibyte UTF-8",   () => expect(utf8Encode("\xE2\x86\x92\xE2\x94\x82\xCE\xBB")).to.equal("→│λ"));
 		it("encodes astral characters", () => expect(utf8Encode(decodedAstrals)).to.equal(astralChars));
 	});
+	
+	describe("wsDecodeFrame()", () => {
+		const {wsDecodeFrame} = utils;
+		const base = {isFinal: true, isRSV1: false, isRSV2: false, isRSV3: false, mask: null};
+		it("decodes single-frame unmasked text messages", () => {
+			const frame = [0x81, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   [72, 101, 108, 108, 111],
+				length: 5n,
+				opcode: 1,
+				opname: "text",
+			});
+		});
+		it("decodes single-frame masked text messages", () => {
+			const frame = [0x81, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   [127, 159, 77, 81, 88],
+				length: 5n,
+				mask:   0x37FA213D,
+				opcode: 1,
+				opname: "text",
+			});
+		});
+		it("decodes fragmented unmasked text messages", () => {
+			expect(wsDecodeFrame([0x01, 0x03, 0x48, 0x65, 0x6C])).to.eql({...base,
+				data:    [72, 101, 108],
+				isFinal: false,
+				length:  3n,
+				opcode:  1,
+				opname:  "text",
+			});
+			expect(wsDecodeFrame([0x80, 0x02, 0x6C, 0x6F])).to.eql({...base,
+				data:    [108, 111],
+				length:  2n,
+				opcode:  0,
+				opname:  "continue",
+			});
+		});
+		it("decodes unmasked ping requests", () => {
+			const frame = [0x89, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   [72, 101, 108, 108, 111],
+				length: 5n,
+				opcode: 9,
+				opname: "ping",
+			});
+		});
+		it("decodes masked ping responses", () => {
+			const frame = [0x8A, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   [127, 159, 77, 81, 88],
+				length: 5n,
+				mask:   0x37FA213D,
+				opcode: 10,
+				opname: "pong",
+			});
+		});
+		it("decodes 256-byte unmasked binary messages", () => {
+			const bytes = new Array(256).fill(0xFF);
+			const frame = [0x82, 0x7E, 0x01, 0x00, ...bytes];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   bytes,
+				length: 256n,
+				opcode: 2,
+				opname: "binary",
+			});
+		});
+		it("decodes 64-kilobyte unmasked binary messages", () => {
+			const bytes = new Array(65536).fill(0xFF);
+			const frame = [0x82, 0x7F, 0, 0, 0, 0, 0, 1, 0, 0, ...bytes];
+			expect(wsDecodeFrame(frame)).to.eql({...base,
+				data:   bytes,
+				length: 65536n,
+				opcode: 2,
+				opname: "binary",
+			});
+		});
+	});
 });
