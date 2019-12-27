@@ -419,10 +419,10 @@ describe("Colour-related functions", function(){
 	describe("Colour conversion", () => {
 		let cmykTests, hslTests, hsvTests, mixedTests;
 		before("Loading fixtures", async () => {
-			cmykTests  = await import("./fixtures/colours/cmyk-tests.mjs");
-			hslTests   = await import("./fixtures/colours/hsl-tests.mjs");
-			hsvTests   = await import("./fixtures/colours/hsv-tests.mjs");
-			mixedTests = await import("./fixtures/colours/mixed-tests.mjs");
+			cmykTests  = (await import("./fixtures/colours/cmyk-tests.mjs")).default;
+			hslTests   = (await import("./fixtures/colours/hsl-tests.mjs")).default;
+			hsvTests   = (await import("./fixtures/colours/hsv-tests.mjs")).default;
+			mixedTests = (await import("./fixtures/colours/mixed-tests.mjs")).default;
 		});
 		
 		it("converts CMYK to CMY", () => {

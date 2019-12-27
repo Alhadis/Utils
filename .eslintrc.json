@@ -1,9 +1,13 @@
 {
 	"extends": "@alhadis",
 	"globals": {
+		"BigInt": true,
 		"globalThis": true
 	},
 	"overrides": [{
+		"files": ["lib/binary.mjs"],
+		"rules": {"multiline-ternary": 0}
+	},{
 		"files": ["lib/*.mjs", "test/*.mjs"],
 		"rules": {"require-atomic-updates": 0}
 	},{
@@ -19,5 +23,8 @@
 		"files": ["test/*.mjs"],
 		"rules": {"keyword-spacing": 0},
 		"globals": {"expect": true}
+	},{
+		"files": ["test/misc.mjs"],
+		"rules": {"comma-spacing": 0}
 	}]
 }

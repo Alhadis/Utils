@@ -5,7 +5,7 @@ import * as utils      from "../index.mjs";
 
 describe("Byte-level functions", () => {
 	const dir  = dirname(fileURLToPath(import.meta.url));
-	const file = path => readFileSync(join(dir, "fixtures", ...path.split("/")));
+	const file = path => readFileSync(join(dir, "fixtures", ...path.split("/")), {encoding: "binary"});
 	
 	describe("adler32()", () => {
 		const {adler32} = utils;
