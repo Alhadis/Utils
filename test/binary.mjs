@@ -66,6 +66,73 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	describe("bytesToUInt16()", () => {
+		const {bytesToUInt16} = utils;
+		it("encodes bytes in big-endian order", () => {
+			expect(bytesToUInt16([0xFF, 0xBB])).to.eql([0xFFBB]);
+			expect(bytesToUInt16([0x12, 0x34, 0x56, 0x78])).to.eql([0x1234, 0x5678]);
+			expect(bytesToUInt16([0xAA, 0xBB, 0xCC, 0xDD, 0xEE])).to.eql([0xAABB, 0xCCDD, 0xEE00]);
+		});
+		it("encodes bytes in little-endian order", () => {
+			expect(bytesToUInt16([0xFF, 0xBB], true)).to.eql([0xBBFF]);
+			expect(bytesToUInt16([0x12, 0x34, 0x56, 0x78], true)).to.eql([0x3412, 0x7856]);
+			expect(bytesToUInt16([0xAA, 0xBB, 0xCC, 0xDD, 0xEE], true)).to.eql([0xBBAA, 0xDDCC, 0x00EE]);
+		});
+		it("encodes typed arrays", () => {
+			expect(bytesToUInt16(Uint8Array.from([0xFF, 0xBB, 0xCC]))).to.eql([0xFFBB, 0xCC00]);
+			expect(bytesToUInt16(Uint8Array.from([0x12, 0x34]), true)).to.eql([0x3412]);
+		});
+		it("encodes buffers", () => {
+			expect(bytesToUInt16(Buffer.from([0xFF, 0xBB, 0xCC]))).to.eql([0xFFBB, 0xCC00]);
+			expect(bytesToUInt16(Buffer.from([0x12, 0x34]), true)).to.eql([0x3412]);
+		});
+	});
+	
+	describe("bytesToUInt32()", () => {
+		const {bytesToUInt32} = utils;
+		it("encodes bytes in big-endian order", () => {
+			expect(bytesToUInt32([0xAA, 0xBB, 0xCC, 0xDD])).to.eql([0xAABBCCDD]);
+			expect(bytesToUInt32([0xAB, 0xCD, 0xEF, 0x12, 0x34])).to.eql([0xABCDEF12, 0x34000000]);
+			expect(bytesToUInt32([0x12, 0x34, 0x56, 0x78, 0xAB, 0xCD, 0xEF, 0x35])).to.eql([0x12345678, 0xABCDEF35]);
+		});
+		it("encodes bytes in little-endian order", () => {
+			expect(bytesToUInt32([0xAA, 0xBB, 0xCC, 0xDD], true)).to.eql([0xDDCCBBAA]);
+			expect(bytesToUInt32([0xAB, 0xCD, 0xEF, 0x12, 0x34], true)).to.eql([0x12EFCDAB, 0x34]);
+			expect(bytesToUInt32([0x12, 0x34, 0x56, 0x78, 0xAB, 0xCD, 0xEF, 0x35], true)).to.eql([0x78563412, 0x35EFCDAB]);
+		});
+		it("encodes typed arrays", () => {
+			expect(bytesToUInt32(Uint8Array.from([0xAB, 0xCD, 0xEF, 0x12, 0x34]))).to.eql([0xABCDEF12, 0x34000000]);
+			expect(bytesToUInt32(Uint8Array.from([0x12, 0x34, 0x56, 0x78, 0x9E]), true)).to.eql([0x78563412, 0x9E]);
+			expect(bytesToUInt32(Uint8Array.from([0x12, 0x34, 0x56, 0x78]), true)).to.eql([0x78563412]);
+		});
+		it("encodes buffers", () => {
+			expect(bytesToUInt32(Buffer.from([0xAB, 0xCD, 0xEF, 0x12, 0x34]))).to.eql([0xABCDEF12, 0x34000000]);
+			expect(bytesToUInt32(Buffer.from([0x12, 0x34, 0x56, 0x78, 0x9E]), true)).to.eql([0x78563412, 0x9E]);
+			expect(bytesToUInt32(Buffer.from([0x12, 0x34, 0x56, 0x78]), true)).to.eql([0x78563412]);
+		});
+	});
+	
+	describe("bytesToUInt64()", () => {
+		const {bytesToUInt64} = utils;
+		const bytes = [
+			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+			0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x91,
+			0xAB, 0xCD,
+		];
+		const be = [0x1122334455667788n, 0xABCDEF1234567891n, 0xABCD000000000000n];
+		const le = [0x8877665544332211n, 0x9178563412EFCDABn, 0xCDABn];
+		it("encodes bytes in big-endian order",    () => expect(bytesToUInt64(bytes)).to.eql(be));
+		it("encodes bytes in little-endian order", () => expect(bytesToUInt64(bytes, true)).to.eql(le));
+		it("encodes typed arrays", () => {
+			expect(bytesToUInt64(Uint8Array.from(bytes))).to.eql(be);
+			expect(bytesToUInt64(Uint8Array.from(bytes), true)).to.eql(le);
+		});
+		it("encodes buffers", () => {
+			expect(bytesToUInt64(Buffer.from(bytes))).to.eql(be);
+			expect(bytesToUInt64(Buffer.from(bytes), true)).to.eql(le);
+		});
+	});
+	
 	describe("crc32()", () => {
 		const {crc32} = utils;
 		it("computes CRCs of string values", () => {
@@ -122,6 +189,78 @@ describe("Byte-level functions", () => {
 			it("generates grey pixels",    () => expect(rgba(0x3A, 0x3B, 0x3C, 0x00)).to.equal(file("rgba/3a3b3c00.png")));
 			it("generates #BBFFDD pixels", () => expect(rgba(0xBB, 0xFF, 0xDD, 0x00)).to.equal(file("rgba/bbffdd00.png")));
 			it("generates #BBAAFF pixels", () => expect(rgba(0xBB, 0xAA, 0xFF, 0x00)).to.equal(file("rgba/bbaaff00.png")));
+		});
+	});
+	
+	describe("uint16ToBytes()", () => {
+		const {uint16ToBytes} = utils;
+		it("decodes integers in big-endian order", () => {
+			const uints = [0xABCD, 0xEF12, 0x34];
+			const bytes = [0xAB, 0xCD, 0xEF, 0x12, 0, 0x34];
+			expect(uint16ToBytes(uints)).to.eql(bytes);
+		});
+		it("decodes integers in little-endian order", () => {
+			const uints = [0xABCD, 0xEF12, 0x34];
+			const bytes = [0xCD, 0xAB, 0x12, 0xEF, 0x34, 0];
+			expect(uint16ToBytes(uints, true)).to.eql(bytes);
+		});
+		it("decodes single-integer arguments", () => {
+			expect(uint16ToBytes(0xABCD))  .to.eql([0xAB, 0xCD]);
+			expect(uint16ToBytes([0xEF12])).to.eql([0xEF, 0x12]);
+			expect(uint16ToBytes(0xABCD,   true)).to.eql([0xCD, 0xAB]);
+			expect(uint16ToBytes([0xEF12], true)).to.eql([0x12, 0xEF]);
+		});
+	});
+	
+	describe("uint32ToBytes()", () => {
+		const {uint32ToBytes} = utils;
+		it("decodes integers in big-endian order", () => {
+			const uints = [0xABCDEF12, 0x34567891, 0x23];
+			const bytes = [0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x91, 0, 0, 0, 0x23];
+			expect(uint32ToBytes(uints)).to.eql(bytes);
+		});
+		it("decodes integers in little-endian order", () => {
+			const uints = [0xABCDEF12, 0x34567891, 0x23];
+			const bytes = [0x12, 0xEF, 0xCD, 0xAB, 0x91, 0x78, 0x56, 0x34, 0x23, 0, 0, 0];
+			expect(uint32ToBytes(uints, true)).to.eql(bytes);
+		});
+		it("decodes single-integer arguments", () => {
+			const input = 0xABCDEF12;
+			const bytes = [0xAB, 0xCD, 0xEF, 0x12];
+			expect(uint32ToBytes(input))  .to.eql(bytes);
+			expect(uint32ToBytes([input])).to.eql(bytes);
+			bytes.reverse();
+			expect(uint32ToBytes(input,   true)).to.eql(bytes);
+			expect(uint32ToBytes([input], true)).to.eql(bytes);
+		});
+	});
+	
+	describe("uint64ToBytes()", () => {
+		const {uint64ToBytes} = utils;
+		it("decodes integers in big-endian order", () => {
+			const uints = [0x1122334455667788n, 0xABCDEF1234567891n, 0xABCDn];
+			expect(uint64ToBytes(uints)).to.eql([
+				0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+				0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x91,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xAB, 0xCD,
+			]);
+		});
+		it("decodes integers in little-endian order", () => {
+			const uints = [0x1122334455667788n, 0xABCDEF1234567891n, 0xABCDn];
+			expect(uint64ToBytes(uints, true)).to.eql([
+				0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
+				0x91, 0x78, 0x56, 0x34, 0x12, 0xEF, 0xCD, 0xAB,
+				0xCD, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			]);
+		});
+		it("decodes single-integer arguments", () => {
+			const input = 0xABCDEF1234567891n;
+			const bytes = [0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x91];
+			expect(uint64ToBytes(input))  .to.eql(bytes);
+			expect(uint64ToBytes([input])).to.eql(bytes);
+			bytes.reverse();
+			expect(uint64ToBytes(input,   true)).to.eql(bytes);
+			expect(uint64ToBytes([input], true)).to.eql(bytes);
 		});
 	});
 	
