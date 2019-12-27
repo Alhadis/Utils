@@ -192,6 +192,30 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	describe("rotl() / rotr()", () => {
+		const {rotl, rotr} = utils;
+		let tests = null;
+		before("Loading tests", async () => {
+			tests = (await import("./fixtures/rot32.mjs")).default;
+		});
+		it("rotates bits towards the left", () => tests.forEach((test, i) => {
+			for(const [input, output] of test)
+				expect(rotl(input, i + 1)).to.equal(output);
+		}));
+		it("rotates bits towards the right", () => tests.forEach((test, i) => {
+			for(const [output, input] of test)
+				expect(rotr(input, i + 1)).to.equal(output);
+		}));
+		it("wraps offset amounts modulo 32", () => {
+			expect(rotl(0xF8000000, 32)).to.equal(0xF8000000);
+			expect(rotr(0xF8000000, 32)).to.equal(0xF8000000);
+			expect(rotl(0xF8000000, 33)).to.equal(0xF0000001);
+			expect(rotr(0xF8000000, 33)).to.equal(0x7C000000);
+			expect(rotl(0xF8000000, 34)).to.equal(0xE0000003);
+			expect(rotr(0xF8000000, 34)).to.equal(0x3E000000);
+		});
+	});
+	
 	describe("sha1()", () => {
 		const {sha1} = utils;
 		const $ = s => s.split("").map(x => x.charCodeAt(0));
