@@ -1,3 +1,4 @@
+import assert          from "assert";
 import {readFileSync}  from "fs";
 import {dirname, join} from "path";
 import {fileURLToPath} from "url";
@@ -350,23 +351,108 @@ describe("Byte-level functions", () => {
 	});
 	
 	// Cuneiform sequences shared by UTF8-related functions
+	// TODO(2019/12): This is fucked on so many levels. Use later for testing surrogate halves.
 	const astralChars    = "𒀻𒀰";
 	const decodedAstrals = "\xED\xA0\x88\xED\xB0\xBB\xED\xA0\x88\xED\xB0\xB0";
 	
 	describe("utf8Decode()", () => {
 		const {utf8Decode} = utils;
-		it("preserves 7-bit ASCII",     () => expect(utf8Decode("Foo\0Bar")).to.equal("Foo\0Bar"));
-		it("decodes extended ASCII",    () => expect(utf8Decode("cáfébábé")).to.equal("cÃ¡fÃ©bÃ¡bÃ©"));
-		it("decodes multibyte UTF-8",   () => expect(utf8Decode("→│λ")).to.equal("\xE2\x86\x92\xE2\x94\x82\xCE\xBB"));
-		it("decodes astral characters", () => expect(utf8Decode(astralChars)).to.equal(decodedAstrals));
+		
+		function decode(input, expected){
+			const bytes = expected.map(n => n.toString(16).toUpperCase().padStart(2, "0")).join(" ");
+			let message = `Expected "${input}" to be decoded as <${bytes}>`;
+			const result = utf8Decode(input);
+			assert.deepStrictEqual(result, expected, message);
+			
+			// Ensure consistency with Node.js/ICU-based implementations
+			message = "Expected encodings to match";
+			assert.strictEqual(Buffer.from(expected).utf8Slice(), input, message);
+			assert.strictEqual(new TextDecoder("utf-8").decode(new Uint8Array(expected).buffer), input, message);
+		}
+		
+		it("decodes 1-byte sequences", () => {
+			for(let i = 0; i < 128; ++i)
+				decode(String.fromCodePoint(i), [i]);
+		});
+		
+		it("decodes 2-byte sequences", () => {
+			decode("\xA0", [0xC2, 0xA0]);
+			decode("§",    [0xC2, 0xA7]);
+			decode("ÿ",    [0xC3, 0xBF]);
+			decode("Джон", [0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD]);
+			decode("John", [0x4A, 0x6F, 0x68, 0x6E]);
+		});
+		
+		it("decodes 3-byte sequences", () => {
+			decode("€",   [0xE2, 0x82, 0xAC]);
+			decode("�",   [0xEF, 0xBF, 0xBD]);
+			decode("→│λ", [0xE2, 0x86, 0x92, 0xE2, 0x94, 0x82, 0xCE, 0xBB]);
+		});
+		
+		it("decodes 4-byte sequences", () => {
+			decode("😂", [0xF0, 0x9F, 0x98, 0x82]);
+			decode("𝑱𝒐", [0xF0, 0x9D, 0x91, 0xB1, 0xF0, 0x9D, 0x92, 0x90]);
+			decode("𝒉𝒏", [0xF0, 0x9D, 0x92, 0x89, 0xF0, 0x9D, 0x92, 0x8F]);
+		});
 	});
 	
 	describe("utf8Encode()", () => {
 		const {utf8Encode} = utils;
-		it("preserves 7-bit ASCII",     () => expect(utf8Encode("Foo\0Bar")).to.equal("Foo\0Bar"));
-		it("encodes extended ASCII",    () => expect(utf8Encode("cÃ¡fÃ©bÃ¡bÃ©")).to.equal("cáfébábé"));
-		it("encodes multibyte UTF-8",   () => expect(utf8Encode("\xE2\x86\x92\xE2\x94\x82\xCE\xBB")).to.equal("→│λ"));
-		it("encodes astral characters", () => expect(utf8Encode(decodedAstrals)).to.equal(astralChars));
+		
+		function encode(input, expected){
+			const bytes = input.map(n => n.toString(16).toUpperCase().padStart(2, "0")).join(" ");
+			let message = `Expected <${bytes}> to be encoded as "${expected}"`;
+			const result = utf8Encode(input);
+			assert.strictEqual(result, expected, message);
+			
+			// Ensure consistent error-handling with other implementations
+			message = "Expected encodings to match";
+			assert.strictEqual(Buffer.from(input).utf8Slice(), result, message);
+			assert.strictEqual(new TextDecoder("utf-8").decode(new Uint8Array(input).buffer), expected, input);
+		}
+
+		it("encodes valid UTF-8", () => {
+			// Single characters
+			encode([0x4A],                   "J");
+			encode([0xC2, 0xA7],             "§");
+			encode([0xE2, 0x82, 0xAC],       "€");
+			encode([0xF0, 0x9F, 0x98, 0x82], "😂");
+			
+			// Multiple characters
+			encode([0x4A, 0x6F, 0x68, 0x6E], "John");
+			encode([0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD], "Джон");
+			encode([0xE2, 0x86, 0x92, 0xE2, 0x94, 0x82, 0xCE, 0xBB], "→│λ");
+			encode([0xF0, 0x9D, 0x91, 0xB1, 0xF0, 0x9D, 0x92, 0x90], "𝑱𝒐");
+			encode([0xF0, 0x9D, 0x92, 0x89, 0xF0, 0x9D, 0x92, 0x8F], "𝒉𝒏");
+		});
+		
+		it("encodes errors as U+FFFD", () => {
+			encode([0xC2],                   "�");
+			encode([0xA0, 0xC0],             "��");
+			encode([0xC2, 0xEE],             "��");
+			encode([0xC2, 0x45],             "�E");
+			encode([0xE1, 0x45, 0xA0, 0x45], "�E�E");
+			
+			// FIXME/TODO: These tests fail because of error-handling mismatches
+			encode([0xE1, 0xA0, 0x45],       "�E");
+			encode([0xE1, 0xA0, 0xC0],       "��");
+			encode([0xE1, 0xA0, 0x4A],       "�J");
+			encode([0xE1, 0xA0, 0xC0, 0x45], "��E");
+		});
+		
+		it("isn't fooled by overlong encodings", () => {
+			encode([0xC0, 0x80],             "��");   // NUL (U+0000)
+			encode([0xC0, 0x90],             "��");   // DLE (U+0010)
+			encode([0xC0, 0x8D],             "��");   // \r
+			encode([0xC1, 0x80],             "��");   // @
+			encode([0xC1, 0x8F],             "��");   // O
+			encode([0xC1, 0x90],             "��");   // P
+			encode([0xC0, 0xAF, 0x2A],       "��*");  // /*
+			encode([0xF0, 0x82, 0x82, 0xAC], "����"); // €
+			
+			// Examples from RFC 3629 §10
+			encode([0x2F, 0xC0, 0xAE, 0x2E, 0x2F], "/��./"); // /../
+		});
 	});
 	
 	// WebSocket frame tests
