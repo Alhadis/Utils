@@ -130,4 +130,3 @@ export declare function wsDecodeFrame(input: number[]): WSFrame;
 export declare function wsEncodeFrame(input: WSFrame): number[];
 export declare function wsHandshake(key: string): string;
 export declare function wsMask(input: number[], key: number): number[];
-export declare function zeroise(value: number, min: number): string;
