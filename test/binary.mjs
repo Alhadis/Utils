@@ -350,11 +350,6 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
-	// Cuneiform sequences shared by UTF8-related functions
-	// TODO(2019/12): This is fucked on so many levels. Use later for testing surrogate halves.
-	const astralChars    = "𒀻𒀰";
-	const decodedAstrals = "\xED\xA0\x88\xED\xB0\xBB\xED\xA0\x88\xED\xB0\xB0";
-	
 	describe("utf8Decode()", () => {
 		const {utf8Decode} = utils;
 		
@@ -399,7 +394,7 @@ describe("Byte-level functions", () => {
 	describe("utf8Encode()", () => {
 		const {utf8Encode} = utils;
 		
-		function encode(input, expected){
+		function encode(input, expected, isValid = false){
 			const bytes = input.map(n => n.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 			let message = `Expected <${bytes}> to be encoded as "${expected}"`;
 			const result = utf8Encode(input);
@@ -409,49 +404,92 @@ describe("Byte-level functions", () => {
 			message = "Expected encodings to match";
 			assert.strictEqual(Buffer.from(input).utf8Slice(), result, message);
 			assert.strictEqual(new TextDecoder("utf-8").decode(new Uint8Array(input).buffer), expected, input);
+			
+			// Make sure invalid UTF-8 raises an error for opts.strict
+			const error = {name: "RangeError", message: /^Invalid (code point|UTF-8 at offset) \d+$/};
+			(isValid ? assert.doesNotThrow : assert.throws)(() => utf8Encode(input, {strict: true}), error);
 		}
 
 		it("encodes valid UTF-8", () => {
 			// Single characters
-			encode([0x4A],                   "J");
-			encode([0xC2, 0xA7],             "§");
-			encode([0xE2, 0x82, 0xAC],       "€");
-			encode([0xF0, 0x9F, 0x98, 0x82], "😂");
+			encode([0x4A],                   "J", true);
+			encode([0xC2, 0xA7],             "§", true);
+			encode([0xE2, 0x82, 0xAC],       "€", true);
+			encode([0xF0, 0x9F, 0x98, 0x82], "😂", true);
 			
 			// Multiple characters
-			encode([0x4A, 0x6F, 0x68, 0x6E], "John");
-			encode([0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD], "Джон");
-			encode([0xE2, 0x86, 0x92, 0xE2, 0x94, 0x82, 0xCE, 0xBB], "→│λ");
-			encode([0xF0, 0x9D, 0x91, 0xB1, 0xF0, 0x9D, 0x92, 0x90], "𝑱𝒐");
-			encode([0xF0, 0x9D, 0x92, 0x89, 0xF0, 0x9D, 0x92, 0x8F], "𝒉𝒏");
+			encode([0x4A, 0x6F, 0x68, 0x6E], "John", true);
+			encode([0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD], "Джон", true);
+			encode([0xE2, 0x86, 0x92, 0xE2, 0x94, 0x82, 0xCE, 0xBB], "→│λ", true);
+			encode([0xF0, 0x9D, 0x91, 0xB1, 0xF0, 0x9D, 0x92, 0x90], "𝑱𝒐", true);
+			encode([0xF0, 0x9D, 0x92, 0x89, 0xF0, 0x9D, 0x92, 0x8F], "𝒉𝒏", true);
 		});
 		
 		it("encodes errors as U+FFFD", () => {
+			encode([0xC0],                   "�");
+			encode([0xC1],                   "�");
 			encode([0xC2],                   "�");
 			encode([0xA0, 0xC0],             "��");
 			encode([0xC2, 0xEE],             "��");
 			encode([0xC2, 0x45],             "�E");
+			encode([0x45, 0xC2],             "E�");
+			encode([0x41, 0xA0, 0x42],       "A�B");
 			encode([0xE1, 0x45, 0xA0, 0x45], "�E�E");
-			
-			// FIXME/TODO: These tests fail because of error-handling mismatches
 			encode([0xE1, 0xA0, 0x45],       "�E");
 			encode([0xE1, 0xA0, 0xC0],       "��");
 			encode([0xE1, 0xA0, 0x4A],       "�J");
 			encode([0xE1, 0xA0, 0xC0, 0x45], "��E");
+			encode([0xF0, 0x9F, 0x98, 0x2F], "�/");
+			encode([0xF0, 0x9F, 0x2F, 0x2E], "�/.");
+			encode([0xF0, 0x2E, 0x2E, 0x2F], "�../");
+			encode([0xF0, 0x2E, 0xE1, 0x2F], "�.�/");
 		});
 		
 		it("isn't fooled by overlong encodings", () => {
-			encode([0xC0, 0x80],             "��");   // NUL (U+0000)
-			encode([0xC0, 0x90],             "��");   // DLE (U+0010)
-			encode([0xC0, 0x8D],             "��");   // \r
-			encode([0xC1, 0x80],             "��");   // @
-			encode([0xC1, 0x8F],             "��");   // O
-			encode([0xC1, 0x90],             "��");   // P
-			encode([0xC0, 0xAF, 0x2A],       "��*");  // /*
-			encode([0xF0, 0x82, 0x82, 0xAC], "����"); // €
-			
-			// Examples from RFC 3629 §10
-			encode([0x2F, 0xC0, 0xAE, 0x2E, 0x2F], "/��./"); // /../
+			const overlong = (bytes, chars, expected) => {
+				encode(bytes, expected);
+				const error = {name: "RangeError", message: /^Invalid UTF-8 at offset \d+$/};
+				assert.strictEqual          (utf8Encode(bytes, {allowOverlong: true}),  chars);
+				assert.notStrictEqual       (utf8Encode(bytes, {allowOverlong: false}), chars);
+				assert.throws         (() => utf8Encode(bytes, {allowOverlong: false, strict: true}), error);
+				assert.doesNotThrow   (() => utf8Encode(bytes, {allowOverlong: true,  strict: true}));
+			};
+			overlong([0xC0, 0x80], "\0", "��");
+			overlong([0xC0, 0x90], "\x10", "��");
+			overlong([0xC0, 0x8D], "\r", "��");
+			overlong([0xC1, 0x80], "@", "��");
+			overlong([0xC1, 0x8F], "O", "��");
+			overlong([0xC1, 0x90], "P", "��");
+			overlong([0xC0, 0xAF, 0x2A], "/*", "��*");
+			overlong([0xF0, 0x82, 0x82, 0xAC], "€", "����");
+			overlong([0x2F, 0xC0, 0xAE, 0x2E, 0x2F], "/../", "/��./");
+		});
+		
+		it("rejects surrogate halves", () => {
+			const input = [0xED, 0xA0, 0x88, 0xED, 0xB0, 0xBB, 0xED, 0xA0, 0x88, 0xED, 0xB0, 0xB0];
+			encode(input, "������������");
+			assert.deepStrictEqual       (utf8Encode(input, {allowSurrogates: false}), "������������");
+			assert.deepStrictEqual       (utf8Encode(input, {allowSurrogates: true}), "𒀻𒀰");
+			assert.throws          (() => utf8Encode(input, {allowSurrogates: false, strict: true}), RangeError);
+			assert.doesNotThrow    (() => utf8Encode(input, {allowSurrogates: true,  strict: true}));
+		});
+		
+		it("returns codepoints if requested", () => {
+			const input = [0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD];
+			const codes = [0x414, 0x436, 0x43E, 0x43D];
+			assert.deepStrictEqual(utf8Encode(input), "Джон");
+			assert.deepStrictEqual(utf8Encode(input, {codePoints: false}), "Джон");
+			assert.deepStrictEqual(utf8Encode(input, {codePoints: true}), codes);
+		});
+		
+		it("clamps codepoints to U+10FFFF", () => {
+			const input = [0xF7, 0xBD, 0xBD, 0xBD, 0xBD];
+			const codes = [0xFFFD, 0xFFFD, 0xFFFD, 0xFFFD, 0xFFFD];
+			encode(input, "�����");
+			assert.deepStrictEqual(utf8Encode(input, {codePoints: true}), codes);
+			assert.deepStrictEqual(utf8Encode(input, {codePoints: true}), codes);
+			assert.deepStrictEqual(utf8Encode(input, {allowOverlong: true}), "�����");
+			assert.deepStrictEqual(utf8Encode(input, {allowOverlong: true, codePoints: true}), codes);
 		});
 	});
 	
