@@ -662,7 +662,7 @@ describe("Byte-level functions", () => {
 	describe("wsEncodeFrame()", () => {
 		const {wsEncodeFrame} = utils;
 		it("encodes single-frame unmasked text messages", () => {
-			const frame = [0x81, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = new Uint8Array([0x81, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -678,7 +678,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes single-frame masked text messages", () => {
-			const frame = [0x81, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const frame = new Uint8Array([0x81, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -695,7 +695,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes unmasked ping requests", () => {
-			const frame = [0x89, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = new Uint8Array([0x89, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -711,7 +711,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes masked ping responses", () => {
-			const frame = [0x8A, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const frame = new Uint8Array([0x8A, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -729,7 +729,7 @@ describe("Byte-level functions", () => {
 		});
 		it("encodes 256-byte unmasked binary messages", () => {
 			const bytes = new Array(256).fill(0xFF);
-			const frame = [0x82, 0x7E, 0x01, 0x00, ...bytes];
+			const frame = new Uint8Array([0x82, 0x7E, 0x01, 0x00, ...bytes]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -746,7 +746,7 @@ describe("Byte-level functions", () => {
 		});
 		it("encodes 64-KiB unmasked binary messages", () => {
 			const bytes = new Array(65536).fill(0xFF);
-			const frame = [0x82, 0x7F, 0, 0, 0, 0, 0, 1, 0, 0, ...bytes];
+			const frame = new Uint8Array([0x82, 0x7F, 0, 0, 0, 0, 0, 1, 0, 0, ...bytes]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -762,7 +762,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes fragmented unmasked text messages", () => {
-			let frame = [0x01, 0x03, 0x48, 0x65, 0x6C];
+			let frame = new Uint8Array([0x01, 0x03, 0x48, 0x65, 0x6C]);
 			let input = {
 				isFinal: false,
 				isRSV1:  false,
@@ -776,7 +776,7 @@ describe("Byte-level functions", () => {
 			};
 			expect(wsEncodeFrame(input)).to.eql(frame);
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
-			frame = [0x80, 0x02, 0x6C, 0x6F];
+			frame = new Uint8Array([0x80, 0x02, 0x6C, 0x6F]);
 			input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -792,7 +792,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes messages with “reserved” opcodes", () => {
-			const frame = [0x83, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = new Uint8Array([0x83, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F]);
 			const input = {
 				isFinal: true,
 				isRSV1:  false,
@@ -808,7 +808,7 @@ describe("Byte-level functions", () => {
 			expect(wsEncodeFrame(input, true)).to.eql(frame);
 		});
 		it("encodes messages with “reserved” flags", () => {
-			const frame = [0xF9, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = new Uint8Array([0xF9, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F]);
 			const input = {
 				isFinal: true,
 				isRSV1:  true,

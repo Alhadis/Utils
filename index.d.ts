@@ -127,5 +127,5 @@ export declare function which(name: string, all?: boolean): Promise<(string|Arra
 export declare function wordCount(input: string, ignoreHyphens?: boolean): number;
 export declare function wordWrap(input: string, length?: number): string[];
 export declare function wsDecodeFrame(input: number[], noMask?: boolean): WSFrame;
-export declare function wsEncodeFrame(input: WSFrame, noMask?: boolean): number[];
+export declare function wsEncodeFrame(input: WSFrame, noMask?: boolean): Uint8Array;
 export declare function wsHandshake(key: string): string;
