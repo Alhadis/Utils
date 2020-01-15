@@ -120,6 +120,8 @@ export declare function uint32ToBytes(input: number | number[], littleEndian?: b
 export declare function uint64ToBytes(input: BigInt | BigInt[], littleEndian?: boolean): number[];
 export declare function utf16Decode(input: string | number[], littleEndian?: boolean, addBOM?: boolean): number[];
 export declare function utf16Encode(bytes: number[], opts?: {allowUnpaired?: boolean; codePoints?: boolean; endianness?: string}): string;
+export declare function utf32Decode(input: string | number[], littleEndian?: boolean, addBOM?: boolean): number[];
+export declare function utf32Encode(bytes: number[], opts?: {codePoints?: boolean; endianness?: string}): string;
 export declare function utf8Decode(input: string | number[]): number[];
 export declare function utf8Encode(bytes: number[], opts?: {allowOverlong?: boolean; allowSurrogates?: boolean; codePoints?: boolean; strict?: boolean; stripBOM?: boolean}): string;
 export declare function vlqDecode(input: string): number[];
