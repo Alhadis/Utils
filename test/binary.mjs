@@ -454,6 +454,17 @@ describe("Byte-level functions", () => {
 			assert.doesNotThrow    (() => utf8Encode(input, {allowSurrogates: true,  strict: true}));
 		});
 		
+		it("retains byte-order marks", () => {
+			const bom = [0xEF, 0xBB, 0xBF];
+			assert.strictEqual(utf8Encode(bom,             {stripBOM: false}), "\u{FEFF}");
+			assert.strictEqual(utf8Encode(bom,             {stripBOM: true}),  "");
+			assert.strictEqual(utf8Encode([...bom, 0x45],  {stripBOM: false}), "\u{FEFF}E");
+			assert.strictEqual(utf8Encode([...bom, 0x45],  {stripBOM: true}),  "E");
+			assert.strictEqual(utf8Encode([0x45, ...bom],  {stripBOM: true}),  "E\u{FEFF}");
+			assert.strictEqual(utf8Encode(bom.concat(bom), {stripBOM: true}),  "\u{FEFF}");
+			assert.strictEqual(utf8Encode(bom.concat(bom), {stripBOM: false}), "\u{FEFF}".repeat(2));
+		});
+		
 		it("returns codepoints if requested", () => {
 			const input = [0xD0, 0x94, 0xD0, 0xB6, 0xD0, 0xBE, 0xD0, 0xBD];
 			const codes = [0x414, 0x436, 0x43E, 0x43D];

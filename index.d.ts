@@ -119,7 +119,7 @@ export declare function uint16ToBytes(input: number | number[], littleEndian?: b
 export declare function uint32ToBytes(input: number | number[], littleEndian?: boolean): number[];
 export declare function uint64ToBytes(input: BigInt | BigInt[], littleEndian?: boolean): number[];
 export declare function utf8Decode(input: string | number[]): number[];
-export declare function utf8Encode(bytes: number[], opts?: {allowOverlong?: boolean; allowSurrogates?: boolean; codePoints?: boolean; strict?: boolean}): string;
+export declare function utf8Encode(bytes: number[], opts?: {allowOverlong?: boolean; allowSurrogates?: boolean; codePoints?: boolean; strict?: boolean; stripBOM?: boolean}): string;
 export declare function vlqDecode(input: string): number[];
 export declare function vlqEncode(input: number): string;
 export declare function wait(delay?: number): Promise<void>;
