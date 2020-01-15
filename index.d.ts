@@ -118,6 +118,8 @@ export declare function uint(value: any): number;
 export declare function uint16ToBytes(input: number | number[], littleEndian?: boolean): number[];
 export declare function uint32ToBytes(input: number | number[], littleEndian?: boolean): number[];
 export declare function uint64ToBytes(input: BigInt | BigInt[], littleEndian?: boolean): number[];
+export declare function utf16Decode(input: string | number[], littleEndian?: boolean, addBOM?: boolean): number[];
+export declare function utf16Encode(bytes: number[], opts?: {allowUnpaired?: boolean; codePoints?: boolean; endianness?: string}): string;
 export declare function utf8Decode(input: string | number[]): number[];
 export declare function utf8Encode(bytes: number[], opts?: {allowOverlong?: boolean; allowSurrogates?: boolean; codePoints?: boolean; strict?: boolean; stripBOM?: boolean}): string;
 export declare function vlqDecode(input: string): number[];
