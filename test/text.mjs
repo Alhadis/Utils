@@ -1,6 +1,220 @@
 import * as utils from "../index.mjs";
 
 describe("Text-related functions", () => {
+	describe("alignText()", () => {
+		const {alignText} = utils;
+		it("centres input by default",       () => expect(alignText("Text", 6)).to.equal(" Text "));
+		it("left-aligns text with spaces",   () => expect(alignText("Text", 10, 0.0)).to.equal("Text      "));
+		it("centre-aligns text with spaces", () => expect(alignText("Text", 10, 0.5)).to.equal("   Text   "));
+		it("right-aligns text with spaces",  () => expect(alignText("Text", 10, 1.0)).to.equal("      Text"));
+		it("supports arbitrary alignment",   () => {
+			expect(alignText("Text", 14, 0.75, "=")).to.equal("========Text==");
+			expect(alignText("Text", 14, 0.25, "*")).to.equal("***Text*******");
+		});
+		it("supports custom padding characters", () => {
+			expect(alignText("Text",   10, 0.0, "=")).to.equal("Text======");
+			expect(alignText("Text",   10, 0.5, "=")).to.equal("===Text===");
+			expect(alignText("Text",   10, 1.0, "=")).to.equal("======Text");
+			expect(alignText(" Text ", 10, 0.0, "-")).to.equal(" Text ----");
+			expect(alignText(" Text ", 10, 0.5, "-")).to.equal("-- Text --");
+			expect(alignText(" Text ", 10, 1.0, "-")).to.equal("---- Text ");
+			expect(alignText("Text",   20, 0.0, "=")).to.equal("Text================");
+			expect(alignText("Text",   20, 0.5, "=")).to.equal("========Text========");
+			expect(alignText("Text",   20, 1.0, "=")).to.equal("================Text");
+			expect(alignText("[Text]", 20, 0.0, "-")).to.equal("[Text]--------------");
+			expect(alignText("[Text]", 20, 0.5, "-")).to.equal("-------[Text]-------");
+			expect(alignText("[Text]", 20, 1.0, "-")).to.equal("--------------[Text]");
+		});
+		it("does nothing if input is too wide", () => {
+			const input = "1234567890";
+			expect(alignText(input, 5)).to.equal(input);
+			expect(alignText(input, 10)).to.equal(input);
+		});
+		it("rounds off uneven spacing", () => {
+			const input = "1234567890";
+			expect(alignText(input, 11)).to.equal(` ${input}`);
+			expect(alignText(input, 12)).to.equal(` ${input} `);
+			expect(alignText(input, 13)).to.equal(`  ${input} `);
+			expect(alignText(input, 14)).to.equal(`  ${input}  `);
+		});
+	});
+	
+	describe("camelToKebabCase()", () => {
+		const {camelToKebabCase} = utils;
+		it("converts camelCased segments", () => {
+			expect(camelToKebabCase("fooB")).to.equal("foo-b");
+			expect(camelToKebabCase("fBar")).to.equal("f-bar");
+			expect(camelToKebabCase("fooBar")).to.equal("foo-bar");
+			expect(camelToKebabCase("fooBarBaz")).to.equal("foo-bar-baz");
+		});
+		it("converts segments with numbers", () => {
+			expect(camelToKebabCase("foo1Bar")).to.equal("foo1-bar");
+			expect(camelToKebabCase("fooBar1")).to.equal("foo-bar1");
+			expect(camelToKebabCase("fooBar1Baz")).to.equal("foo-bar1-baz");
+		});
+		it("converts segments with acronyms", () => {
+			expect(camelToKebabCase("fooHTML")).to.equal("foo-html");
+			expect(camelToKebabCase("fooHTMLBar")).to.equal("foo-html-bar");
+			expect(camelToKebabCase("fooBarHTML")).to.equal("foo-bar-html");
+			expect(camelToKebabCase("fooBarHTMLBaz")).to.equal("foo-bar-html-baz");
+			expect(camelToKebabCase("fooHTMLBarBaz")).to.equal("foo-html-bar-baz");
+			expect(camelToKebabCase("fooHTML1")).to.equal("foo-html1");
+			expect(camelToKebabCase("foo1HTML")).to.equal("foo1-html");
+			expect(camelToKebabCase("foo1HTML2")).to.equal("foo1-html2");
+			expect(camelToKebabCase("foo10HTML20")).to.equal("foo10-html20");
+			expect(camelToKebabCase("foo1H2ML3")).to.equal("foo1-h2ml3");
+			expect(camelToKebabCase("f01oH2ML3")).to.equal("f01o-h2ml3");
+		});
+		it("only converts camelCased strings", () => {
+			expect(camelToKebabCase("Foo")).to.equal("Foo");
+			expect(camelToKebabCase("foo_bar")).to.equal("foo_bar");
+			expect(camelToKebabCase("foo_barBaz")).to.equal("foo_barBaz");
+			expect(camelToKebabCase("1FooBar")).to.equal("1FooBar");
+			expect(camelToKebabCase("1-fooBar")).to.equal("1-fooBar");
+			expect(camelToKebabCase("fooBar-Baz")).to.equal("fooBar-Baz");
+			expect(camelToKebabCase("PascalCase")).to.equal("PascalCase");
+		});
+	});
+	
+	describe("deindent()", () => {
+		const {deindent} = utils;
+		describe("String literals", () => {
+			it("strips leading tabs", () => {
+				expect(deindent("Foo\n\tBar\n\tBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n\tBar\nBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n\tBar\n\t\nBaz")).to.equal("Foo\nBar\n\nBaz");
+			});
+
+			it("strips leading spaces", () => {
+				// 4-column indents
+				expect(deindent("Foo\n    Bar\n    Baz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n    Bar\nBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n    Bar\n    \n    Baz")).to.equal("Foo\nBar\n\nBaz");
+				
+				// 2-column indents (i.e., the worst tab-stop width ever)
+				expect(deindent("Foo\n  Bar\n  Baz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n    Bar\n  Baz")).to.equal("Foo\n  Bar\nBaz");
+				expect(deindent("Foo\n    Bar\n  \n  Baz")).to.equal("Foo\n  Bar\n\nBaz");
+			});
+
+			it("strips mixed tabs and spaces", () => {
+				expect(deindent("Foo\n\t    \t    \tBar\n\t    \t    \tBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n\t    \t    \tBar\n\t    \t    Baz")).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent("Foo\n\t    \t    \t    Bar\n\t    \t    Baz")).to.equal("Foo\n\t    Bar\nBaz");
+			});
+			
+			it("strips leading newlines", () => {
+				expect(deindent("\n\t\t\t\t\tFoo\n\t\t\t\t\tBar\n\t\t\t\t\tBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("\n\t\t\t\t\t\n\t\t\t\t\tFoo\n\t\t\t\t\tBar\n\t\t\t\t\tBaz")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("\n\t\t\t\t\tFoo\n\t\t\t\t\t\tBar\n\t\t\t\t\tBaz")).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent("\n\t\t\t\t\t\n\t\t\t\t\tFoo\n\t\t\t\t\t\tBar\n\t\t\t\t\tBaz")).to.equal("Foo\n\tBar\nBaz");
+			});
+			
+			it("strips trailing newlines", () => {
+				expect(deindent("Foo\n\t\t\t\t\tBar\n\t\t\t\t\tBaz\n\t\t\t\t")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n\t\t\t\t\tBar\n\t\t\t\t\tBaz\n\t\t\t\t\t\n\t\t\t\t")).to.equal("Foo\nBar\nBaz");
+				expect(deindent("Foo\n\t\t\t\t\tBar\n\t\t\t\tBaz\n\t\t\t\t")).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent("Foo\n\t\t\t\t\tBar\n\t\t\t\tBaz\n\t\t\t\t\n\t\t\t\t")).to.equal("Foo\n\tBar\nBaz");
+			});
+			
+			it("retains trailing tabs", () => {
+				expect(deindent("Foo\t")).to.equal("Foo\t");
+				expect(deindent("\tFoo\t")).to.equal("Foo\t");
+			});
+			
+			it("retains trailing spaces", () => {
+				expect(deindent("Foo  ")).to.equal("Foo  ");
+				expect(deindent("  Foo  ")).to.equal("Foo  ");
+			});
+		});
+		describe("Tagged templates", () => {
+			it("strips leading tabs", () => {
+				expect(deindent `Foo
+					Bar
+					Baz`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+					Bar
+				Baz`).to.equal("Foo\n\tBar\nBaz");
+			});
+
+			it("strips leading spaces", () => {
+				// 4-column indents
+				expect(deindent `Foo
+                    Bar
+                    Baz`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+                    Bar
+                Baz`).to.equal("Foo\n    Bar\nBaz");
+				
+				// 2-column indents (i.e., the worst tab-stop width ever)
+				expect(deindent `Foo
+          Bar
+          Baz`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+            Bar
+          Baz`).to.equal("Foo\n  Bar\nBaz");
+			});
+
+			it("strips mixed tabs and spaces", () => {
+				expect(deindent `Foo
+	    	    	Bar
+	    	    	Baz`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+	    	    	Bar
+	    	    Baz`).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent `Foo
+	    	    	    Bar
+	    	    Baz`).to.equal("Foo\n\t    Bar\nBaz");
+			});
+			
+			it("strips leading newlines", () => {
+				expect(deindent `
+					Foo
+					Bar
+					Baz`
+				).to.equal("Foo\nBar\nBaz");
+				expect(deindent `
+					
+					Foo
+					Bar
+					Baz`
+				).to.equal("Foo\nBar\nBaz");
+				expect(deindent `
+					Foo
+						Bar
+					Baz`
+				).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent `
+					
+					Foo
+						Bar
+					Baz`
+				).to.equal("Foo\n\tBar\nBaz");
+			});
+			
+			it("strips trailing newlines", () => {
+				expect(deindent `Foo
+					Bar
+					Baz
+				`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+					Bar
+					Baz
+					
+				`).to.equal("Foo\nBar\nBaz");
+				expect(deindent `Foo
+					Bar
+				Baz
+				`).to.equal("Foo\n\tBar\nBaz");
+				expect(deindent `Foo
+					Bar
+				Baz
+				
+				`).to.equal("Foo\n\tBar\nBaz");
+			});
+		});
+	});
+	
 	describe("escapeHTML()", () => {
 		const {escapeHTML} = utils;
 		it("escapes angle brackets", () => void expect(escapeHTML("< < > >")).to.equal("&#60; &#60; &#62; &#62;"));
@@ -19,6 +233,144 @@ describe("Text-related functions", () => {
 			const pattern = /^ember(?:\.|(?:-[^.]+)?-(?:\d+\.)+(?:debug\.)?)js$/i;
 			const source = escapeRegExp(pattern.source);
 			expect(new RegExp(source).test(pattern.source)).to.be.true;
+		});
+	});
+	
+	describe("findBasePath()", () => {
+		const {findBasePath} = utils;
+		it("returns the directory that contains each path", () => {
+			const paths = [
+				"/usr/local/bin/node_modules",
+				"/usr/local/bin/not-npm",
+				"/usr/local/bin/other-shite",
+			];
+			expect(findBasePath(paths)).to.equal("/usr/local/bin");
+			expect(findBasePath(["/usr/local/share", ...paths])).to.equal("/usr/local");
+			expect(findBasePath(["/usr/local",       ...paths])).to.equal("/usr/local");
+			expect(findBasePath(["/usr/share/man",   ...paths])).to.equal("/usr");
+			expect(findBasePath(["/tmp",             ...paths])).to.equal("/");
+			expect(findBasePath(["/",                ...paths])).to.equal("/");
+		});
+		it("doesn't care about trailing slashes", () => {
+			const paths = [
+				"/usr/local/bin/node_modules/",
+				"/usr/local/bin/not-npm/",
+				"/usr/local/bin/other-shite/",
+			];
+			expect(findBasePath(paths)).to.equal("/usr/local/bin");
+			expect(findBasePath(["/usr/local/share/", ...paths])).to.equal("/usr/local");
+			expect(findBasePath(["/usr/local/",       ...paths])).to.equal("/usr/local");
+			expect(findBasePath(["/usr/share/man/",   ...paths])).to.equal("/usr");
+			expect(findBasePath(["/tmp/",             ...paths])).to.equal("/");
+			expect(findBasePath(["/",                 ...paths])).to.equal("/");
+		});
+		it("returns the dirname of a single-path array", () => {
+			expect(findBasePath(["/usr/local/bin/"])) .to.equal("/usr/local");
+			expect(findBasePath(["/usr/local/bin"]))  .to.equal("/usr/local");
+			expect(findBasePath(["/usr/local"]))      .to.equal("/usr");
+			expect(findBasePath(["/usr"]))            .to.equal("/");
+			expect(findBasePath(["/"]))               .to.equal("/");
+		});
+		it("works with Windows-style paths too", () => {
+			const paths = [
+				"C:\\Users\\John\\Is Glad\\He No Longer\\uses\\Windows",
+				"C:\\Users\\John\\My Documents\\",
+				"C:\\Users\\John\\My Music\\",
+			];
+			expect(findBasePath(paths)).to.equal("C:\\Users\\John");
+			expect(findBasePath(["C:\\Users\\admin\\1", ...paths])).to.equal("C:\\Users");
+			expect(findBasePath(["C:\\temp\\1",         ...paths])).to.equal("C:\\");
+			expect(findBasePath(["D:\\temp\\1",         ...paths])).to.equal("");
+		});
+	});
+	
+	describe("formatBytes()", () => {
+		const {formatBytes} = utils;
+		const KB = 1024;
+		const MB = KB * 1024;
+		const GB = MB * 1024;
+		const TB = GB * 1024;
+		const PB = TB * 1024;
+		const EB = PB * 1024;
+		const ZB = EB * 1024;
+		const YB = ZB * 1024;
+		it("formats bytes", () => {
+			expect(formatBytes(1)).to.equal("1 B");
+			expect(formatBytes(127)).to.equal("127 B");
+			expect(formatBytes(1023)).to.equal("1023 B");
+		});
+		it("formats kilobytes", () => {
+			expect(formatBytes(KB *    1)).to.equal("1 KB");
+			expect(formatBytes(KB * 1.25)).to.equal("1.25 KB");
+			expect(formatBytes(KB * 1.50)).to.equal("1.5 KB");
+			expect(formatBytes(KB * 3.75)).to.equal("3.75 KB");
+			expect(formatBytes(KB *   50)).to.equal("50 KB");
+			expect(formatBytes(KB *  359)).to.equal("359 KB");
+			expect(formatBytes(KB * 1023)).to.equal("1023 KB");
+		});
+		it("formats megabytes", () => {
+			expect(formatBytes(MB *    1)).to.equal("1 MB");
+			expect(formatBytes(MB * 1.25)).to.equal("1.25 MB");
+			expect(formatBytes(MB * 1.50)).to.equal("1.5 MB");
+			expect(formatBytes(MB * 3.75)).to.equal("3.75 MB");
+			expect(formatBytes(MB *   50)).to.equal("50 MB");
+			expect(formatBytes(MB *  359)).to.equal("359 MB");
+			expect(formatBytes(MB * 1023)).to.equal("1023 MB");
+			expect(formatBytes(3524959))  .to.equal("3.36 MB");
+		});
+		it("formats gigabytes", () => {
+			expect(formatBytes(GB *    1)).to.equal("1 GB");
+			expect(formatBytes(GB * 1.25)).to.equal("1.25 GB");
+			expect(formatBytes(GB * 1.50)).to.equal("1.5 GB");
+			expect(formatBytes(GB * 3.75)).to.equal("3.75 GB");
+			expect(formatBytes(GB *   50)).to.equal("50 GB");
+			expect(formatBytes(GB *  359)).to.equal("359 GB");
+			expect(formatBytes(GB * 1023)).to.equal("1023 GB");
+		});
+		it("formats terabytes", () => {
+			expect(formatBytes(TB *    1)).to.equal("1 TB");
+			expect(formatBytes(TB * 1.25)).to.equal("1.25 TB");
+			expect(formatBytes(TB * 1.50)).to.equal("1.5 TB");
+			expect(formatBytes(TB * 3.75)).to.equal("3.75 TB");
+			expect(formatBytes(TB *   50)).to.equal("50 TB");
+			expect(formatBytes(TB *  359)).to.equal("359 TB");
+			expect(formatBytes(TB * 1023)).to.equal("1023 TB");
+		});
+		it("formats petabytes", () => {
+			expect(formatBytes(PB *    1)).to.equal("1 PB");
+			expect(formatBytes(PB * 1.25)).to.equal("1.25 PB");
+			expect(formatBytes(PB * 1.50)).to.equal("1.5 PB");
+			expect(formatBytes(PB * 3.75)).to.equal("3.75 PB");
+			expect(formatBytes(PB *   50)).to.equal("50 PB");
+			expect(formatBytes(PB *  359)).to.equal("359 PB");
+			expect(formatBytes(PB * 1023)).to.equal("1023 PB");
+		});
+		it("formats exabytes", () => {
+			expect(formatBytes(EB *    1)).to.equal("1 EB");
+			expect(formatBytes(EB * 1.25)).to.equal("1.25 EB");
+			expect(formatBytes(EB * 1.50)).to.equal("1.5 EB");
+			expect(formatBytes(EB * 3.75)).to.equal("3.75 EB");
+			expect(formatBytes(EB *   50)).to.equal("50 EB");
+			expect(formatBytes(EB *  359)).to.equal("359 EB");
+			expect(formatBytes(EB * 1023)).to.equal("1023 EB");
+		});
+		it("formats zettabytes", () => {
+			expect(formatBytes(ZB *    1)).to.equal("1 ZB");
+			expect(formatBytes(ZB * 1.25)).to.equal("1.25 ZB");
+			expect(formatBytes(ZB * 1.50)).to.equal("1.5 ZB");
+			expect(formatBytes(ZB * 3.75)).to.equal("3.75 ZB");
+			expect(formatBytes(ZB *   50)).to.equal("50 ZB");
+			expect(formatBytes(ZB *  359)).to.equal("359 ZB");
+			expect(formatBytes(ZB * 1023)).to.equal("1023 ZB");
+		});
+		it("formats yottabytes", () => {
+			expect(formatBytes(YB *    1)).to.equal("1 YB");
+			expect(formatBytes(YB * 1.25)).to.equal("1.25 YB");
+			expect(formatBytes(YB * 1.50)).to.equal("1.5 YB");
+			expect(formatBytes(YB * 3.75)).to.equal("3.75 YB");
+			expect(formatBytes(YB *   50)).to.equal("50 YB");
+			expect(formatBytes(YB *  359)).to.equal("359 YB");
+			expect(formatBytes(YB * 1023)).to.equal("1023 YB");
 		});
 	});
 	
@@ -43,6 +395,172 @@ describe("Text-related functions", () => {
 		it("coerces non-numeric values", () => {
 			expect(formatTime({valueOf: () => 450}))    .to.equal("00:00:00.450");
 			expect(formatTime({valueOf: () => 450.75})) .to.equal("00:00:00.451");
+		});
+	});
+	
+	describe("getUnusedChar()", () => {
+		const {getUnusedChar} = utils;
+		it("returns a character with an unused codepoint", () => {
+			expect(getUnusedChar("ABC"))   .to.equal("\0");
+			expect(getUnusedChar("\0AB"))  .to.equal("\x01");
+			expect(getUnusedChar("\0\x01")).to.equal("\x02");
+			for(let s = "", i = 0; i < 255; s += String.fromCodePoint(i), ++i){
+				expect(getUnusedChar(s)).to.equal(String.fromCodePoint(i));
+				expect(getUnusedChar(s.substr(1))).to.equal("\0");
+			}
+		});
+	});
+	
+	describe("isplit()", () => {
+		const {isplit} = utils;
+		it("splits strings using an arbitrary delimiter", () => {
+			expect(isplit("A|B|C|D|E|F|", "|")).to.have.lengthOf(12);
+			expect(isplit("-A-B-C-DEF",   "-")).to.have.lengthOf(8);
+			expect(isplit("ABC--DE-F-",  "--")).to.have.lengthOf(3);
+		});
+		it("includes delimiters in the results", () => {
+			expect(isplit("A|B|C|D|E|F|", "|")).to.eql("A|B|C|D|E|F|".split(""));
+			expect(isplit("-A-B-C-DEF",   "-")).to.eql(["-", "A", "-", "B", "-", "C", "-", "DEF"]);
+			expect(isplit("ABC--DE-F-",  "--")).to.eql(["ABC", "--", "DE-F-"]);
+		});
+		it("accepts regular expressions as delimiters", () => {
+			expect(isplit("ABC_DEF___XYZ_", /_+/g)).to.eql(["ABC", "_", "DEF", "___", "XYZ", "_"]);
+			expect(isplit("ABC1DEF123XYZ0", /\d+/)).to.eql(["ABC", "1", "DEF", "123", "XYZ", "0"]);
+			expect(isplit("ABC", /^[A-Z]{3}$/g))   .to.eql(["ABC"]);
+		});
+		it("splits by character if no pattern is given", () => {
+			expect(isplit("ABCDEF")).to.eql("ABCDEF".split(""));
+		});
+		it("filters empty segments from the results", () => {
+			expect(isplit("ABC--DEF", "-")).to.eql(["ABC", "-", "-", "DEF"]);
+			expect(isplit("-ABC--DE-F-", "-")).to.eql(["-", "ABC", "-", "-", "DE", "-", "F", "-"]);
+		});
+	});
+	
+	describe("isValidCCNumber()", () => {
+		const {isValidCCNumber} = utils;
+		it("validates credit-card numbers with separators", () => {
+			expect(isValidCCNumber("0000-0000-0000-0000")).to.be.true;
+			expect(isValidCCNumber("1234-5678-4213-8432")).to.be.true;
+			expect(isValidCCNumber("1234 5678 4213 8432")).to.be.true;
+			expect(isValidCCNumber("1234*5678*4213*8432")).to.be.true;
+			expect(isValidCCNumber("1234_5678_4213_8432")).to.be.true;
+			expect(isValidCCNumber("1234-5678-N0PE-8432")).to.be.false;
+			expect(isValidCCNumber("1234 5678 N0PE 8432")).to.be.false;
+			expect(isValidCCNumber("1234*5678*N0PE*8432")).to.be.false;
+			expect(isValidCCNumber("1234_5678_N0PE_8432")).to.be.false;
+		});
+		it("validates credit-card numbers without separators", () => {
+			expect(isValidCCNumber("0".repeat(16))).to.be.true;
+			expect(isValidCCNumber("1234567842138432")).to.be.true;
+			expect(isValidCCNumber("12345678N0PE8432")).to.be.false;
+		});
+		it("validates credit-card numbers with too many digits", () => {
+			expect(isValidCCNumber("0".repeat(17))).to.be.false;
+			expect(isValidCCNumber("1234-5678-4213-8432".repeat(2))).to.be.false;
+			expect(isValidCCNumber("1234-5678-N0PE-8432".repeat(2))).to.be.false;
+			expect(isValidCCNumber("1234567842138432".repeat(2))).to.be.false;
+			expect(isValidCCNumber("12345678N0PE8432".repeat(2))).to.be.false;
+		});
+		it("validates credit-card numbers with not enough digits", () => {
+			expect(isValidCCNumber("0".repeat(15))).to.be.false;
+			expect(isValidCCNumber("1234-5678-8432")).to.be.false;
+			expect(isValidCCNumber("1234 5678 8432")).to.be.false;
+			expect(isValidCCNumber("123456784213")).to.be.false;
+			expect(isValidCCNumber("12345678N0PE")).to.be.false;
+		});
+		it("allows pointless or repeated separators", () => {
+			expect(isValidCCNumber("1234-----5678---4213----8432")).to.be.true;
+			expect(isValidCCNumber("1234    5678     4213    8432")).to.be.true;
+			expect(isValidCCNumber("1234*****5678***4213****8432")).to.be.true;
+			expect(isValidCCNumber("1234______5678_4213___8432")).to.be.true;
+			expect(isValidCCNumber("1234-----5678---N0PE---8432")).to.be.false;
+			expect(isValidCCNumber("1234    5678     N0PE   8432")).to.be.false;
+			expect(isValidCCNumber("1234***5678*******N0PE***8432")).to.be.false;
+			expect(isValidCCNumber("1234__5678_________N0PE___8432")).to.be.false;
+		});
+		it("doesn't care where separators are placed", () => {
+			expect(isValidCCNumber("1-2---3-456---7842--13-84----32")).to.be.true;
+			expect(isValidCCNumber("1 2   3 456   7842  13 84    32")).to.be.true;
+			expect(isValidCCNumber("1*2***3*456***7842**13*84****32")).to.be.true;
+			expect(isValidCCNumber("1_2___3_456___7842__13_84____32")).to.be.true;
+			expect(isValidCCNumber("1-2---3-456---78N0--PE-84----32")).to.be.false;
+			expect(isValidCCNumber("1 2   3 456   78N0  PE 84    32")).to.be.false;
+			expect(isValidCCNumber("1*2***3*456***78N0**PE*84****32")).to.be.false;
+			expect(isValidCCNumber("1_2___3_456___78N0__PE_84____32")).to.be.false;
+		});
+		it("implicitly works with array-type arguments", () => {
+			expect(isValidCCNumber([1234, 4567, 1245,   2553])).to.be.true;
+			expect(isValidCCNumber([1234, 4567, "N0PE", 2553])).to.be.false;
+		});
+	});
+	
+	describe("kebabToCamelCase()", () => {
+		const {kebabToCamelCase} = utils;
+		it("converts kebab-case to camelCase", () => {
+			expect(kebabToCamelCase("foo"))            .to.equal("foo");
+			expect(kebabToCamelCase("foo-bar"))        .to.equal("fooBar");
+			expect(kebabToCamelCase("foo-bar-baz"))    .to.equal("fooBarBaz");
+		});
+		it("converts segments ending in numbers", () => {
+			expect(kebabToCamelCase("foo1-bar"))       .to.equal("foo1Bar");
+			expect(kebabToCamelCase("foo1-bar2-baz"))  .to.equal("foo1Bar2Baz");
+			expect(kebabToCamelCase("foo12-bar34-baz")).to.equal("foo12Bar34Baz");
+		});
+		it("converts segments starting with numbers", () => {
+			expect(kebabToCamelCase("foo-1bar"))       .to.equal("foo1bar");
+			expect(kebabToCamelCase("foo-1bar-2baz"))  .to.equal("foo1bar2baz");
+			expect(kebabToCamelCase("foo-12bar-34baz")).to.equal("foo12bar34baz");
+		});
+		it("collapses contiguous dashes into one", () => {
+			expect(kebabToCamelCase("foo----bar"))     .to.equal("fooBar");
+			expect(kebabToCamelCase("foo---bar--baz")) .to.equal("fooBarBaz");
+		});
+		it("lowercases input before converting it", () => {
+			expect(kebabToCamelCase("fooBar-baz"))     .to.equal("foobarBaz");
+			expect(kebabToCamelCase("fooBar-bazQux"))  .to.equal("foobarBazqux");
+		});
+	});
+	
+	describe("ordinalSuffix()", () => {
+		const {ordinalSuffix} = utils;
+		const th = "th", st = "st", nd = "nd", rd = "rd";
+		it("returns a number's ordinal suffix in English", () => {
+			const tests = {
+				0:th,  1:st,  2:nd,  3:rd,  4:th,  5:th,  6:th,  7:th,  8:th,  9:th,
+				10:th, 11:th, 12:th, 13:th, 14:th, 15:th, 16:th, 17:th, 18:th, 19:th,
+				20:th, 21:st, 22:nd, 23:rd, 24:th, 25:th, 26:th, 27:th, 28:th, 29:th,
+				30:th, 31:st, 32:nd, 33:rd, 34:th, 35:th, 36:th, 37:th, 38:th, 39:th,
+				40:th, 41:st, 42:nd, 43:rd, 44:th, 45:th, 46:th, 47:th, 48:th, 49:th,
+				50:th, 51:st, 52:nd, 53:rd, 54:th, 55:th, 56:th, 57:th, 58:th, 59:th,
+				60:th, 61:st, 62:nd, 63:rd, 64:th, 65:th, 66:th, 67:th, 68:th, 69:th,
+				70:th, 71:st, 72:nd, 73:rd, 74:th, 75:th, 76:th, 77:th, 78:th, 79:th,
+				80:th, 81:st, 82:nd, 83:rd, 84:th, 85:th, 86:th, 87:th, 88:th, 89:th,
+				90:th, 91:st, 92:nd, 93:rd, 94:th, 95:th, 96:th, 97:th, 98:th, 99:th,
+				
+				100:th, 101:st, 102:nd, 103:rd, 104:th, 105:th, 106:th, 107:th, 108:th, 109:th,
+				110:th, 111:th, 112:th, 113:th, 114:th, 115:th, 116:th, 117:th, 118:th, 119:th,
+				120:th, 121:st, 122:nd, 123:rd, 124:th, 125:th, 126:th, 127:th, 128:th, 129:th,
+				130:th, 131:st, 132:nd, 133:rd, 134:th, 135:th, 136:th, 137:th, 138:th, 139:th,
+				140:th, 141:st, 142:nd, 143:rd, 144:th, 145:th, 146:th, 147:th, 148:th, 149:th,
+				150:th, 151:st, 152:nd, 153:rd, 154:th, 155:th, 156:th, 157:th, 158:th, 159:th,
+				160:th, 161:st, 162:nd, 163:rd, 164:th, 165:th, 166:th, 167:th, 168:th, 169:th,
+				170:th, 171:st, 172:nd, 173:rd, 174:th, 175:th, 176:th, 177:th, 178:th, 179:th,
+				180:th, 181:st, 182:nd, 183:rd, 184:th, 185:th, 186:th, 187:th, 188:th, 189:th,
+				190:th, 191:st, 192:nd, 193:rd, 194:th, 195:th, 196:th, 197:th, 198:th, 199:th,
+			};
+			for(const number in tests){
+				const ordinal = tests[number];
+				const result  = ordinalSuffix(number);
+				const message = `Expected ordinal of ${number} to be ${number}${ordinal}, got ${number}${result}`;
+				expect(result).to.equal(ordinal, message);
+			}
+		});
+		it('defaults to "-th" for non-numeric arguments', () => {
+			expect(ordinalSuffix(NaN)).to.equal("th");
+			expect(ordinalSuffix(null)).to.equal("th");
+			expect(ordinalSuffix(Infinity)).to.equal("th");
+			expect(ordinalSuffix(-Infinity)).to.equal("th");
 		});
 	});
 	
@@ -188,6 +706,168 @@ describe("Text-related functions", () => {
 				expect(parseTime({toString: () => "0:1.567"}))         .to.equal(1567);
 				expect(parseTime({toString: () => "\n\t0:1.567\t\n"})) .to.equal(1567);
 			});
+		});
+	});
+	
+	describe("parseURL()", () => {
+		const {parseURL} = utils;
+		const base = {
+			auth:     "",
+			filename: "",
+			fragment: "",
+			hostname: "",
+			password: "",
+			pathname: "",
+			port:     null,
+			protocol: "",
+			query:    "",
+			username: "",
+		};
+		it("parses empty or invalid input", () => {
+			expect(parseURL("")).to.eql(base);
+			expect(parseURL("\n\0")).to.eql(base);
+		});
+		it("parses protocols and hostnames", () =>
+			expect(parseURL("https://github.com")).to.eql({
+				...base,
+				protocol: "https",
+				hostname: "github.com",
+			}));
+		it("parses usernames", () => {
+			const username = "Alhadis";
+			expect(parseURL(`https://${username}@github.com`)).to.eql({
+				...base,
+				auth:     username + "@",
+				protocol: "https",
+				hostname: "github.com",
+				username,
+			});
+		});
+		it("parses passwords", () => {
+			const username = "Alhadis";
+			const password = "yeah-this-is-so-totally-my-real-password";
+			expect(parseURL(`https://${username}:${password}@github.com`)).to.eql({
+				...base,
+				auth:     `${username}:${password}@`,
+				protocol: "https",
+				hostname: "github.com",
+				username,
+				password,
+			});
+		});
+		it("parses port numbers", () => {
+			expect(parseURL("wss://localhost:1337")).to.eql({
+				...base,
+				protocol: "wss",
+				hostname: "localhost",
+				port:     1337,
+			});
+		});
+		it("parses pathnames", () => {
+			expect(parseURL("https://github.com/")).to.eql({
+				...base,
+				protocol: "https",
+				hostname: "github.com",
+				pathname: "/",
+			});
+			expect(parseURL("http://something.com/dir/page.html")).to.eql({
+				...base,
+				protocol: "http",
+				hostname: "something.com",
+				pathname: "/dir/page.html",
+				filename: "page.html",
+			});
+		});
+		it("parses search queries", () => {
+			const result = {
+				...base,
+				protocol: "https",
+				hostname: "query.org",
+				pathname: "/dir/page.html",
+				filename: "page.html",
+			};
+			expect(parseURL("https://query.org/dir/page.html?a=b"))      .to.eql({...result, query: "?a=b"});
+			expect(parseURL("https://query.org/dir/page.html?a=b/c"))    .to.eql({...result, query: "?a=b/c"});
+			expect(parseURL("https://query.org/dir/page.html?a=b&d=e"))  .to.eql({...result, query: "?a=b&d=e"});
+			expect(parseURL("https://query.org/dir/page.html?a=b&d=e/f")).to.eql({...result, query: "?a=b&d=e/f"});
+		});
+		it("parses fragment identifiers", () => {
+			const url = "https://github.com/Alhadis/Utils";
+			const result = {
+				...base,
+				protocol: "https",
+				hostname: "github.com",
+				pathname: "/Alhadis/Utils",
+				filename: "Utils",
+				fragment: "#utils",
+			};
+			expect(parseURL(url + "#utils"))     .to.eql(result);
+			expect(parseURL(url + "?a=b#utils")) .to.eql({...result, query: "?a=b"});
+			expect(parseURL(url + "#utils?a=b")) .to.eql({...result, fragment: "#utils?a=b"});
+			expect(parseURL(url + "#utils/?a=b")).to.eql({...result, fragment: "#utils/?a=b"});
+		});
+		it("parses protocols without forward-slashes", () => {
+			expect(parseURL("https:foo")).to.eql({
+				...base,
+				protocol: "https",
+				hostname: "foo",
+			});
+			expect(parseURL("https:foo/bar")).to.eql({
+				...base,
+				protocol: "https",
+				hostname: "foo",
+				pathname: "/bar",
+				filename: "bar",
+			});
+		});
+		it("converts protocol names to lowercase", () => {
+			const result = {...base, protocol: "https", hostname: "foo.com"};
+			expect(parseURL("HTTPS://foo.com")).to.eql(result);
+			expect(parseURL("HtTpS://foo.com")).to.eql(result);
+			expect(parseURL("HtTpS:foo.com"))  .to.eql(result);
+		});
+		it("parses incomplete URLs", () => {
+			expect(parseURL("foo"))     .to.eql({...base, hostname: "foo"});
+			expect(parseURL("//foo"))   .to.eql({...base, hostname: "foo"});
+			expect(parseURL("://foo"))  .to.eql({...base, hostname: "foo"});
+			expect(parseURL("https://")).to.eql({...base, protocol: "https"});
+		});
+		it("parses incomplete URLs with paths", () => {
+			const result = {...base, hostname: "foo", pathname: "/bar", filename: "bar"};
+			expect(parseURL("foo/bar"))   .to.eql(result);
+			expect(parseURL("//foo/bar")) .to.eql(result);
+			expect(parseURL("://foo/bar")).to.eql(result);
+		});
+		it("parses system filepaths", () => {
+			let result = {...base, pathname: "/usr/share/man/whatis", filename: "whatis"};
+			expect(parseURL("/usr/share/man/whatis"))        .to.eql(result);
+			expect(parseURL("/usr/share/man/whatis?a=b"))    .to.eql({...result, query: "?a=b"});
+			expect(parseURL("/usr/share/man/whatis#foo"))    .to.eql({...result, fragment: "#foo"});
+			expect(parseURL("/usr/share/man/whatis?a=b#foo")).to.eql({...result, query: "?a=b", fragment: "#foo"});
+			
+			result = {...base, hostname: "usr", pathname: "/share/man/whatis", filename: "whatis"};
+			expect(parseURL("//usr/share/man/whatis"))        .to.eql(result);
+			expect(parseURL("//usr/share/man/whatis?a=b"))    .to.eql({...result, query: "?a=b"});
+			expect(parseURL("//usr/share/man/whatis#foo"))    .to.eql({...result, fragment: "#foo"});
+			expect(parseURL("//usr/share/man/whatis?a=b#foo")).to.eql({...result, query: "?a=b", fragment: "#foo"});
+		});
+	});
+	
+	describe("slug()", () => {
+		const {slug} = utils;
+		it("converts input to lowercase",      () => expect(slug("Foo")).to.equal("foo"));
+		it("replaces whitespace with dashes",  () => expect(slug("Foo Bar")).to.equal("foo-bar"));
+		it("replaces punctuation with dashes", () => expect(slug("Foo?!Bar")).to.equal("foo-bar"));
+		it("merges multiple dashes into one",  () => expect(slug("Foo--Bar")).to.equal("foo-bar"));
+		it("understands common contractions",  () => {
+			expect(slug("Here's an ID string.")).to.equal("heres-an-id-string");
+			expect(slug("Also, how're you?")).to.equal("also-how-are-you");
+		});
+		it("never starts or ends slugs with a dash", () => {
+			expect(slug(" Foo")).to.equal("foo");
+			expect(slug("Foo ")).to.equal("foo");
+			expect(slug("(Foo)")).to.equal("foo");
+			expect(slug("(Foo)(bar)")).to.equal("foo-bar");
 		});
 	});
 	
@@ -473,6 +1153,12 @@ describe("Text-related functions", () => {
 		const DEC  = YEAR * 10;
 		const CENT = DEC  * 10;
 		const MILL = CENT * 10;
+		
+		it("accepts Dates as arguments", () => {
+			const now = Date.now();
+			expect(timeSince(new Date(now - 86400000))).to.equal("Yesterday");
+			expect(timeSince(new Date(now + 86400001))).to.equal("Tomorrow");
+		});
 		
 		describe("Seconds", () => {
 			describe("Past intervals", () => {
@@ -806,6 +1492,196 @@ describe("Text-related functions", () => {
 					it("formats 100100 years", () => expect(timeSince(MILL * -100.1, true)).to.equal("100100 years from now"));
 				});
 			});
+		});
+	});
+
+	describe("titleCase()", () => {
+		const {titleCase} = utils;
+		const test = (input, expected) => {
+			expect(titleCase(input)).to.equal(expected);
+			expect(titleCase(input.toLowerCase())).to.equal(expected);
+			expect(titleCase(input.toUpperCase())).to.equal(expected);
+		};
+		it("doesn't capitalise articles", () => {
+			test("Find A Way",          "Find a Way");
+			test("Find The Way",        "Find the Way");
+			test("Use An Example",      "Use an Example");
+		});
+		it("doesn't capitalise conjunctions", () => {
+			test("Here Nor There",      "Here nor There");
+			test("Strange But True",    "Strange but True");
+			test("Thelma And Louise",   "Thelma and Louise");
+			test("This Or That",        "This or That");
+			test("Not Yet Started",     "Not yet Started");
+		});
+		it("doesn't capitalise prepositions", () => {
+			test("Lost In Space",       "Lost in Space");
+			test("Bad At Examples",     "Bad at Examples");
+			test("Playing With Fire",   "Playing with Fire");
+			test("Done For Laughs",     "Done for Laughs");
+			test("Glass Of Water",      "Glass of Water");
+			test("Glass On Table",      "Glass on Table");
+			test("Going To Town",       "Going to Town");
+			test("Newcastle Upon Tyne", "Newcastle upon Tyne");
+			test("Lord Of The Rings",   "Lord of the Rings");
+		});
+		it("capitalises principal words", () => {
+			test("A Cup of Tea",        "A Cup of Tea");
+			test("A few good men",      "A Few Good Men");
+			test("Of Mice And Men",     "Of Mice and Men");
+			test("the member of",       "The Member Of");
+		});
+		it("capitalises words between punctuation", () => {
+			test('He "Started" it',     'He "Started" It');
+			test('He started "It"',     'He Started "It"');
+			test('He did "It" first',   'He Did "It" First');
+			test('He Said "And?"',      'He Said "And?"');
+			test("this And... that",    "This and... That");
+			test("He Did It...",        "He Did It...");
+		});
+		it("capitalises the pronoun “I”", () => {
+			test("You and i",           "You and I");
+			test("You and i do",        "You and I Do");
+			test("i do?",               "I Do?");
+		});
+		it("capitalises contractions", () => {
+			test("I'm okay",            "I'm Okay");
+			test("ThaT'S not right",    "That's Not Right");
+		});
+		it("capitalises short verbs", () => {
+			test("This is Dumb",        "This Is Dumb");
+			test("These are Dumb",      "These Are Dumb");
+		});
+		it("capitalises single letters", () => {
+			test("A b c d",             "A B C D");
+			test("A a c d",             "A a C D");
+			test("X y z a",             "X Y Z A");
+		});
+	});
+
+	describe("tokeniseOutline()", () => {
+		const {tokeniseOutline} = utils;
+		it("tokenises indented lines", () => {
+			const input = ["1.", "\t1.1", "\t1.2", "\t1.3", "2.", "\t2.1", "\t2.2"];
+			const root1 = Object.assign([], {level: 0, parent: null, name: "1."});
+			const root2 = Object.assign([], {level: 0, parent: null, name: "2."});
+			root1.push(
+				Object.assign([], {name: "1.1", level: 1, parent: root1}),
+				Object.assign([], {name: "1.2", level: 1, parent: root1}),
+				Object.assign([], {name: "1.3", level: 1, parent: root1}),
+			);
+			root2.push(
+				Object.assign([], {name: "2.1", level: 1, parent: root2}),
+				Object.assign([], {name: "2.2", level: 1, parent: root2}),
+			);
+			expect(tokeniseOutline(input.join("\n"))).to.eql([root1, root2]);
+		});
+		it("tokenises unindented lines", () => {
+			expect(tokeniseOutline("Foo\nBar\nBaz")).to.eql([
+				Object.assign([], {level: 0, parent: null, name: "Foo"}),
+				Object.assign([], {level: 0, parent: null, name: "Bar"}),
+				Object.assign([], {level: 0, parent: null, name: "Baz"}),
+			]);
+		});
+		it("tokenises multiple levels", () => {
+			const input = [
+				"1.",
+				"\t1.1",
+				"\t1.2",
+				"\t\t1.2.1",
+				"\t\t1.2.2",
+				"\t\t\t1.2.2.1",
+				"\t\t\t1.2.2.2",
+				"\t\t\t1.2.2.3",
+				"\t\t1.2.3",
+				"\t1.3",
+				"2.",
+				"\t2.1",
+				"\t\t2.1.1",
+				"\t\t2.1.2",
+				"\t2.2",
+			].join("\n");
+			const root1 = Object.assign([], {level: 0, parent: null, name: "1."});
+			const root2 = Object.assign([], {level: 0, parent: null, name: "2."});
+			root1.push(
+				Object.assign([], {level: 1, parent: root1, name: "1.1"}),
+				Object.assign([], {level: 1, parent: root1, name: "1.2"}),
+				Object.assign([], {level: 1, parent: root1, name: "1.3"}),
+			);
+			root2.push(
+				Object.assign([], {level: 1, parent: root1, name: "2.1"}),
+				Object.assign([], {level: 1, parent: root1, name: "2.2"}),
+			);
+			root1[1].push(
+				Object.assign([], {level: 2, parent: root1[1], name: "1.2.1"}),
+				Object.assign([], {level: 2, parent: root1[1], name: "1.2.2"}),
+				Object.assign([], {level: 2, parent: root1[1], name: "1.2.3"}),
+			);
+			root1[1][1].push(
+				Object.assign([], {level: 2, parent: root1[1][1], name: "1.2.2.1"}),
+				Object.assign([], {level: 2, parent: root1[1][1], name: "1.2.2.2"}),
+				Object.assign([], {level: 2, parent: root1[1][1], name: "1.2.2.3"}),
+			);
+			root2[0].push(
+				Object.assign([], {level: 2, parent: root2[0], name: "2.1.1"}),
+				Object.assign([], {level: 2, parent: root2[0], name: "2.1.2"}),
+			);
+			expect(tokeniseOutline(input)).to.eql([root1, root2]);
+		});
+		it("treats two indentation levels as one", () => {
+			const parent = Object.assign([], {level: 0, name: "Foo", parent: null});
+			const uncle  = Object.assign([], {level: 0, name: "Baz", parent: null});
+			const child  = Object.assign([], {level: 2, name: "Bar", parent});
+			parent.push(child);
+			expect(tokeniseOutline("Foo\n\t\tBar\nBaz")).to.eql([parent, uncle]);
+		});
+		it("strips leading indentation before parsing", () => {
+			const input = ["\t1.", "\t\t2.", "\t3.", "\t\t4."];
+			const root1 = Object.assign([], {level: 0, parent: null, name: "1."});
+			const root2 = Object.assign([], {level: 0, parent: null, name: "3."});
+			root1.push(Object.assign([], {level: 1, parent: root1, name: "2."}));
+			root2.push(Object.assign([], {level: 1, parent: root2, name: "4."}));
+			const tree = [root1, root2];
+			expect(tokeniseOutline(input.join("\n"))).to.eql(tree);
+			expect(tokeniseOutline(input.map(x => "\t\t" + x).join("\n"))).to.eql(tree);
+		});
+	});
+
+	describe("wordCount()", () => {
+		const {wordCount} = utils;
+		it("naïvely counts words separated by whitespace", () => {
+			expect(wordCount("Foo")).to.equal(1);
+			expect(wordCount("What a")).to.equal(2);
+			expect(wordCount("Bunch of odd-looking functions")).to.equal(4);
+			expect(wordCount("Foo\nBar")).to.equal(2);
+		});
+		it("optionally counts hyphenated-segments", () => {
+			expect(wordCount("Foo-", true)).to.equal(1);
+			expect(wordCount("What-a", true)).to.equal(2);
+			expect(wordCount("Bunch of odd-looking functions", true)).to.equal(5);
+		});
+		it("returns zero for empty input", () => {
+			expect(wordCount("")).to.equal(0);
+			expect(wordCount(" ")).to.equal(0);
+			expect(wordCount("  ")).to.equal(0);
+		});
+	});
+
+	// TODO: Rewrite this function; its current behaviour makes no sense
+	describe("wordWrap()", () => {
+		const {wordWrap} = utils;
+		it("wraps text to a designated line-length", () => {
+			const input = "Lorem ipsum dolor sit amet";
+			expect(wordWrap(input, 18)).to.eql(["Lorem ipsum dolor ", "sit amet"]);
+			expect(wordWrap(input, 12)).to.eql(["Lorem ipsum ", "dolor sit ", "amet"]);
+		});
+		it("preserves line-breaks in the original text", () => {
+			expect(wordWrap("Foo\nBar Baz", 8))   .to.eql(["Foo\n", "Bar ", "Baz"]);
+			expect(wordWrap("Foo\n\nBar\nBaz", 8)).to.eql(["Foo\n\n", "Bar", "\n", "Baz"]);
+		});
+		it("splits words if they don't fit on one line", () => {
+			expect(wordWrap("Foooooooooooo", 4))  .to.eql(["Fooo", "oooo", "oooo", "o"]);
+			expect(wordWrap("Foo Baaaaaaar", 10)) .to.eql(["Foo ", "Baaaaaaar"]);
 		});
 	});
 });

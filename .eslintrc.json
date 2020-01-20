@@ -4,6 +4,7 @@
 		"BigInt": true,
 		"globalThis": true
 	},
+	"ignorePatterns": ["coverage/*"],
 	"overrides": [{
 		"files": ["lib/binary.mjs"],
 		"rules": {"multiline-ternary": 0}

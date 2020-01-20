@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+cd "${0%/*}"
+
+for dir in junk junk/foo junk/bar junk/bar/baz; do
+	[ ! -d "$dir" ] && mkdir "$dir"
+	chmod 0755 "$dir"
+	for i in 1 2 3; do
+		file="${dir}/${dir##*/}.$i"
+		echo "$file" > "$file"
+	done
+done
+
+[ -d junk2 ] && rm -rf junk2
+cp -pR junk junk2

@@ -374,6 +374,7 @@ describe("Colour-related functions", function(){
 				expect(reflect(48,  134)).to.be.closeTo(19, 1);
 				expect(reflect(160, 180)).to.equal(255);
 				expect(reflect(180, 160)).to.equal(255);
+				expect(reflect(128, 255)).to.equal(255);
 			});
 			it("blends translucent values", () => {
 				expect(alphaF(128,  48, reflect, 0.4)).to.be.closeTo(60, 1);
@@ -468,7 +469,10 @@ describe("Colour-related functions", function(){
 		
 		it("converts hex to RGB", () => {
 			const {hexToRGB} = utils;
-			mixedTests.map(test => expect(hexToRGB(test.hexInt)).to.eql(test.rgb));
+			mixedTests.map(test => {
+				expect(hexToRGB(test.hexInt)).to.eql(test.rgb);
+				expect(hexToRGB(test.hexStr)).to.eql(test.rgb);
+			});
 		});
 		
 		it("converts HSL to HSV", () => {

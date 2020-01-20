@@ -9,6 +9,127 @@ describe("Miscellaneous functions", () => {
 		htmlAllFn   === Function.prototype.toString.call(window.HTMLAllCollection)
 	);
 	
+	describe("collectStrings()", () => {
+		const {collectStrings} = utils;
+		it("splits strings by whitespace", () => {
+			expect(collectStrings("foo bar"))     .to.eql(["foo", "bar"]);
+			expect(collectStrings("foo bar baz")) .to.eql(["foo", "bar", "baz"]);
+		});
+		it("trims strings before splitting them", () => {
+			expect(collectStrings("foo "))        .to.eql(["foo"]);
+			expect(collectStrings(" foo"))        .to.eql(["foo"]);
+			expect(collectStrings(" foo bar "))   .to.eql(["foo", "bar"]);
+		});
+		it("flattens simple arrays", () => {
+			expect(collectStrings(["foo", ["bar"]]))          .to.eql(["foo", "bar"]);
+			expect(collectStrings(["foo", ["bar"], ["baz"]])) .to.eql(["foo", "bar", "baz"]);
+			expect(collectStrings(["foo", ["bar", "baz"]]))   .to.eql(["foo", "bar", "baz"]);
+		});
+		it("flattens nested arrays", () => {
+			expect(collectStrings(["foo", ["bar", ["baz"]], "qux"]))   .to.eql(["foo", "bar", "baz", "qux"]);
+			expect(collectStrings(["foo", ["bar", ["baz", "qux"]]]))   .to.eql(["foo", "bar", "baz", "qux"]);
+			expect(collectStrings(["foo", ["bar", ["baz", ["qux"]]]])) .to.eql(["foo", "bar", "baz", "qux"]);
+		});
+		it("splits strings in arrays", () => {
+			expect(collectStrings(["foo bar"]))                 .to.eql(["foo", "bar"]);
+			expect(collectStrings(["foo", "bar baz", "qux"]))   .to.eql(["foo", "bar", "baz", "qux"]);
+			expect(collectStrings(["foo", ["bar baz"], "qux"])) .to.eql(["foo", "bar", "baz", "qux"]);
+		});
+		it("ignores empty values", () => {
+			expect(collectStrings([])).to.eql([]);
+			expect(collectStrings("")).to.eql([]);
+			expect(collectStrings(" ")).to.eql([]);
+			expect(collectStrings(["", []])).to.eql([]);
+			expect(collectStrings(["", [""]])).to.eql([]);
+		});
+		it("handles circular references", () => {
+			const a = ["foo", ["bar"]];
+			const b = [["baz"], "qux"];
+			a.push(b);
+			b.push(a);
+			expect(collectStrings(a)).to.eql(["foo", "bar", "baz", "qux"]);
+			expect(collectStrings(b)).to.eql(["baz", "qux", "foo", "bar"]);
+			expect(collectStrings([b, b, b, a])).to.eql(["baz", "qux", "foo", "bar"]);
+		});
+	});
+	
+	describe("getProperties()", () => {
+		const {getProperties} = utils;
+		it("returns properties defined on an object", () => {
+			const obj = Object.create(null);
+			const foo = {enumerable: false, configurable: false, writable: false, value: "Foo"};
+			const bar = {enumerable: true,  configurable: true,  writable: true,  value: "Bar"};
+			Object.defineProperties(obj, {foo, bar});
+			expect(getProperties(obj)).to.eql(new Map([["foo", foo], ["bar", bar]]));
+		});
+		it("returns properties inherited from a prototype", () => {
+			class A { foo(){} }
+			class B extends A {}
+			expect(getProperties(new B()).get("foo")).to.eql({
+				value: A.prototype.foo,
+				enumerable: false,
+				configurable: true,
+				writable: true,
+			});
+		});
+		it("gives precedence to locally-defined properties", () => {
+			class A { foo(){} }
+			class B extends A { foo(){} }
+			expect(getProperties(new B()).get("foo")).to.eql({
+				value: B.prototype.foo,
+				enumerable: false,
+				configurable: true,
+				writable: true,
+			});
+		});
+		it("returns Symbol-keyed properties", () => {
+			const obj = Object.create(null);
+			const fn  = () => true;
+			obj[Symbol.iterator] = fn;
+			const props = getProperties(obj);
+			expect(props).to.eql(new Map([[Symbol.iterator, {
+				value: fn,
+				configurable: true,
+				enumerable: true,
+				writable: true,
+			}]]));
+		});
+	});
+	
+	describe("keyGrep()", () => {
+		const {keyGrep} = utils;
+		it("filters properties that match a pattern", () => {
+			const obj = {foo: true, bar: false, 1: "one", 2: "two", footer: ""};
+			expect(keyGrep(obj, /^foo/)).to.eql({foo: true, footer: ""});
+			expect(keyGrep(obj, /\d/))  .to.eql({1: "one", 2: "two"});
+			expect(keyGrep(obj, /\t/))  .to.eql({});
+		});
+		it("matches string-type patterns literally", () => {
+			expect(keyGrep({".": true}, ".")).to.eql({".": true});
+			expect(keyGrep({"\\d+": true, 1: false}, "\\d+")).to.eql({"\\d+": true});
+		});
+		it("returns an object with a null prototype", () => {
+			const obj = keyGrep({}, /./);
+			expect(obj).to.eql({});
+			expect(obj).not.to.have.property("constructor");
+			expect(obj).not.to.have.property("__proto__");
+		});
+		it("ignores non-enumerable properties", () => {
+			let calls = 0;
+			const obj = {};
+			Object.defineProperty(obj, "bar", {configurable: true, get: () => ++calls});
+			expect(keyGrep(obj, /bar/)).to.eql({});
+			expect(calls).to.equal(0);
+			Object.defineProperty(obj, "bar", {enumerable: true});
+			expect(keyGrep(obj, /bar/)).to.eql({bar: 1});
+		});
+		it("doesn't mutate the subject", () => {
+			const obj = {foo: 1, bar: 2, baz: 3};
+			expect(keyGrep(obj, /^.a/)).to.eql({bar: 2, baz: 3}).and.not.equal(obj);
+			expect(obj).to.eql({foo: 1, bar: 2, baz: 3});
+		});
+	});
+	
 	describe("isNativeDOM()", () => {
 		const {isNativeDOM} = utils;
 		if(isBrowser)
@@ -190,11 +311,37 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
+	describe("parseKeywords()", () => {
+		const {parseKeywords} = utils;
+		it("populates an object with boolean properties", () => {
+			expect(parseKeywords("top"))          .to.eql({top: true});
+			expect(parseKeywords(["top"]))        .to.eql({top: true});
+			expect(parseKeywords("top left"))     .to.eql({top: true, left: true});
+			expect(parseKeywords(["top left"]))   .to.eql({top: true, left: true});
+			expect(parseKeywords(["top", "left"])).to.eql({top: true, left: true});
+		});
+		it("returns an object with a null prototype", () => {
+			const keys = parseKeywords("one two three");
+			expect(keys).to.eql({one: true, two: true, three: true});
+			expect(keys).not.to.have.property("__proto__");
+			expect(keys).not.to.have.property("constructor");
+		});
+		it("returns null for empty input", () => {
+			expect(parseKeywords("")).to.be.null;
+			expect(parseKeywords(null)).to.be.null;
+		});
+	});
+	
 	describe("partition()", () => {
 		const {partition} = utils;
 		it("divides arrays", () => {
-			expect(partition(["A", "B", "C", "D"], [2])).to.eql([["A", "B"], ["C", "D"]]);
-			expect(partition(["A", "B", "C"], [2, 1]))  .to.eql([["A", "B"], ["C"]]);
+			expect(partition(["A", "B", "C", "D"], 2)).to.eql([["A", "B"], ["C", "D"]]);
+			expect(partition(["A", "B", "C"], [2, 1])).to.eql([["A", "B"], ["C"]]);
+		});
+		
+		it("divides strings", () => {
+			expect(partition("ABCD", [2])).to.eql(["AB", "CD"]);
+			expect(partition("ABCD", [3, 1])).to.eql(["ABC", "D"]);
 		});
 		
 		it("uses sparse arrays for incomplete sections", () => {
@@ -212,6 +359,148 @@ describe("Miscellaneous functions", () => {
 					return {next: () => ({value: ++i, done: i > 5})};
 				}
 			})(), [2])).to.eql([[1, 2], [3, 4], [5,,]]);
+		});
+		
+		it("throws an error for invalid sizes", () => {
+			const message = /^At least one positive, non-zero size is required$/;
+			expect(() => partition(["A", "B"], [-1])).to.throw(RangeError, message);
+			expect(() => partition(["A", "B"],  [0])).to.throw(RangeError, message);
+		});
+	});
+	
+	describe("resolveProperty()", () => {
+		const {resolveProperty} = utils;
+		it("resolves property names", () => {
+			expect(resolveProperty("foo", {foo: "bar"})).to.equal("bar");
+			expect(resolveProperty("foo", {foo: ["bar"]})).to.eql(["bar"]);
+		});
+		it("resolves nested property names", () => {
+			expect(resolveProperty("foo.bar",     {foo: {bar: "baz"}})).to.equal("baz");
+			expect(resolveProperty("foo.bar",     {foo: {bar: ["baz"]}})).to.eql(["baz"]);
+			expect(resolveProperty("foo.bar",     {foo: {bar: {baz: "qux"}}})).to.eql({baz: "qux"});
+			expect(resolveProperty("foo.bar.baz", {foo: {bar: {baz: "qux"}}})).to.equal("qux");
+		});
+		it("returns values by reference", () => {
+			const bar = {baz: [1, 2]};
+			const foo = {bar};
+			expect(resolveProperty("foo",     {foo})).to.equal(foo);
+			expect(resolveProperty("foo.bar", {foo})).to.equal(bar);
+		});
+		it("returns `undefined` for nonexistent properties", () => {
+			expect(resolveProperty("foo.bar.baz", {foo: {bar: []}})).to.be.undefined;
+			expect(resolveProperty("foo.bar.baz", {foo: {}})).to.be.undefined;
+			expect(resolveProperty("foo.bar.baz", {})).to.be.undefined;
+		});
+		it("returns `undefined` for empty accessors", () => {
+			expect(resolveProperty("", {foo: 1})).to.be.undefined;
+		});
+		it("returns the last value if `usePrevious` is set", () => {
+			const obj = {foo: {bar: []}};
+			expect(resolveProperty("foo.bar.baz", obj, true)).to.equal(obj.foo.bar);
+			expect(resolveProperty("foo.qux.baz", obj, true)).to.equal(obj.foo);
+			expect(resolveProperty("qul.bar.baz", obj, true)).to.equal(obj);
+		});
+		it("can handle circular structures", () => {
+			const foo = {name: "Foo"};
+			const bar = {baz: foo};
+			foo.bar = bar;
+			expect(resolveProperty("foo.bar.baz.name", {foo})).to.equal("Foo");
+			expect(resolveProperty("foo.bar.baz.bar",  {foo})).to.equal(bar);
+		});
+		it("supports array-like accessors", () => {
+			expect(resolveProperty("[0]",           ["foo"])).to.equal("foo");
+			expect(resolveProperty("[0][1]",        [[, "foo"]])).to.equal("foo");
+			expect(resolveProperty("foo[0]",        {foo: ["bar"]})).to.equal("bar");
+			expect(resolveProperty("foo[1]",        {foo: [0, [1]]})).to.eql([1]);
+			expect(resolveProperty("foo[1][0]",     {foo: [0, [1]]})).to.equal(1);
+			expect(resolveProperty("foo.bar[1]",    {foo: {bar: [1, 2]}})).to.equal(2);
+			expect(resolveProperty("foo[0].bar[1]", {foo: [{bar: [1, 2]}]})).to.equal(2);
+		});
+		it("supports numeric accessors", () => {
+			expect(resolveProperty("0",             ["foo"])).to.equal("foo");
+			expect(resolveProperty("0.1",           [[, "foo"]])).to.equal("foo");
+			expect(resolveProperty("foo.0",         {foo: ["bar"]})).to.equal("bar");
+			expect(resolveProperty("foo.1",         {foo: [0, [1]]})).to.eql([1]);
+			expect(resolveProperty("foo.1.0",       {foo: [0, [1]]})).to.equal(1);
+			expect(resolveProperty("foo.bar.1",     {foo: {bar: [1, 2]}})).to.equal(2);
+			expect(resolveProperty("foo.0.bar.1",   {foo: [{bar: [1, 2]}]})).to.equal(2);
+		});
+		it("supports single-quoted accessors", () => {
+			expect(resolveProperty("['0']",           ["foo"])).to.equal("foo");
+			expect(resolveProperty("['0']['1']",      [[, "foo"]])).to.equal("foo");
+			expect(resolveProperty("foo['0']",        {foo: ["bar"]})).to.equal("bar");
+			expect(resolveProperty("foo['1']",        {foo: [0, [1]]})).to.eql([1]);
+			expect(resolveProperty("foo['1']['0']",   {foo: [0, [1]]})).to.equal(1);
+			expect(resolveProperty("foo.bar['1']",    {foo: {bar: [1, 2]}})).to.equal(2);
+			expect(resolveProperty("foo['0'].b['1']", {foo: [{b: [1, 2]}]})).to.equal(2);
+		});
+		it("supports double-quoted accessors", () => {
+			expect(resolveProperty('["0"]',           ["foo"])).to.equal("foo");
+			expect(resolveProperty('["0"]["1"]',      [[, "foo"]])).to.equal("foo");
+			expect(resolveProperty('foo["0"]',        {foo: ["bar"]})).to.equal("bar");
+			expect(resolveProperty('foo["1"]',        {foo: [0, [1]]})).to.eql([1]);
+			expect(resolveProperty('foo["1"]["0"]',   {foo: [0, [1]]})).to.equal(1);
+			expect(resolveProperty('foo.bar["1"]',    {foo: {bar: [1, 2]}})).to.equal(2);
+			expect(resolveProperty('foo["0"].b["1"]', {foo: [{b: [1, 2]}]})).to.equal(2);
+		});
+		it("supports quoted property names", () => {
+			expect(resolveProperty('["foo"]',           {foo: {bar: 1}})).to.eql({bar: 1});
+			expect(resolveProperty('["foo"]["bar"]',    {foo: {bar: 4}})).to.equal(4);
+			expect(resolveProperty('foo["bar"]',        {foo: {bar: 2}})).to.equal(2);
+			expect(resolveProperty('foo["bar"].baz',    {foo: {bar: {baz: 3}}})).to.equal(3);
+			expect(resolveProperty('foo["bar"]["baz"]', {foo: {bar: {baz: 3}}})).to.equal(3);
+		});
+		it("doesn't interpret dots in quoted regions", () => {
+			const obj = {foo: {"bar.baz": 3, bar: {baz: 4}}, "foo.bar.baz": 5};
+			expect(resolveProperty('foo["bar.baz"]',     obj)).to.equal(3);
+			expect(resolveProperty("foo['bar.baz']",     obj)).to.equal(3);
+			expect(resolveProperty("'foo.bar.baz'",      obj)).to.equal(5);
+			expect(resolveProperty('"foo.bar.baz"',      obj)).to.equal(5);
+			expect(resolveProperty('["foo.bar.baz"]',    obj)).to.equal(5);
+			expect(resolveProperty("['foo.bar.baz']",    obj)).to.equal(5);
+			expect(resolveProperty('["foo"]["bar.baz"]', obj)).to.equal(3);
+			expect(resolveProperty("['foo']['bar.baz']", obj)).to.equal(3);
+		});
+		it("doesn't interpret quotes within other quotes", () => {
+			const obj = {
+				foo: {
+					"'bar.baz'": 1,
+					'"bar.baz"': 2,
+					bar: {
+						baz: 3,
+						"'baz'": 4,
+						'"baz"': 5,
+					},
+				},
+				"'foo.bar.baz'": 6,
+				'"foo.bar.baz"': 7,
+				"foo.'bar'.baz": 8,
+				'foo."bar".baz': 9,
+			};
+			expect(resolveProperty("foo[\"'bar.baz'\"]",    obj)).to.equal(1);
+			expect(resolveProperty("foo['\"bar.baz\"']",    obj)).to.equal(2);
+			expect(resolveProperty("foo['bar']['baz']",     obj)).to.equal(3);
+			expect(resolveProperty("foo['bar'][\"'baz'\"]", obj)).to.equal(4);
+			expect(resolveProperty("foo['bar']['\"baz\"']", obj)).to.equal(5);
+			expect(resolveProperty("[\"foo.'bar'.baz\"]",   obj)).to.equal(8);
+			expect(resolveProperty("['foo.\"bar\".baz']",   obj)).to.equal(9);
+			expect(resolveProperty("\"foo.'bar'.baz\"",     obj)).to.equal(8);
+			expect(resolveProperty("'foo.\"bar\".baz'",     obj)).to.equal(9);
+		});
+		it("resolves primitive properties", () => {
+			expect(resolveProperty("[0]", "foo")).to.equal("f");
+			expect(resolveProperty("[1]", "foo")).to.equal("o");
+			expect(resolveProperty("length", "foo")).to.equal(3);
+			expect(resolveProperty("length.constructor", "foo")).to.equal(Number);
+			expect(resolveProperty("length.constructor.name", "foo")).to.equal("Number");
+			expect(resolveProperty("[0]",      undefined)).to.equal(undefined);
+			expect(resolveProperty("foo",      undefined)).to.equal(undefined);
+			expect(resolveProperty("[0].name", undefined)).to.equal(undefined);
+			expect(resolveProperty("foo.name", undefined)).to.equal(undefined);
+			expect(resolveProperty("[0]",      null))     .to.equal(undefined);
+			expect(resolveProperty("foo",      null))     .to.equal(undefined);
+			expect(resolveProperty("[0].name", null))     .to.equal(undefined);
+			expect(resolveProperty("foo.name", null))     .to.equal(undefined);
 		});
 	});
 

@@ -1,6 +1,8 @@
 import fs         from "fs";
 import path       from "path";
 import url        from "url";
+import assert     from "assert";
+import {homedir}  from "os";
 import * as utils from "../index.mjs";
 
 describe("Shell-specific functions", () => {
@@ -104,6 +106,19 @@ describe("Shell-specific functions", () => {
 					stderr: "foo",
 					code: 0,
 				});
+				const read = (() => {
+					const stdin = [];
+					const toHex = a => a.map(x => x.toString(16).toUpperCase().padStart(2, "0"));
+					process.stdin.on("readable", () => {
+						const data = process.stdin.read();
+						null === data ? console.log(toHex(stdin).join(" ")) : stdin.push(...data);
+					});
+				}).toString().replace(/^.*?=>\s*{|}$/g, "").replace(/[\n\t]+/g, "");
+				expect(await exec("node", ["-e", read], "😂", {encoding: ["", "base64"]})).to.eql({
+					stdout: "RjAgOUYgOTggODIK",
+					stderr: "",
+					code: 0,
+				});
 			});
 		});
 
@@ -193,6 +208,15 @@ describe("Shell-specific functions", () => {
 		it("executes pipelines asynchronously", async () =>
 			expect(execChain([["true"]])).to.be.a("promise"));
 		
+		it("accepts a string for commands without arguments", async () => {
+			const [{code: code0}, {code: code1}] = await Promise.all([
+				execChain(["true"]),
+				execChain(["false"]),
+			]);
+			expect(code0).to.equal(0);
+			expect(code1).to.equal(1);
+		});
+		
 		it("avoids modifying the original command list", async () => {
 			const cmds = [["echo", "Foo"], ["grep", "Foo"]];
 			const copy = JSON.parse(JSON.stringify(cmds));
@@ -273,20 +297,34 @@ describe("Shell-specific functions", () => {
 	});
 	
 	describe("ls()", () => {
-		const {ls}     = utils;
+		const {ls, nerf} = utils;
 		const fixtures = path.join(dir, "fixtures", "ls");
-		const stripTimestamps = stats => Object.keys(stats)
-			.filter(key => /^(?:[amc]|birth)time(?:ms)?$/i.test(key) || stats[key] instanceof Date)
-			.forEach(timestamp => delete stats[timestamp]);
+		const unlink = nerf(fs.unlinkSync);
+		
+		// Remove date-related filesystem properties; timestamps confuse tests
+		function stripTimestamps(subject){
+			if(subject instanceof Map){
+				subject.forEach(stripTimestamps);
+				return subject;
+			}
+			for(const key of Object.keys(subject))
+				if(/^(?:[amc]|birth)time(?:ms)?$/i.test(key) || subject[key] instanceof Date)
+					delete subject[key];
+			return subject;
+		}
 		
 		describe("Default behaviour", () => {
+			const lnk = path.join(fixtures, "file.lnk");
 			let expected, result;
 			
 			before("Loading fixtures", async () => {
-				const paths = ".gitignore file.1 file.2 subdir.1 subdir.2 subdir.3 subdir.4".split(" ");
+				const paths = ".gitignore file.1 file.2 subdir.1".split(" ");
 				expected = new Map(paths.map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]));
-				expected.forEach(stripTimestamps);
+				stripTimestamps(expected);
+				unlink(lnk);
 			});
+			
+			after("Removing symlink", () => fs.existsSync(lnk) && fs.unlinkSync(lnk));
 			
 			it("runs asynchronously", async () => {
 				result = ls(fixtures);
@@ -302,9 +340,336 @@ describe("Shell-specific functions", () => {
 			
 			it("lists only the immediate directory contents", async () => {
 				expect(result.size).to.equal(expected.size);
-				result.forEach(stripTimestamps);
+				stripTimestamps(result);
 				expect(result).to.eql(expected);
 			});
+			
+			it("lists paths pointing to regular files", async () => {
+				const file1 = path.join(fixtures, "file.1");
+				const file2 = path.join(fixtures, "file.2");
+				const list1 = stripTimestamps(await ls(file1));
+				const list2 = stripTimestamps(await ls([file1, file2]));
+				expect(list1).to.eql(new Map([
+					[file1, expected.get(file1)],
+				]));
+				expect(list2).to.eql(new Map([
+					[file1, expected.get(file1)],
+					[file2, expected.get(file2)],
+				]));
+			});
+			
+			it("lists symbolic links without following them", async () => {
+				fs.symlinkSync("file.1", lnk);
+				const stat = fs.lstatSync(lnk);
+				const list = await ls(lnk);
+				[...list.values(), stat].forEach(stripTimestamps);
+				expect(list).to.eql(new Map([[lnk, stat]]));
+			});
+		});
+		
+		describe("Recursion", () => {
+			const link1 = path.join(fixtures, "1.lnk");
+			const link2 = path.join(fixtures, "subdir.1", "2.lnk");
+			const link3 = path.join(fixtures, "subdir.1", "subdir.2", "subdir.3", "3.lnk");
+			let levels = [];
+			let linked = [];
+			
+			before("Loading fixtures", async () => {
+				const paths = ".gitignore file.1 file.2".split(" ");
+				levels.push([...paths, "subdir.1"]);
+				for(let s = "", i = 1; i < 5; ++i){
+					s += `subdir.${i}`;
+					paths.push(s);
+					for(let j = 1; j < 5; ++j){
+						const str = `${s}/file.${i}.${j}`;
+						paths.push(str);
+						if(4 === i) linked.push(str);
+					}
+					levels.push(paths.slice());
+					if(i < 4) levels[levels.length - 1].push(`${s}/subdir.${i + 1}`);
+					s += "/";
+				}
+				linked.unshift(...levels[0], ...levels[1]);
+				[levels, [linked]] = [levels, [linked]].map(list =>
+					list.map(paths => new Map(paths.map(x => [
+						x = path.join(fixtures, x),
+						stripTimestamps(fs.lstatSync(x)),
+					]))));
+				unlink(link1);
+			});
+			
+			after("Removing symlinks", () => [link1, link2, link3].map(unlink));
+			
+			for(let i = 0; i < 5; ++i)
+				it(`recurses ${i} subdirectory level(s)`, async () =>
+					expect(stripTimestamps(await ls(fixtures, {recurse: i}))).to.eql(levels[i]));
+			
+			it("recurses indefinitely", async () => {
+				const all = levels[levels.length - 1];
+				expect(stripTimestamps(await ls(fixtures, {recurse: -1}))).to.eql(all);
+				expect(stripTimestamps(await ls(fixtures, {recurse: Infinity}))).to.eql(all);
+				expect(stripTimestamps(await ls(fixtures, {recurse: -Infinity}))).to.eql(all);
+			});
+			
+			it("follows symbolic links", async () => {
+				fs.symlinkSync("./subdir.1/subdir.2/subdir.3/subdir.4", link1);
+				const list = stripTimestamps(await ls(fixtures, {recurse: 1, followSymlinks: true}));
+				expect(list).to.eql(new Map([...linked, [link1, stripTimestamps(fs.lstatSync(link1))]]));
+			});
+			
+			it("ignores broken symlinks", async () => {
+				const subdir1 = path.join(fixtures, "subdir.1");
+				const nothing = path.join(subdir1, "nothing");
+				expect(fs.existsSync(nothing)).to.be.false;
+				fs.symlinkSync(nothing, link2);
+				
+				const all = levels[levels.length - 1];
+				all.set(link1,   stripTimestamps(fs.lstatSync(link1)));
+				all.set(link2,   stripTimestamps(fs.lstatSync(link2)));
+				all.set(subdir1, stripTimestamps(fs.lstatSync(subdir1)));
+				
+				const list = stripTimestamps(await ls(fixtures, {recurse: -1, followSymlinks: true}));
+				assert.deepStrictEqual(list, all);
+			});
+			
+			it("never recurses forever", async () => {
+				fs.symlinkSync(path.join(fixtures, "subdir.1"), link3);
+				const all = levels.pop();
+				const sub = path.join(fixtures, "subdir.1", "subdir.2", "subdir.3");
+				all.set(sub,   stripTimestamps(fs.lstatSync(sub)));
+				all.set(link1, stripTimestamps(fs.lstatSync(link1)));
+				all.set(link3, stripTimestamps(fs.lstatSync(link3)));
+				expect(stripTimestamps(await ls(fixtures, {recurse: -1, followSymlinks: true}))).to.eql(all);
+			});
+		});
+		
+		describe("Inaccessible directories", () => {
+			const tmp = path.join(fixtures, "tmp");
+			
+			before("Creating fixture", () => {
+				fs.mkdirSync(tmp);
+				fs.chmodSync(tmp, 0);
+			});
+			
+			after("Removing fixture", () => fs.rmdirSync(tmp));
+			
+			it("raises an exception if accessed directly", async () => {
+				let error = null;
+				try{ await ls(tmp); }
+				catch(e){ error = e; }
+				expect(error).to.be.an("error");
+			});
+			
+			it("suppresses errors during recursion", () =>
+				ls(path.dirname(tmp), {recurse: 1}));
+		});
+	
+		describe("Filtering", () => {
+			let stats = null;
+			
+			before("Loading fixtures", () =>
+				stats = new Map(["file.2", "subdir.1/file.1.2", "subdir.1/subdir.2/file.2.2"]
+					.map(x => [x = path.join(fixtures, x), stripTimestamps(fs.lstatSync(x))])));
+			
+			it("filters lists with regular expressions", async () => {
+				const list = await ls(fixtures, {filter: /file(?:\.\d)?\.2$/, recurse: 2});
+				assert.deepStrictEqual(stripTimestamps(list), stats);
+			});
+			
+			it("filters lists with predicate functions", async () => {
+				let path, file;
+				const filter = (...args) => ([path, file] = args, path.endsWith(".2") && file.isFile());
+				const list = stripTimestamps(await ls(fixtures, {filter, recurse: 2}));
+				assert.deepStrictEqual(list, stats);
+				expect(fs.existsSync(path)).to.be.true;
+				expect(file).to.be.an.instanceOf(fs.Stats);
+			});
+			
+			it("ignores paths matching a regular expression", async () => {
+				const files = ["subdir.1", ".gitignore"].map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]);
+				const list = stripTimestamps(await ls(fixtures, {ignore: /file\.[12]$/}));
+				assert.deepStrictEqual(list, stripTimestamps(new Map(files)));
+			});
+			
+			it("ignores paths matching a predicate function", async () => {
+				let args = [];
+				const ignore = (path, file) => (args = [path, file], /([\\/])\.(?:(?!\1).)+$/.test(path) || file.isDirectory());
+				const result = ["file.1", "file.2"].map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]);
+				const list = stripTimestamps(await ls(fixtures, {ignore}));
+				assert.deepStrictEqual(list, stripTimestamps(new Map(result)));
+				expect(fs.existsSync(args[0])).to.be.true;
+				expect(args[1]).to.be.an.instanceOf(fs.Stats);
+			});
+			
+			it("never scans directories it ignores", async () => {
+				const scanned = [];
+				const ignore = path => {
+					scanned.push(path.substring(fixtures.length + 1));
+					return path.endsWith("subdir.2");
+				};
+				const result = await ls(fixtures, {recurse: -1, ignore});
+				expect([...result.keys()]).not.to.include(path.join(fixtures, "subdir.1", "subdir.2"));
+				expect(scanned.sort()).to.eql(`
+					.gitignore
+					file.1
+					file.2
+					subdir.1
+					subdir.1/file.1.1
+					subdir.1/file.1.2
+					subdir.1/file.1.3
+					subdir.1/file.1.4
+					subdir.1/subdir.2
+				`.split(/\s+/).filter(Boolean).sort());
+			});
+		});
+	});
+	
+	describe("readStdin()", function(){
+		const {exec} = utils;
+		const file = path.join(dir, "fixtures", "stdin.mjs");
+		this.slow(1000);
+		
+		it("reads standard input to completion", async () => {
+			expect((await exec("node", [file], "Hello")).stdout).to.equal("5\n");
+			expect((await exec("node", [file], ", world")).stdout).to.equal("7\n");
+		});
+	});
+	
+	describe("rmrf()", function(){
+		this.slow(1000);
+		const {rmrf, exec, ls} = utils;
+		const fixtures = path.join(dir, "fixtures", "rmrf");
+		const junk1 = path.join(fixtures, "junk");
+		const junk2 = path.join(fixtures, "junk2");
+		const rmExe = path.join(fixtures, "rm");
+		let cwd, paths;
+		
+		// Create a bunch of crap to rimraf the hell out of
+		async function makeJunk(){
+			if("win32" === process.platform){
+				// TODO: Write tests for Windows
+				return;
+			}
+			else{
+				expect(fs.lstatSync("mkjunk").mode & 0o111).to.be.above(0);
+				await exec(path.join(fixtures, "mkjunk"));
+				
+				// Assert that files were created successfully
+				for(const junk of [junk1, junk2])
+					expect([...(await ls(junk, {recurse: -1})).keys()].sort()).to.eql([
+						"junk.1", "junk.2", "junk.3",
+						"foo", "foo/foo.1", "foo/foo.2", "foo/foo.3",
+						"bar", "bar/bar.1", "bar/bar.2", "bar/bar.3",
+						"bar/baz", "bar/baz/baz.1", "bar/baz/baz.2", "bar/baz/baz.3",
+					].map(x => path.join(junk, x)).sort());
+			}
+		}
+		
+		// Shadow the rm(1) binary so error-handling can be tested
+		async function makeRmHack(opts){
+			fs.writeFileSync(rmExe, "#!/bin/sh\nfalse\n");
+			fs.chmodSync(rmExe, 0o755);
+			const pathKey = Object.keys(paths).pop();
+			process.env[pathKey] = fixtures + path.delimiter + process.env[pathKey];
+		}
+		
+		before(() => {
+			cwd = process.cwd();
+			paths = "win32" === process.platform
+				? {__proto__: null, Path: process.env.Path}
+				: {__proto__: null, PATH: process.env.PATH};
+		});
+		after(() => Object.assign(process.env, paths));
+		beforeEach(() => process.chdir(fixtures));
+		afterEach(() => {
+			fs.existsSync(rmExe) && fs.unlinkSync(rmExe);
+			process.chdir(cwd);
+		});
+		
+		it("removes files", async () => {
+			await makeJunk();
+			const file = path.join(fixtures, "junk", "junk.1");
+			expect(fs.existsSync(file)).to.be.true;
+			await rmrf(file);
+			expect(fs.existsSync(file)).to.be.false;
+		});
+		
+		it("ignores files that don't exist", async () => {
+			await makeJunk();
+			const file = path.join(fixtures, "junk", "junk.0");
+			expect(fs.existsSync(file)).to.be.false;
+			await rmrf(file);
+			await rmrf([]);
+			expect(fs.existsSync(file)).to.be.false;
+		});
+		
+		it("recursively removes directories", async () => {
+			await makeJunk();
+			expect(fs.existsSync(junk1)).to.be.true;
+			expect(fs.existsSync(junk2)).to.be.true;
+			await rmrf(junk1);
+			await rmrf(junk2);
+			expect(fs.existsSync(junk1)).to.be.false;
+			expect(fs.existsSync(junk2)).to.be.false;
+		});
+		
+		it("recursively removes multiple directories", async () => {
+			await makeJunk();
+			expect(fs.existsSync(junk1)).to.be.true;
+			expect(fs.existsSync(junk2)).to.be.true;
+			await rmrf([junk1, junk2]);
+			expect(fs.existsSync(junk1)).to.be.false;
+			expect(fs.existsSync(junk2)).to.be.false;
+		});
+		
+		it("raises an exception for non-zero exit-codes", async () => {
+			await makeRmHack();
+			let error = null;
+			try{ await rmrf(junk1); }
+			catch(e){ error = e; }
+			expect(error).to.be.an("error");
+			expect(error.message).to.match(/^(?:rm|CMD\.EXE) .*exited with 1$/);
+		});
+		
+		it("ignores exceptions if `ignoreErrors` is set", async () => {
+			await makeRmHack();
+			let error = null;
+			try{ await rmrf(junk1, true); }
+			catch(e){ error = e; }
+			expect(error).to.be.null;
+		});
+	});
+	
+	describe("tildify()", () => {
+		const {tildify} = utils;
+		const HOME      = process.env.HOME || homedir();
+		const env       = Object.getOwnPropertyDescriptor(process, "env");
+		const platform  = Object.getOwnPropertyDescriptor(process, "platform");
+		
+		after(() => Object.defineProperties(process, {platform, env}));
+		before(() => Object.defineProperties(process, {
+			platform: {...platform, value: "linux", writable: true},
+			env:      {...env,      value: {...process.env, HOME}},
+		}));
+		
+		it("replaces $HOME with a tilde", () => {
+			expect(tildify(`${HOME}`)).to.equal("~/");
+			expect(tildify(`${HOME}/`)).to.equal("~/");
+			expect(tildify(`${HOME}/Labs`)).to.equal("~/Labs");
+			expect(tildify(`${HOME}/Downloads/`)).to.equal("~/Downloads/");
+		});
+		
+		it("only replaces the start of a string", () => {
+			expect(tildify(`/${HOME}`)).to.equal(`/${HOME}`);
+			expect(tildify(`/tmp/${HOME}`)).to.equal(`/tmp/${HOME}`);
+			expect(tildify(`${HOME}/Desktop/${HOME}`)).to.equal(`~/Desktop/${HOME}`);
+			expect(tildify(`${HOME}/Desktop/${HOME}/`)).to.equal(`~/Desktop/${HOME}/`);
+		});
+		
+		it("does nothing on Windows", () => {
+			process.platform = "win32";
+			for(const path of [HOME, `${HOME}/`, `${HOME}/Labs`, `${HOME}/Downloads/`])
+				expect(tildify(path)).to.equal(path);
 		});
 	});
 	
