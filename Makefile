@@ -23,10 +23,18 @@ lint:
 
 # Run unit-tests
 test:
-	npx mocha
+	npx c8 mocha
 
 .PHONY: test
 
+
+# Generate an HTML coverage report
+html-report: coverage/index.html
+coverage/index.html: index.mjs lib/*.mjs test/*.mjs
+	npx c8 --reporter=html mocha
+	sed -i.bak -e 's/tab-size: *2;*/tab-size: 4;/g' coverage/base.css
+	rm coverage/base.css.bak
+	case `uname -s` in Darwin) open $@;; *) xdg-open $@;; esac
 
 
 # Regenerate a base64-encoded list of PNG fixtures
