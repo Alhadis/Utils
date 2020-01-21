@@ -1,0 +1,11 @@
+[utf16be*.txt]
+charset = utf16be
+
+[utf16le*.txt]
+charset = utf16le
+
+[utf32be*.txt]
+charset = utf32be
+
+[utf32le*.txt]
+charset = utf32le

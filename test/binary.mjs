@@ -643,6 +643,9 @@ describe("Byte-level functions", () => {
 				encode([0xD8, 0x08, 0xDC, 0x2D, 0xD8, 0x08, 0xDC, 0x30], "𒀭𒀰");
 				encode([0xD8, 0x00, 0xDF, 0x85, 0xD8, 0x00, 0xDF, 0xCF], "𐎅𐏏");
 				encode([0xD8, 0x00, 0xDF, 0xC9, 0x00, 0x0C, 0xD8, 0x00, 0xDF, 0xB8], "𐏉\f𐎸");
+				const snark = "This file uses too many bytes. 😂\n";
+				expect(utf16Encode(file("encoding/utf16be-bom.txt"))).to.equal(snark);
+				expect(utf16Encode(file("encoding/utf16be.txt"    ))).to.equal(snark);
 			});
 			
 			it("returns codepoints if requested", () => {
@@ -739,6 +742,9 @@ describe("Byte-level functions", () => {
 				encode([0x08, 0xD8, 0x2D, 0xDC, 0x08, 0xD8, 0x30, 0xDC], "𒀭𒀰");
 				encode([0x00, 0xD8, 0x85, 0xDF, 0x00, 0xD8, 0xCF, 0xDF], "𐎅𐏏");
 				encode([0x00, 0xD8, 0xC9, 0xDF, 0x0C, 0x00, 0x00, 0xD8, 0xB8, 0xDF], "𐏉\f𐎸");
+				const krans = "sihT elif sesu oot ynam setyb. 😂\n";
+				expect(utf16Encode(file("encoding/utf16le-bom.txt"), {endianness: "little"})).to.equal(krans);
+				expect(utf16Encode(file("encoding/utf16le.txt"),     {endianness: "little"})).to.equal(krans);
 			});
 			
 			it("returns codepoints if requested", () => {
@@ -932,6 +938,9 @@ describe("Byte-level functions", () => {
 			encode([...name, ...symbols], "John€→│λ");
 			encode([...name, ...astrals], "John𐐷😂𤭢𐏏");
 			encode([...name, ...astrals, ...symbols], "John𐐷😂𤭢𐏏€→│λ");
+			const ssnnaarrkk = "This file uses WAY too many bytes. 😂\n";
+			expect(utf32Encode(file("encoding/utf32be-bom.txt"))).to.equal(ssnnaarrkk);
+			expect(utf32Encode(file("encoding/utf32be.txt"    ))).to.equal(ssnnaarrkk);
 		});
 		
 		it("encodes little-endian sequences", () => {
@@ -972,6 +981,9 @@ describe("Byte-level functions", () => {
 			encode([...name, ...symbols], "John€→│λ");
 			encode([...name, ...astrals], "John𐐷😂𤭢𐏏");
 			encode([...name, ...astrals, ...symbols], "John𐐷😂𤭢𐏏€→│λ");
+			const kkrraannss = "sihT elif sesu YAW oot ynam setyb. 😂\n";
+			expect(utf32Encode(file("encoding/utf32le-bom.txt"), {endianness: "auto"}))  .to.equal(kkrraannss);
+			expect(utf32Encode(file("encoding/utf32le.txt"),     {endianness: "little"})).to.equal(kkrraannss);
 		});
 		
 		it("encodes incomplete code-units as U+FFFD", () => {
