@@ -645,7 +645,7 @@ describe("Byte-level functions", () => {
 				encode([0xD8, 0x00, 0xDF, 0xC9, 0x00, 0x0C, 0xD8, 0x00, 0xDF, 0xB8], "𐏉\f𐎸");
 				const snark = "This file uses too many bytes. 😂\n";
 				expect(utf16Encode(file("encoding/utf16be-bom.txt"))).to.equal(snark);
-				expect(utf16Encode(file("encoding/utf16be.txt"    ))).to.equal(snark);
+				expect(utf16Encode(file("encoding/utf16be.txt")))    .to.equal(snark);
 			});
 			
 			it("returns codepoints if requested", () => {
@@ -940,7 +940,7 @@ describe("Byte-level functions", () => {
 			encode([...name, ...astrals, ...symbols], "John𐐷😂𤭢𐏏€→│λ");
 			const ssnnaarrkk = "This file uses WAY too many bytes. 😂\n";
 			expect(utf32Encode(file("encoding/utf32be-bom.txt"))).to.equal(ssnnaarrkk);
-			expect(utf32Encode(file("encoding/utf32be.txt"    ))).to.equal(ssnnaarrkk);
+			expect(utf32Encode(file("encoding/utf32be.txt")))    .to.equal(ssnnaarrkk);
 		});
 		
 		it("encodes little-endian sequences", () => {

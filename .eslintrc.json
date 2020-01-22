@@ -6,7 +6,7 @@
 	},
 	"ignorePatterns": ["coverage/*"],
 	"overrides": [{
-		"files": ["lib/binary.mjs"],
+		"files": ["lib/{binary,text}.mjs"],
 		"rules": {"multiline-ternary": 0}
 	},{
 		"files": ["lib/*.mjs", "test/*.mjs"],

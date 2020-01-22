@@ -566,7 +566,7 @@ describe("Shell-specific functions", () => {
 		}
 		
 		// Shadow the rm(1) binary so error-handling can be tested
-		async function makeRmHack(opts){
+		async function makeRmHack(){
 			fs.writeFileSync(rmExe, "#!/bin/sh\nfalse\n");
 			fs.chmodSync(rmExe, 0o755);
 			const pathKey = Object.keys(paths).pop();
