@@ -46,6 +46,7 @@ export declare function distance(a: Point, b: Point): number;
 export declare function drawHTML(context: CanvasRenderingContext2D, node: Node, x?: number, y?: number, w?: number, h?: number): HTMLImageElement;
 export declare function drawPolygon(context: CanvasRenderingContext2D, points: Point[]): void;
 export declare function drawTextArea(context: CanvasRenderingContext2D, text: string | any[], x?: number, y?: number, w?: number, h?: number, leading?: number, indent?: number): DrawTextResult;
+export declare function escapeCtrl(input: string, opts?: {before?: string; after?: string; include?: string; exclude?: string; caret?: boolean; named?: boolean; octal?: boolean; pictures?: boolean}): string;
 export declare function escapeHTML(input: string): string;
 export declare function escapeRegExp(input: string): string;
 export declare function exec(command: string, argList: string[], input?: string, options?: ExecOptions): Promise<ExecResult>;

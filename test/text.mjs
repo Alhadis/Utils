@@ -215,6 +215,98 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("escapeCtrl()", () => {
+		const {escapeCtrl} = utils;
+		function escape(input, expected, opts = {}){
+			expect(escapeCtrl(input, opts)).to.equal(expected);
+			expect(escapeCtrl(`A${input}Z`, opts)).to.equal(`A${expected}Z`);
+		}
+		const ord = n => String.fromCharCode(n);
+		const hex = n => n.toString(16).padStart(2, "0").toUpperCase();
+		const oct = n => n.toString(8).padStart(3, "0");
+		it("escapes codes in hexadecimal", () => {
+			for(let i = 0x00; i < 0x09; ++i) escape(ord(i), `\\x${hex(i)}`);
+			for(let i = 0x0B; i < 0x20; ++i) escape(ord(i), `\\x${hex(i)}`);
+			for(let i = 0x7F; i < 0xA0; ++i) escape(ord(i), `\\x${hex(i)}`);
+		});
+		it("escapes codes in octal", () => {
+			for(let i = 0x00; i < 0x09; ++i) escape(ord(i), `\\${oct(i)}`, {octal: true});
+			for(let i = 0x0B; i < 0x20; ++i) escape(ord(i), `\\${oct(i)}`, {octal: true});
+			for(let i = 0x7F; i < 0xA0; ++i) escape(ord(i), `\\${oct(i)}`, {octal: true});
+		});
+		it("escapes codes in caret notation", () => {
+			const codex = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_";
+			for(let i = 0x00; i < 0x09; ++i) escape(ord(i), "^" + codex[i], {caret: true});
+			for(let i = 0x0B; i < 0x20; ++i) escape(ord(i), "^" + codex[i], {caret: true});
+			escape("\x7F", "^?", {caret: true});
+		});
+		it("escapes codes in C-style notation", () => {
+			escape("\0",   "\\0", {named: true});
+			escape("\x07", "\\a", {named: true});
+			escape("\b",   "\\b", {named: true});
+			escape("\x1B", "\\e", {named: true});
+			escape("\f",   "\\f", {named: true});
+			escape("\r",   "\\r", {named: true});
+			escape("\v",   "\\v", {named: true});
+		});
+		it("escapes codes as Unicode control pictures", () => {
+			const codex = "␀␁␂␃␄␅␆␇␈␉␊␋␌␍␎␏␐␑␒␓␔␕␖␗␘␙␚␛␜␝␞␟␠";
+			for(let i = 0x00; i < 0x09; ++i) escape(ord(i), codex[i], {pictures: true});
+			for(let i = 0x0B; i < 0x20; ++i) escape(ord(i), codex[i], {pictures: true});
+			escape("\x7F", "␡", {pictures: true});
+		});
+		it("doesn't escape tabs", () => {
+			escape("\t", "\t");
+			escape("\t", "\t", {octal: true});
+			escape("\t", "\t", {caret: true});
+			escape("\t", "\t", {named: true});
+		});
+		it("doesn't escape line feeds", () => {
+			escape("\n", "\n");
+			escape("\n", "\n", {octal: true});
+			escape("\n", "\n", {caret: true});
+			escape("\n", "\n", {named: true});
+		});
+		it("doesn't escape carriage returns in CRLF", () => {
+			escape("\r\n",   "\r\n");
+			escape("\r\n",   "\r\n",      {octal: true});
+			escape("\r\n",   "\r\n",      {caret: true});
+			escape("\r\n",   "\r\n",      {named: true});
+			escape("\r\r\n", "\\x0D\r\n");
+			escape("\r\r\n", "\\015\r\n", {octal: true});
+			escape("\r\r\n", "^M\r\n",    {caret: true});
+			escape("\r\r\n", "\\r\r\n",   {named: true});
+		});
+		it("inserts strings around every escape", () => {
+			const before = "\x1B[7m";
+			const after  = "\x1B[27m";
+			escape("\0",   before + "\\x00" + after, {before, after});
+			escape("\0",   before + "\\000" + after, {before, after, octal: true});
+			escape("\0",   before + "\\0"   + after, {before, after, named: true});
+			escape("\0",   before + "^@"    + after, {before, after, caret: true});
+			escape("\0",   before + "␀"    + after, {before, after, pictures: true});
+			escape("\x1B", before + "\\x1B" + after, {before, after});
+			escape("\x1B", before + "\\033" + after, {before, after, octal: true});
+			escape("\x1B", before + "\\e"   + after, {before, after, named: true});
+			escape("\x1B", before + "^["    + after, {before, after, caret: true});
+			escape("\x1B", before + "␛"    + after, {before, after, pictures: true});
+		});
+		it("escapes additional characters given by the user", () => {
+			escape("|",    "\\x7C",      {include: "|"});
+			escape("^",    "\\x5E",      {include: "^"});
+			escape("\t",   "\\x09",      {include: "\t"});
+			escape("\n",   "\\x0A",      {include: "\n"});
+			escape("\r\n", "\\x0D\n",    {include: "\r"});
+			escape("\r\n", "\\x0D\\x0A", {include: "\r\n"});
+		});
+		it("exempts certain characters from being escaped", () => {
+			escape("\0",   "\0",   {exclude: "\0"});
+			escape("\x1B", "\x1B", {exclude: "\x1B"});
+			escape("\v\f", "\v\f", {exclude: "\v\f"});
+			escape("|",    "|",    {exclude: "|"});
+		});
+	});
+	
 	describe("escapeHTML()", () => {
 		const {escapeHTML} = utils;
 		it("escapes angle brackets", () => void expect(escapeHTML("< < > >")).to.equal("&#60; &#60; &#62; &#62;"));
