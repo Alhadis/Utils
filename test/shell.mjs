@@ -565,6 +565,19 @@ describe("Shell-specific functions", () => {
 			}
 		}
 		
+		// Create a bunch of files whose names contain unsafe characters
+		async function makeUnsafe(){
+			if("win32" === process.platform){
+				// TODO: Handle Windows
+				return;
+			}
+			else{
+				await exec(path.join(fixtures, "mkunsafe"));
+				expect(fs.lstatSync("junk/$foo").isFile()).to.be.true;
+				expect(fs.lstatSync("junk/bar") .isFile()).to.be.true;
+			}
+		}
+		
 		// Shadow the rm(1) binary so error-handling can be tested
 		async function makeRmHack(){
 			fs.writeFileSync(rmExe, "#!/bin/sh\nfalse\n");
@@ -620,6 +633,19 @@ describe("Shell-specific functions", () => {
 			await rmrf([junk1, junk2]);
 			expect(fs.existsSync(junk1)).to.be.false;
 			expect(fs.existsSync(junk2)).to.be.false;
+		});
+		
+		it("safely handles shell metacharacters in filenames", async () => {
+			if("win32" === process.platform) return; // TODO: Handle Windows
+			await makeUnsafe();
+			await exec(path.join(fixtures, "rmunsafe"), [], null, {env: {foo: "bar"}});
+			expect(fs.existsSync("junk/$foo")).to.be.false;
+			expect(fs.existsSync("junk/bar")) .to.be.true;
+			await makeUnsafe();
+			await rmrf(junk1);
+			expect(fs.existsSync("junk"))     .to.be.false;
+			expect(fs.existsSync("junk/$foo")).to.be.false;
+			expect(fs.existsSync("junk/bar")) .to.be.false;
 		});
 		
 		it("raises an exception for non-zero exit-codes", async () => {
