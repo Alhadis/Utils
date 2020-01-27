@@ -813,6 +813,494 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("parsePrimitive()", () => {
+		const {parsePrimitive} = utils;
+		const parse = (input, expected, at) => expect(parsePrimitive(input, at)).to.eql(expected);
+		
+		it("returns null for non-primitives", () => {
+			parse("Nah", null);
+			parse("",    null);
+			parse("{}",  null);
+			parse("/?",  null);
+		});
+		
+		it("doesn't evaluate its input", () => {
+			parse("2 + 3", null);
+			parse("(() => { while(true); })()", null);
+		});
+		
+		it("parses booleans", () => {
+			parse("true",      {name: "true",  type: Boolean, value: true});
+			parse("false",     {name: "false", type: Boolean, value: false});
+		});
+		
+		it("parses nullish values", () => {
+			parse("null",      {name: "null",      type: null,      value: null});
+			parse("undefined", {name: "undefined", type: undefined, value: undefined});
+		});
+		
+		it("parses strings", () => {
+			parse('"Foo"',        {type: String, delimiter: '"', value: "Foo"});
+			parse("'Foo'",        {type: String, delimiter: "'", value: "Foo"});
+			parse("`Foo`",        {type: String, delimiter: "`", value: "Foo"});
+			parse('"Fo\\"o"',     {type: String, delimiter: '"', value: 'Fo"o'});
+			parse("'Fo\\'o'",     {type: String, delimiter: "'", value: "Fo'o"});
+			parse("`Fo\\`o`",     {type: String, delimiter: "`", value: "Fo`o"});
+			parse('"Fo\\.\\"o"',  {type: String, delimiter: '"', value: 'Fo."o'});
+			parse("'Fo\\.\\'o'",  {type: String, delimiter: "'", value: "Fo.'o"});
+			parse("`Fo\\.\\`o`",  {type: String, delimiter: "`", value: "Fo.`o"});
+			parse('"Fo\\\\\\"o"', {type: String, delimiter: '"', value: 'Fo\\"o'});
+			parse("'Fo\\\\\\'o'", {type: String, delimiter: "'", value: "Fo\\'o"});
+			parse("`Fo\\\\\\`o`", {type: String, delimiter: "`", value: "Fo\\`o"});
+		});
+		
+		it("parses numbers in base-2", () => {
+			parse("0b10001",  {type: Number, value:  0b10001});
+			parse("0B10001",  {type: Number, value:  0b10001});
+			parse("0b1_001",  {type: Number, value:  0b1001});
+			parse("0B1_001",  {type: Number, value:  0b1001});
+			parse("0b1_0_1",  {type: Number, value:  0b101});
+			parse("0B1_0_1",  {type: Number, value:  0b101});
+			parse("+0b10001", {type: Number, value:  0b10001});
+			parse("+0B10001", {type: Number, value:  0b10001});
+			parse("+0b1_001", {type: Number, value:  0b1001});
+			parse("+0B1_001", {type: Number, value:  0b1001});
+			parse("+0b1_0_1", {type: Number, value:  0b101});
+			parse("+0B1_0_1", {type: Number, value:  0b101});
+			parse("-0b10001", {type: Number, value: -0b10001});
+			parse("-0B10001", {type: Number, value: -0b10001});
+			parse("-0b1_001", {type: Number, value: -0b1001});
+			parse("-0B1_001", {type: Number, value: -0b1001});
+			parse("-0b1_0_1", {type: Number, value: -0b101});
+			parse("-0B1_0_1", {type: Number, value: -0b101});
+		});
+		
+		it("parses numbers in base-8", () => {
+			parse("0o024",    {type: Number, value:  0o024});
+			parse("0O024",    {type: Number, value:  0o024});
+			parse("0o4670",   {type: Number, value:  0o4670});
+			parse("0O4670",   {type: Number, value:  0o4670});
+			parse("0o4_67",   {type: Number, value:  0o467});
+			parse("0O4_67",   {type: Number, value:  0o467});
+			parse("0o4_6_7",  {type: Number, value:  0o467});
+			parse("0O4_6_7",  {type: Number, value:  0o467});
+			parse("+0o024",   {type: Number, value:  0o024});
+			parse("+0O024",   {type: Number, value:  0o024});
+			parse("+0o4670",  {type: Number, value:  0o4670});
+			parse("+0O4670",  {type: Number, value:  0o4670});
+			parse("+0o4_67",  {type: Number, value:  0o467});
+			parse("+0O4_67",  {type: Number, value:  0o467});
+			parse("+0o4_6_7", {type: Number, value:  0o467});
+			parse("+0O4_6_7", {type: Number, value:  0o467});
+			parse("-0o024",   {type: Number, value: -0o024});
+			parse("-0O024",   {type: Number, value: -0o024});
+			parse("-0o4670",  {type: Number, value: -0o4670});
+			parse("-0O4670",  {type: Number, value: -0o4670});
+			parse("-0o4_67",  {type: Number, value: -0o467});
+			parse("-0O4_67",  {type: Number, value: -0o467});
+			parse("-0o4_6_7", {type: Number, value: -0o467});
+			parse("-0O4_6_7", {type: Number, value: -0o467});
+		});
+		
+		it("parses numbers in base-10", () => {
+			// Integers
+			parse("0",        {type: Number, value:  0});
+			parse("+0",       {type: Number, value: +0});
+			parse("-0",       {type: Number, value: -0});
+			parse("5",        {type: Number, value:  5});
+			parse("+5",       {type: Number, value: +5});
+			parse("-5",       {type: Number, value: -5});
+			parse("567",      {type: Number, value:  567});
+			parse("+567",     {type: Number, value: +567});
+			parse("-567",     {type: Number, value: -567});
+			parse("1_0",      {type: Number, value:  10});
+			parse("+1_0",     {type: Number, value: +10});
+			parse("-1_0",     {type: Number, value: -10});
+			parse("5_3",      {type: Number, value:  53});
+			parse("+5_3",     {type: Number, value: +53});
+			parse("-5_3",     {type: Number, value: -53});
+			parse("56_7",     {type: Number, value:  567});
+			parse("+56_7",    {type: Number, value: +567});
+			parse("-56_7",    {type: Number, value: -567});
+			
+			// Floats
+			parse("5.7",      {type: Number, value:  5.7});
+			parse("+5.7",     {type: Number, value: +5.7});
+			parse("-5.7",     {type: Number, value: -5.7});
+			parse(".7",       {type: Number, value:  0.7});
+			parse("+.7",      {type: Number, value: +0.7});
+			parse("-.7",      {type: Number, value: -0.7});
+			parse("5.7_3",    {type: Number, value:  5.73});
+			parse("+5.7_3",   {type: Number, value: +5.73});
+			parse("-5.7_3",   {type: Number, value: -5.73});
+			parse(".7_3",     {type: Number, value:  0.73});
+			parse("+.7_3",    {type: Number, value: +0.73});
+			parse("-.7_3",    {type: Number, value: -0.73});
+			parse("5_3.7",    {type: Number, value:  53.7});
+			parse("+5_3.7",   {type: Number, value: +53.7});
+			parse("-5_3.7",   {type: Number, value: -53.7});
+			parse("5_3.7_6",  {type: Number, value:  53.76});
+			parse("+5_3.7_6", {type: Number, value: +53.76});
+			parse("-5_3.7_6", {type: Number, value: -53.76});
+		});
+		
+		it("parses numbers in base-16", () => {
+			parse("0xBAAAD",  {type: Number, value:  0xBAAAD});
+			parse("0XBAAAD",  {type: Number, value:  0xBAAAD});
+			parse("0xD_AB4",  {type: Number, value:  0xDAB4});
+			parse("0XD_AB4",  {type: Number, value:  0xDAB4});
+			parse("0xD_A_D",  {type: Number, value:  0xDAD});
+			parse("0XD_A_D",  {type: Number, value:  0xDAD});
+			parse("+0xBAAAD", {type: Number, value: +0xBAAAD});
+			parse("+0XBAAAD", {type: Number, value: +0xBAAAD});
+			parse("+0xD_AB4", {type: Number, value: +0xDAB4});
+			parse("+0XD_AB4", {type: Number, value: +0xDAB4});
+			parse("+0xD_A_D", {type: Number, value: +0xDAD});
+			parse("+0XD_A_D", {type: Number, value: +0xDAD});
+			parse("-0xBAAAD", {type: Number, value: -0xBAAAD});
+			parse("-0XBAAAD", {type: Number, value: -0xBAAAD});
+			parse("-0xD_AB4", {type: Number, value: -0xDAB4});
+			parse("-0XD_AB4", {type: Number, value: -0xDAB4});
+			parse("-0xD_A_D", {type: Number, value: -0xDAD});
+			parse("-0XD_A_D", {type: Number, value: -0xDAD});
+		});
+		
+		it("parses bigints in base-2", () => {
+			parse("0b10001n",  {type: BigInt, value:  0b10001n});
+			parse("0B10001n",  {type: BigInt, value:  0b10001n});
+			parse("0b1_001n",  {type: BigInt, value:  0b1001n});
+			parse("0B1_001n",  {type: BigInt, value:  0b1001n});
+			parse("0b1_0_1n",  {type: BigInt, value:  0b101n});
+			parse("0B1_0_1n",  {type: BigInt, value:  0b101n});
+			parse("-0b10001n", {type: BigInt, value: -0b10001n});
+			parse("-0B10001n", {type: BigInt, value: -0b10001n});
+			parse("-0b1_001n", {type: BigInt, value: -0b1001n});
+			parse("-0B1_001n", {type: BigInt, value: -0b1001n});
+			parse("-0b1_0_1n", {type: BigInt, value: -0b101n});
+			parse("-0B1_0_1n", {type: BigInt, value: -0b101n});
+		});
+		
+		it("parses bigints in base-8", () => {
+			parse("0o024n",    {type: BigInt, value:  0o024n});
+			parse("0O024n",    {type: BigInt, value:  0o024n});
+			parse("0o4670n",   {type: BigInt, value:  0o4670n});
+			parse("0O4670n",   {type: BigInt, value:  0o4670n});
+			parse("0o4_67n",   {type: BigInt, value:  0o467n});
+			parse("0O4_67n",   {type: BigInt, value:  0o467n});
+			parse("0o4_6_7n",  {type: BigInt, value:  0o467n});
+			parse("0O4_6_7n",  {type: BigInt, value:  0o467n});
+			parse("-0o024n",   {type: BigInt, value: -0o024n});
+			parse("-0O024n",   {type: BigInt, value: -0o024n});
+			parse("-0o4670n",  {type: BigInt, value: -0o4670n});
+			parse("-0O4670n",  {type: BigInt, value: -0o4670n});
+			parse("-0o4_67n",  {type: BigInt, value: -0o467n});
+			parse("-0O4_67n",  {type: BigInt, value: -0o467n});
+			parse("-0o4_6_7n", {type: BigInt, value: -0o467n});
+			parse("-0O4_6_7n", {type: BigInt, value: -0o467n});
+		});
+		
+		it("parses bigints in base-10", () => {
+			parse("0n",        {type: BigInt, value:  0n});
+			parse("-0n",       {type: BigInt, value: -0n});
+			parse("5n",        {type: BigInt, value:  5n});
+			parse("-5n",       {type: BigInt, value: -5n});
+			parse("567n",      {type: BigInt, value:  567n});
+			parse("-567n",     {type: BigInt, value: -567n});
+			parse("1_0n",      {type: BigInt, value:  10n});
+			parse("-1_0n",     {type: BigInt, value: -10n});
+			parse("5_3n",      {type: BigInt, value:  53n});
+			parse("-5_3n",     {type: BigInt, value: -53n});
+			parse("56_7n",     {type: BigInt, value:  567n});
+			parse("-56_7n",    {type: BigInt, value: -567n});
+		});
+		
+		it("parses bigints in base-16", () => {
+			parse("0xBAAADn",  {type: BigInt, value:  0xBAAADn});
+			parse("0XBAAADn",  {type: BigInt, value:  0xBAAADn});
+			parse("0xD_AB4n",  {type: BigInt, value:  0xDAB4n});
+			parse("0XD_AB4n",  {type: BigInt, value:  0xDAB4n});
+			parse("0xD_A_Dn",  {type: BigInt, value:  0xDADn});
+			parse("0XD_A_Dn",  {type: BigInt, value:  0xDADn});
+			parse("-0xBAAADn", {type: BigInt, value: -0xBAAADn});
+			parse("-0XBAAADn", {type: BigInt, value: -0xBAAADn});
+			parse("-0xD_AB4n", {type: BigInt, value: -0xDAB4n});
+			parse("-0XD_AB4n", {type: BigInt, value: -0xDAB4n});
+			parse("-0xD_A_Dn", {type: BigInt, value: -0xDADn});
+			parse("-0XD_A_Dn", {type: BigInt, value: -0xDADn});
+		});
+		
+		it("parses exponential integers", () => {
+			// Unsigned
+			parse("5e1",      {type: Number, value:  5e1});
+			parse("+5e1",     {type: Number, value: +5e1});
+			parse("-5e1",     {type: Number, value: -5e1});
+			parse("5E1",      {type: Number, value:  5e1});
+			parse("+5E1",     {type: Number, value: +5e1});
+			parse("-5E1",     {type: Number, value: -5e1});
+			parse("5e1_3",    {type: Number, value:  5e13});
+			parse("+5e1_3",   {type: Number, value: +5e13});
+			parse("-5e1_3",   {type: Number, value: -5e13});
+			parse("5E1_3",    {type: Number, value:  5e13});
+			parse("+5E1_3",   {type: Number, value: +5e13});
+			parse("-5E1_3",   {type: Number, value: -5e13});
+			parse("5_8e1",    {type: Number, value:  58e1});
+			parse("+5_8e1",   {type: Number, value: +58e1});
+			parse("-5_8e1",   {type: Number, value: -58e1});
+			parse("5_8E1",    {type: Number, value:  58e1});
+			parse("+5_8E1",   {type: Number, value: +58e1});
+			parse("-5_8E1",   {type: Number, value: -58e1});
+			parse("5_8e1_3",  {type: Number, value:  58e13});
+			parse("+5_8e1_3", {type: Number, value: +58e13});
+			parse("-5_8e1_3", {type: Number, value: -58e13});
+			parse("5_8E1_3",  {type: Number, value:  58e13});
+			parse("+5_8E1_3", {type: Number, value: +58e13});
+			parse("-5_8E1_3", {type: Number, value: -58e13});
+			
+			// Signed, positive
+			parse("5e+2",      {type: Number, value:  5e2});
+			parse("+5e+2",     {type: Number, value: +5e2});
+			parse("-5e+2",     {type: Number, value: -5e2});
+			parse("5E+2",      {type: Number, value:  5e2});
+			parse("+5E+2",     {type: Number, value: +5e2});
+			parse("-5E+2",     {type: Number, value: -5e2});
+			parse("5e+2_3",    {type: Number, value:  5e23});
+			parse("+5e+2_3",   {type: Number, value: +5e23});
+			parse("-5e+2_3",   {type: Number, value: -5e23});
+			parse("5E+2_3",    {type: Number, value:  5e23});
+			parse("+5E+2_3",   {type: Number, value: +5e23});
+			parse("-5E+2_3",   {type: Number, value: -5e23});
+			parse("5_8e+2",    {type: Number, value:  58e2});
+			parse("+5_8e+2",   {type: Number, value: +58e2});
+			parse("-5_8e+2",   {type: Number, value: -58e2});
+			parse("5_8E+2",    {type: Number, value:  58e2});
+			parse("+5_8E+2",   {type: Number, value: +58e2});
+			parse("-5_8E+2",   {type: Number, value: -58e2});
+			parse("5_8e+2_3",  {type: Number, value:  58e23});
+			parse("+5_8e+2_3", {type: Number, value: +58e23});
+			parse("-5_8e+2_3", {type: Number, value: -58e23});
+			parse("5_8E+2_3",  {type: Number, value:  58e23});
+			parse("+5_8E+2_3", {type: Number, value: +58e23});
+			parse("-5_8E+2_3", {type: Number, value: -58e23});
+			
+			// Signed, negative
+			parse("5e-2",      {type: Number, value:  5e-2});
+			parse("+5e-2",     {type: Number, value: +5e-2});
+			parse("-5e-2",     {type: Number, value: -5e-2});
+			parse("5E-2",      {type: Number, value:  5e-2});
+			parse("+5E-2",     {type: Number, value: +5e-2});
+			parse("-5E-2",     {type: Number, value: -5e-2});
+			parse("5e-2_3",    {type: Number, value:  5e-23});
+			parse("+5e-2_3",   {type: Number, value: +5e-23});
+			parse("-5e-2_3",   {type: Number, value: -5e-23});
+			parse("5E-2_3",    {type: Number, value:  5e-23});
+			parse("+5E-2_3",   {type: Number, value: +5e-23});
+			parse("-5E-2_3",   {type: Number, value: -5e-23});
+			parse("5_8e-2",    {type: Number, value:  58e-2});
+			parse("+5_8e-2",   {type: Number, value: +58e-2});
+			parse("-5_8e-2",   {type: Number, value: -58e-2});
+			parse("5_8E-2",    {type: Number, value:  58e-2});
+			parse("+5_8E-2",   {type: Number, value: +58e-2});
+			parse("-5_8E-2",   {type: Number, value: -58e-2});
+			parse("5_8e-2_3",  {type: Number, value:  58e-23});
+			parse("+5_8e-2_3", {type: Number, value: +58e-23});
+			parse("-5_8e-2_3", {type: Number, value: -58e-23});
+			parse("5_8E-2_3",  {type: Number, value:  58e-23});
+			parse("+5_8E-2_3", {type: Number, value: +58e-23});
+			parse("-5_8E-2_3", {type: Number, value: -58e-23});
+		});
+		
+		it("parses exponential floats", () => {
+			// Unsigned
+			parse("5.7e1",        {type: Number, value:  5.7e1});
+			parse("+5.7e1",       {type: Number, value: +5.7e1});
+			parse("-5.7e1",       {type: Number, value: -5.7e1});
+			parse("5.7E1",        {type: Number, value:  5.7e1});
+			parse("+5.7E1",       {type: Number, value: +5.7e1});
+			parse("-5.7E1",       {type: Number, value: -5.7e1});
+			parse(".7e2",         {type: Number, value:  0.7e2});
+			parse("+.7e2",        {type: Number, value: +0.7e2});
+			parse("-.7e2",        {type: Number, value: -0.7e2});
+			parse(".7E2",         {type: Number, value:  0.7e2});
+			parse("+.7E2",        {type: Number, value: +0.7e2});
+			parse("-.7E2",        {type: Number, value: -0.7e2});
+			parse("5.7e1_3",      {type: Number, value:  5.7e13});
+			parse("+5.7e1_3",     {type: Number, value: +5.7e13});
+			parse("-5.7e1_3",     {type: Number, value: -5.7e13});
+			parse("5.7E1_3",      {type: Number, value:  5.7e13});
+			parse("+5.7E1_3",     {type: Number, value: +5.7e13});
+			parse("-5.7E1_3",     {type: Number, value: -5.7e13});
+			parse(".7e2_3",       {type: Number, value:  0.7e23});
+			parse("+.7e2_3",      {type: Number, value: +0.7e23});
+			parse("-.7e2_3",      {type: Number, value: -0.7e23});
+			parse(".7E2_3",       {type: Number, value:  0.7e23});
+			parse("+.7E2_3",      {type: Number, value: +0.7e23});
+			parse("-.7E2_3",      {type: Number, value: -0.7e23});
+			parse("5.7_4e1",      {type: Number, value:  5.74e1});
+			parse("+5.7_4e1",     {type: Number, value: +5.74e1});
+			parse("-5.7_4e1",     {type: Number, value: -5.74e1});
+			parse("5.7_4E1",      {type: Number, value:  5.74e1});
+			parse("+5.7_4E1",     {type: Number, value: +5.74e1});
+			parse("-5.7_4E1",     {type: Number, value: -5.74e1});
+			parse(".7_4e2",       {type: Number, value:  0.74e2});
+			parse("+.7_4e2",      {type: Number, value: +0.74e2});
+			parse("-.7_4e2",      {type: Number, value: -0.74e2});
+			parse(".7_4E2",       {type: Number, value:  0.74e2});
+			parse("+.7_4E2",      {type: Number, value: +0.74e2});
+			parse("-.7_4E2",      {type: Number, value: -0.74e2});
+			parse("5.7_4e1_9",    {type: Number, value:  5.74e19});
+			parse("+5.7_4e1_9",   {type: Number, value: +5.74e19});
+			parse("-5.7_4e1_9",   {type: Number, value: -5.74e19});
+			parse("5.7_4E1_9",    {type: Number, value:  5.74e19});
+			parse("+5.7_4E1_9",   {type: Number, value: +5.74e19});
+			parse("-5.7_4E1_9",   {type: Number, value: -5.74e19});
+			parse("5_8.7_4e1_9",  {type: Number, value:  58.74e19});
+			parse("+5_8.7_4e1_9", {type: Number, value: +58.74e19});
+			parse("-5_8.7_4e1_9", {type: Number, value: -58.74e19});
+			parse("5_8.7_4E1_9",  {type: Number, value:  58.74e19});
+			parse("+5_8.7_4E1_9", {type: Number, value: +58.74e19});
+			parse("-5_8.7_4E1_9", {type: Number, value: -58.74e19});
+			
+			// Signed, positive
+			parse("5.7e+1",        {type: Number, value:  5.7e1});
+			parse("+5.7e+1",       {type: Number, value: +5.7e1});
+			parse("-5.7e+1",       {type: Number, value: -5.7e1});
+			parse("5.7E+1",        {type: Number, value:  5.7e1});
+			parse("+5.7E+1",       {type: Number, value: +5.7e1});
+			parse("-5.7E+1",       {type: Number, value: -5.7e1});
+			parse(".7e+2",         {type: Number, value:  0.7e2});
+			parse("+.7e+2",        {type: Number, value: +0.7e2});
+			parse("-.7e+2",        {type: Number, value: -0.7e2});
+			parse(".7E+2",         {type: Number, value:  0.7e2});
+			parse("+.7E+2",        {type: Number, value: +0.7e2});
+			parse("-.7E+2",        {type: Number, value: -0.7e2});
+			parse("5.7e+1_3",      {type: Number, value:  5.7e13});
+			parse("+5.7e+1_3",     {type: Number, value: +5.7e13});
+			parse("-5.7e+1_3",     {type: Number, value: -5.7e13});
+			parse("5.7E+1_3",      {type: Number, value:  5.7e13});
+			parse("+5.7E+1_3",     {type: Number, value: +5.7e13});
+			parse("-5.7E+1_3",     {type: Number, value: -5.7e13});
+			parse(".7e+2_3",       {type: Number, value:  0.7e23});
+			parse("+.7e+2_3",      {type: Number, value: +0.7e23});
+			parse("-.7e+2_3",      {type: Number, value: -0.7e23});
+			parse(".7E+2_3",       {type: Number, value:  0.7e23});
+			parse("+.7E+2_3",      {type: Number, value: +0.7e23});
+			parse("-.7E+2_3",      {type: Number, value: -0.7e23});
+			parse("5.7_4e+1",      {type: Number, value:  5.74e1});
+			parse("+5.7_4e+1",     {type: Number, value: +5.74e1});
+			parse("-5.7_4e+1",     {type: Number, value: -5.74e1});
+			parse("5.7_4E+1",      {type: Number, value:  5.74e1});
+			parse("+5.7_4E+1",     {type: Number, value: +5.74e1});
+			parse("-5.7_4E+1",     {type: Number, value: -5.74e1});
+			parse(".7_4e+2",       {type: Number, value:  0.74e2});
+			parse("+.7_4e+2",      {type: Number, value: +0.74e2});
+			parse("-.7_4e+2",      {type: Number, value: -0.74e2});
+			parse(".7_4E+2",       {type: Number, value:  0.74e2});
+			parse("+.7_4E+2",      {type: Number, value: +0.74e2});
+			parse("-.7_4E+2",      {type: Number, value: -0.74e2});
+			parse("5.7_4e+1_9",    {type: Number, value:  5.74e19});
+			parse("+5.7_4e+1_9",   {type: Number, value: +5.74e19});
+			parse("-5.7_4e+1_9",   {type: Number, value: -5.74e19});
+			parse("5.7_4E+1_9",    {type: Number, value:  5.74e19});
+			parse("+5.7_4E+1_9",   {type: Number, value: +5.74e19});
+			parse("-5.7_4E+1_9",   {type: Number, value: -5.74e19});
+			parse("5_8.7_4e+1_9",  {type: Number, value:  58.74e19});
+			parse("+5_8.7_4e+1_9", {type: Number, value: +58.74e19});
+			parse("-5_8.7_4e+1_9", {type: Number, value: -58.74e19});
+			parse("5_8.7_4E+1_9",  {type: Number, value:  58.74e19});
+			parse("+5_8.7_4E+1_9", {type: Number, value: +58.74e19});
+			parse("-5_8.7_4E+1_9", {type: Number, value: -58.74e19});
+			
+			// Signed, negative
+			parse("5.7e-1",        {type: Number, value:  5.7e-1});
+			parse("+5.7e-1",       {type: Number, value: +5.7e-1});
+			parse("-5.7e-1",       {type: Number, value: -5.7e-1});
+			parse("5.7E-1",        {type: Number, value:  5.7e-1});
+			parse("+5.7E-1",       {type: Number, value: +5.7e-1});
+			parse("-5.7E-1",       {type: Number, value: -5.7e-1});
+			parse(".7e-2",         {type: Number, value:  0.7e-2});
+			parse("+.7e-2",        {type: Number, value: +0.7e-2});
+			parse("-.7e-2",        {type: Number, value: -0.7e-2});
+			parse(".7E-2",         {type: Number, value:  0.7e-2});
+			parse("+.7E-2",        {type: Number, value: +0.7e-2});
+			parse("-.7E-2",        {type: Number, value: -0.7e-2});
+			parse("5.7e-1_3",      {type: Number, value:  5.7e-13});
+			parse("+5.7e-1_3",     {type: Number, value: +5.7e-13});
+			parse("-5.7e-1_3",     {type: Number, value: -5.7e-13});
+			parse("5.7E-1_3",      {type: Number, value:  5.7e-13});
+			parse("+5.7E-1_3",     {type: Number, value: +5.7e-13});
+			parse("-5.7E-1_3",     {type: Number, value: -5.7e-13});
+			parse(".7e-2_3",       {type: Number, value:  0.7e-23});
+			parse("+.7e-2_3",      {type: Number, value: +0.7e-23});
+			parse("-.7e-2_3",      {type: Number, value: -0.7e-23});
+			parse(".7E-2_3",       {type: Number, value:  0.7e-23});
+			parse("+.7E-2_3",      {type: Number, value: +0.7e-23});
+			parse("-.7E-2_3",      {type: Number, value: -0.7e-23});
+			parse("5.7_4e-1",      {type: Number, value:  5.74e-1});
+			parse("+5.7_4e-1",     {type: Number, value: +5.74e-1});
+			parse("-5.7_4e-1",     {type: Number, value: -5.74e-1});
+			parse("5.7_4E-1",      {type: Number, value:  5.74e-1});
+			parse("+5.7_4E-1",     {type: Number, value: +5.74e-1});
+			parse("-5.7_4E-1",     {type: Number, value: -5.74e-1});
+			parse(".7_4e-2",       {type: Number, value:  0.74e-2});
+			parse("+.7_4e-2",      {type: Number, value: +0.74e-2});
+			parse("-.7_4e-2",      {type: Number, value: -0.74e-2});
+			parse(".7_4E-2",       {type: Number, value:  0.74e-2});
+			parse("+.7_4E-2",      {type: Number, value: +0.74e-2});
+			parse("-.7_4E-2",      {type: Number, value: -0.74e-2});
+			parse("5.7_4e-1_9",    {type: Number, value:  5.74e-19});
+			parse("+5.7_4e-1_9",   {type: Number, value: +5.74e-19});
+			parse("-5.7_4e-1_9",   {type: Number, value: -5.74e-19});
+			parse("5.7_4E-1_9",    {type: Number, value:  5.74e-19});
+			parse("+5.7_4E-1_9",   {type: Number, value: +5.74e-19});
+			parse("-5.7_4E-1_9",   {type: Number, value: -5.74e-19});
+			parse("5_8.7_4e-1_9",  {type: Number, value:  58.74e-19});
+			parse("+5_8.7_4e-1_9", {type: Number, value: +58.74e-19});
+			parse("-5_8.7_4e-1_9", {type: Number, value: -58.74e-19});
+			parse("5_8.7_4E-1_9",  {type: Number, value:  58.74e-19});
+			parse("+5_8.7_4E-1_9", {type: Number, value: +58.74e-19});
+			parse("-5_8.7_4E-1_9", {type: Number, value: -58.74e-19});
+		});
+	
+		it("parses NaN", () => {
+			parse("NaN",  {type: Number, name: "NaN", value: NaN});
+			parse("+NaN", {type: Number, name: "NaN", value: NaN});
+			parse("-NaN", {type: Number, name: "NaN", value: NaN});
+		});
+		
+		it("parses infinity", () => {
+			parse("Infinity",  {type: Number, name: "Infinity", value:  Infinity});
+			parse("+Infinity", {type: Number, name: "Infinity", value:  Infinity});
+			parse("-Infinity", {type: Number, name: "Infinity", value: -Infinity});
+		});
+		
+		it("parses symbols", () => {
+			parse("Symbol(foo)", {type: Symbol, name: "foo", value: Symbol.for("foo")});
+			parse("@@foo", {type: Symbol, name: "foo", value: Symbol.for("foo")}, true);
+			parse("@@foo", null);
+			parse("Symbol(Symbol.iterator)", {type: Symbol, name: "Symbol.iterator", value: Symbol.iterator});
+			parse("@@iterator", {type: Symbol, name: "iterator", value: Symbol.iterator}, true);
+			parse("@@iterator", null);
+		});
+		
+		it("parses regular expressions", () => {
+			parse("/a/",       {type: RegExp, value: /a/});
+			parse("/a/i",      {type: RegExp, value: /a/i});
+			parse("/1|2/g",    {type: RegExp, value: /1|2/g});
+			parse("/(1|2)?a/", {type: RegExp, value: /(1|2)?a/});
+			parse("/.+?/s",    {type: RegExp, value: /.+?/s});
+			parse("/a/; /a/i", null);
+			parse("/++/",      null);
+			parse("/(/",       null);
+		});
+		
+		it("trims whitespace before parsing", () => {
+			parse(" true ",  {type: Boolean, value: true,  name: "true"});
+			parse(" false ", {type: Boolean, value: false, name: "false"});
+			parse(" null\n", {type: null,    value: null,  name: "null"});
+			parse("\v\f0\n", {type: Number,  value: 0});
+		});
+	});
+	
 	describe("parseTime()", () => {
 		const {parseTime} = utils;
 		const expectError = input => {
