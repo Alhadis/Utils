@@ -328,6 +328,163 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("escapeShellArg()", () => {
+		const {escapeShellArg} = utils;
+		const escape = (input, expected, opts = {}) => {
+			for(let i = 0; i < 2; ++i){
+				const [dash, prefix, isPath] = i ? ["-", "./", true] : ["", "", false];
+				expect(escapeShellArg(dash + input.repeat(1), {...opts, isPath})).to.equal(prefix + dash + expected.repeat(1));
+				expect(escapeShellArg(dash + input.repeat(2), {...opts, isPath})).to.equal(prefix + dash + expected.repeat(2));
+				expect(escapeShellArg(dash + input.repeat(5), {...opts, isPath})).to.equal(prefix + dash + expected.repeat(5));
+			}
+		};
+		describe("Default behaviour", () => {
+			it("escapes spaces",            () => escape("a b",  "a\\ b"));
+			it("escapes tabs",              () => escape("a\tb", "a\\\tb"));
+			it("escapes colons",            () => escape(":",    "\\:"));
+			it("escapes semicolons",        () => escape(";",    "\\;"));
+			it("escapes asterisks",         () => escape("*",    "\\*"));
+			it("escapes question marks",    () => escape("?",    "\\?"));
+			it("escapes exclamation marks", () => escape("!",    "\\!"));
+			it("escapes at-signs",          () => escape("@",    "\\@"));
+			it("escapes plus-signs",        () => escape("+",    "\\+"));
+			it("escapes number-signs",      () => escape("#",    "\\#"));
+			it("escapes dollar-signs",      () => escape("$",    "\\$"));
+			it("escapes equals-signs",      () => escape("=",    "\\="));
+			it("escapes double-quotes",     () => escape('"',    '\\"'));
+			it("escapes single-quotes",     () => escape("'",    "\\'"));
+			it("escapes backticks",         () => escape("`",    "\\`"));
+			it("escapes backslashes",       () => escape("\\",   "\\\\"));
+			it("escapes round-brackets",    () => escape("()",   "\\(\\)"));
+			it("escapes angle-brackets",    () => escape("<>",   "\\<\\>"));
+			it("escapes square-brackets",   () => escape("[]",   "\\[\\]"));
+			it("escapes curly-brackets",    () => escape("{}",   "\\{\\}"));
+			it("escapes ampersands",        () => escape("&",    "\\&"));
+			it("escapes pipes",             () => escape("|",    "\\|"));
+			it("escapes tildes",            () => escape("~",    "\\~"));
+			it("escapes them all together", () => {
+				const symbols = "!\"#$&'()*+:;<=>?@[\\]`{|}~";
+				escape(symbols, symbols.replace(/./g, "\\$&"));
+				escape("; rm -rf *", "\\;\\ rm\\ -rf\\ \\*");
+			});
+		});
+		describe("When `quotes` is enabled", () => {
+			it("escapes dollar-signs",           () => escape("$",    "\\$",  {quoted: true}));
+			it("escapes backticks",              () => escape("`",    "\\`",  {quoted: true}));
+			it("escapes backslashes",            () => escape("\\",   "\\\\", {quoted: true}));
+			it("escapes exclamation marks",      () => escape("!",    "\\!",  {quoted: true}));
+			it("escapes double-quotes",          () => escape('"',    '\\"',  {quoted: true}));
+			it("doesn't escape spaces",          () => escape("a b",  "a b",  {quoted: true}));
+			it("doesn't escape tabs",            () => escape("a\tb", "a\tb", {quoted: true}));
+			it("doesn't escape colons",          () => escape(":",    ":",    {quoted: true}));
+			it("doesn't escape semicolons",      () => escape(";",    ";",    {quoted: true}));
+			it("doesn't escape asterisks",       () => escape("*",    "*",    {quoted: true}));
+			it("doesn't escape question marks",  () => escape("?",    "?",    {quoted: true}));
+			it("doesn't escape at-signs",        () => escape("@",    "@",    {quoted: true}));
+			it("doesn't escape plus-signs",      () => escape("+",    "+",    {quoted: true}));
+			it("doesn't escape number-signs",    () => escape("#",    "#",    {quoted: true}));
+			it("doesn't escape equals-signs",    () => escape("=",    "=",    {quoted: true}));
+			it("doesn't escape single-quotes",   () => escape("'",    "'",    {quoted: true}));
+			it("doesn't escape round-brackets",  () => escape("()",   "()",   {quoted: true}));
+			it("doesn't escape angle-brackets",  () => escape("<>",   "<>",   {quoted: true}));
+			it("doesn't escape square-brackets", () => escape("[]",   "[]",   {quoted: true}));
+			it("doesn't escape curly-brackets",  () => escape("{}",   "{}",   {quoted: true}));
+			it("doesn't escape ampersands",      () => escape("&",    "&",    {quoted: true}));
+			it("doesn't escape pipes",           () => escape("|",    "|",    {quoted: true}));
+			it("doesn't escape tildes",          () => escape("~",    "~",    {quoted: true}));
+		});
+		describe("`nullBytes` option", () => {
+			it("keeps them by default", () => {
+				escape("\0",       "\0");
+				escape("\0\0",     "\0\0");
+				escape("\0A\0B\0", "\0A\0B\0");
+			});
+			it("removes them when set to `strip`", () => {
+				escape("\0",       "",   {nullBytes: "strip"});
+				escape("\0\0",     "",   {nullBytes: "strip"});
+				escape("\0A\0B\0", "AB", {nullBytes: "strip"});
+			});
+			it("inserts a backslash when set to `escape`", () => {
+				escape("\0",       "\\\0",           {nullBytes: "escape"});
+				escape("\0\0",     "\\\0\\\0",       {nullBytes: "escape"});
+				escape("\0A\0B\0", "\\\0A\\\0B\\\0", {nullBytes: "escape"});
+			});
+			it("raises an exception when set to `error`", () => {
+				const fn = () => escapeShellArg("\0", {nullBytes: "error"});
+				expect(fn).to.throw(TypeError, /^Input contains null-bytes$/);
+			});
+		});
+		describe("`newline` option", () => {
+			it("keeps them by default", () => {
+				for(const [input, expected] of [
+					["\n",             "\n"],
+					["\r\n",           "\r\n"],
+					["A\nB",           "A\nB"],
+					["A\r\nB",         "A\r\nB"],
+					["\n\n",           "\n\n"],
+					["\r\n\r\n",       "\r\n\r\n"],
+					["\nA\nB\n",       "\nA\nB\n"],
+					["\r\nA\r\nB\r\n", "\r\nA\r\nB\r\n"],
+				]) escape(input, expected) + escape(input, expected, {newlines: "ignore"});
+			});
+			it("removes them when set to `strip`", () => {
+				for(const [input, expected] of [
+					["\n",             ""],
+					["\r\n",           ""],
+					["A\nB",           "AB"],
+					["A\r\nB",         "AB"],
+					["\n\n",           ""],
+					["\r\n\r\n",       ""],
+					["\nA\nB\n",       "AB"],
+					["\r\nA\r\nB\r\n", "AB"],
+				]) escape(input, expected, {newlines: "strip"});
+			});
+			it("inserts a backslash when set to `escape`", () => {
+				for(const [input, expected] of [
+					["\n",             "\\\n"],
+					["\r\n",           "\\\r\\\n"],
+					["A\nB",           "A\\\nB"],
+					["A\r\nB",         "A\\\r\\\nB"],
+					["\n\n",           "\\\n\\\n"],
+					["\r\n\r\n",       "\\\r\\\n\\\r\\\n"],
+					["\nA\nB\n",       "\\\nA\\\nB\\\n"],
+					["\r\nA\r\nB\r\n", "\\\r\\\nA\\\r\\\nB\\\r\\\n"],
+				]) escape(input, expected, {newlines: "escape"});
+			});
+			it("inserts single-quotes when set to `quote`", () => {
+				for(const [input, expected] of [
+					["\n",             "'\n'"],
+					["\r\n",           "'\r\n'"],
+					["A\nB",           "A'\n'B"],
+					["A\r\nB",         "A'\r\n'B"],
+					["\n\n",           "'\n\n'"],
+					["\r\n\r\n",       "'\r\n\r\n'"],
+					["\nA\nB\n",       "'\n'A'\n'B'\n'"],
+					["\nA\n\nB",       "'\n'A'\n\n'B"],
+					["\r\nA\r\nB\r\n", "'\r\n'A'\r\n'B'\r\n'"],
+					["\r\nA\r\n\r\nB", "'\r\n'A'\r\n\r\n'B"],
+				]) expect(escapeShellArg(input, {newlines: "quote"})).to.equal(expected);
+			});
+			it("replaces them with spaces when set to `collapse`", () => {
+				for(const [input, expected] of [
+					["\n",             " "],
+					["\r\n",           " "],
+					["A\nB",           "A B"],
+					["A\r\nB",         "A B"],
+					["\n\n",           " "],
+					["\r\n\r\n",       " "],
+					["\nA\nB\n",       " A B "],
+					["\r\nA\r\nB\r\n", " A B "],
+				]) expect(escapeShellArg(input, {newlines: "collapse"})).to.equal(expected);
+			});
+			it("raises an exception when set to `error`", () => {
+				const error = [TypeError, "Input contains newlines"];
+				for(const test of ["\n", "\r\n", "A\nB", "A\r\nB"])
+					expect(() => escapeShellArg(test, {newlines: "error"})).to.throw(...error);
+			});
+		});
+	});
+	
 	describe("findBasePath()", () => {
 		const {findBasePath} = utils;
 		it("returns the directory that contains each path", () => {
