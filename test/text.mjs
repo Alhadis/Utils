@@ -485,6 +485,127 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("expandEscapes()", () => {
+		const {expandEscapes} = utils;
+		const expand = (input, expected, ...opts) => {
+			expect(expandEscapes(input,           ...opts)).to.equal(expected);
+			expect(expandEscapes(`<${input}>`,    ...opts)).to.equal(`<${expected}>`);
+			expect(expandEscapes(`A${input}Z`,    ...opts)).to.equal(`A${expected}Z`);
+			expect(expandEscapes(input.repeat(4), ...opts)).to.equal(expected.repeat(4));
+		};
+		it("expands 2-digit codepoints", () => {
+			expand("\\x00", "\0");
+			expand("\\x45", "E");
+			expand("\\x7e", "~");
+			expand("\\x7E", "~");
+			expand("\\x5a", "Z");
+			expand("\\x5A", "Z");
+			expand("\\xff", "ÿ");
+			expand("\\xFF", "ÿ");
+			expand("\\xFf", "ÿ");
+			expand("\\x7F", "\x7F");
+			expand("\\x20\\x0A", " \n");
+			expand("\\x0a\\x20", "\n ");
+		});
+		it("expands 4-digit codepoints", () => {
+			expand("\\u0000", "\0");
+			expand("\\u0045", "E");
+			expand("\\u007e", "~");
+			expand("\\u007E", "~");
+			expand("\\u005a", "Z");
+			expand("\\u005A", "Z");
+			expand("\\u00ff", "ÿ");
+			expand("\\u00FF", "ÿ");
+			expand("\\u00Ff", "ÿ");
+			expand("\\u0020", " ");
+			expand("\\u000A", "\n");
+			expand("\\u010A", "Ċ");
+			expand("\\u2014", "—");
+			expand("\\u2020", "†");
+			expand("\\uFFFD", "�");
+		});
+		it("expands variable-length codepoints", () => {
+			expand("\\u{0000}", "\0");  expand("\\u{0}",   "\0");
+			expand("\\u{0045}", "E");   expand("\\u{45}",  "E");
+			expand("\\u{007e}", "~");   expand("\\u{7e}",  "~");
+			expand("\\u{007E}", "~");   expand("\\u{07E}", "~");
+			expand("\\u{005a}", "Z");   expand("\\u{5a}",  "Z");
+			expand("\\u{005A}", "Z");   expand("\\u{5A}",  "Z");
+			expand("\\u{00ff}", "ÿ");   expand("\\u{ff}",  "ÿ");
+			expand("\\u{00FF}", "ÿ");   expand("\\u{0FF}", "ÿ");
+			expand("\\u{00Ff}", "ÿ");   expand("\\u{0Ff}", "ÿ");
+			expand("\\u{0020}", " ");   expand("\\u{A}",   "\n");
+			expand("\\u{010A}", "Ċ");   expand("\\u{10a}", "Ċ");
+			expand("\\u{2014}", "—");   expand("\\u{002020}", "†");
+			expand("\\u{FFFD}", "�");   expand("\\u{00fffd}", "�");
+			expand("\\u{1F602}", "😂"); expand("\\u{000001f602}", "😂");
+		});
+		it("expands octal codepoints", () => {
+			expand("\\033", "\x1B");
+			expand("\\33",  "\x1B");
+			expand("\\3",   "\x03");
+			expand("\\72",  ":");
+			expand("\\177", "\x7F");
+		});
+		it("expands single-character escapes", () => {
+			expand("\\0", "\0");
+			expand("\\t", "\t");
+			expand("\\n", "\n");
+			expand("\\r", "\r");
+			expand("\\f", "\f");
+			expand("\\v", "\v");
+			expand("\\b", "\b");
+		});
+		it("expands escaped backslashes", () => {
+			expand("\\\\0", "\\0");
+			expand("\\\\t", "\\t");
+			expand("\\\\n", "\\n");
+			expand("\\\\r", "\\r");
+			expand("\\\\f", "\\f");
+			expand("\\\\v", "\\v");
+			expand("\\\\b", "\\b");
+		});
+		it("removes line continuations", () => {
+			expand("\\\n",       "");
+			expand("\\\r\n",     "");
+			expand("\\\n\r",     "\r");
+			expand("\\\n\n",     "\n");
+			expand("\\\r\n\r\n", "\r\n");
+		});
+		it("removes partial escape sequences", () => {
+			expect(expandEscapes("\\")).to.equal("");
+			expect(expandEscapes("\\\\\\")).to.equal("\\");
+		});
+		it("strips the slash from unknown escapes", () => {
+			expand("\\?", "?");
+			expand("\\%", "%");
+			expand("\\!", "!");
+			expand("\\U", "U");
+			expand("\\X", "X");
+			expand("\\8", "8");
+		});
+		it("keeps the slash if `ignoreUnknown` is enabled", () => {
+			const opts = [undefined, true];
+			expand("\\?", "\\?", ...opts);
+			expand("\\%", "\\%", ...opts);
+			expand("\\!", "\\!", ...opts);
+			expand("\\U", "\\U", ...opts);
+			expand("\\X", "\\X", ...opts);
+			expand("\\8", "\\8", ...opts);
+		});
+		it("expands \\a and \\e if `all` is enabled", () => {
+			expand("\\a", "a",    false);
+			expand("\\e", "e",    false);
+			expand("\\a", "\x07", true);
+			expand("\\e", "\x1B", true);
+		});
+		it("doesn't double-expand contiguous escapes", () => {
+			expand("\\x5Cn",   "\\n");
+			expand("\\x5Cx5C", "\\x5C");
+			expand("\\\\x5C",  "\\x5C");
+		});
+	});
+	
 	describe("findBasePath()", () => {
 		const {findBasePath} = utils;
 		it("returns the directory that contains each path", () => {

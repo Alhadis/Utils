@@ -57,6 +57,7 @@ export declare function escapeShellArg(input: string, options?: ShellEscapeOptio
 export declare function exec(command: string, argList: string[], input?: string, options?: ExecOptions): Promise<ExecResult>;
 export declare function execChain(commands: CommandList, input?: string, options?: ExecOptions): Promise<ExecResult>;
 export declare function execString(input: string): Promise<string>;
+export declare function expandEscapes(input: string, all?: boolean, ignoreUnknown?: boolean): string;
 export declare function extractTableData(table: HTMLTableElement): object[];
 export declare function findBasePath(paths: string[]): string;
 export declare function formatBytes(bytes: number): string;
