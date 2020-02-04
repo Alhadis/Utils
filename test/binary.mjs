@@ -1039,6 +1039,7 @@ describe("Byte-level functions", () => {
 				opcode:  1,
 				opname:  "text",
 				payload: [0x48, 0x65, 0x6C, 0x6C, 0x6F],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1056,6 +1057,7 @@ describe("Byte-level functions", () => {
 				mask:    0x37FA213D,
 				opcode:  1,
 				opname:  "text",
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql({...frame, payload: unmasked});
 			expect(wsDecodeFrame(input, true)).to.eql({...frame, payload: masked});
@@ -1072,6 +1074,7 @@ describe("Byte-level functions", () => {
 				opcode:  9,
 				opname:  "ping",
 				payload: [0x48, 0x65, 0x6C, 0x6C, 0x6F],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1089,6 +1092,7 @@ describe("Byte-level functions", () => {
 				mask:    0x37FA213D,
 				opcode:  10,
 				opname:  "pong",
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql({...frame, payload: unmasked});
 			expect(wsDecodeFrame(input, true)).to.eql({...frame, payload: masked});
@@ -1106,6 +1110,7 @@ describe("Byte-level functions", () => {
 				opcode:  2,
 				opname:  "binary",
 				payload: bytes,
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1123,6 +1128,7 @@ describe("Byte-level functions", () => {
 				opcode:  2,
 				opname:  "binary",
 				payload: bytes,
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1139,6 +1145,7 @@ describe("Byte-level functions", () => {
 				opcode:  1,
 				opname:  "text",
 				payload: [0x48, 0x65, 0x6C],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1153,6 +1160,7 @@ describe("Byte-level functions", () => {
 				opcode:  0,
 				opname:  "continue",
 				payload: [0x6C, 0x6F],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1169,6 +1177,7 @@ describe("Byte-level functions", () => {
 				opcode:  3,
 				opname:  "reserved",
 				payload: [0x48, 0x65, 0x6C, 0x6C, 0x6F],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
@@ -1185,9 +1194,55 @@ describe("Byte-level functions", () => {
 				opcode:  9,
 				opname:  "ping",
 				payload: [0x48, 0x65, 0x6C, 0x6C, 0x6F],
+				trailer: [],
 			};
 			expect(wsDecodeFrame(input)).to.eql(frame);
 			expect(wsDecodeFrame(input, true)).to.eql(frame);
+		});
+		it("decodes messages with excess bytes", () => {
+			const input = [0x81, 0x85, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const masked = [0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const unmasked = [0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = {
+				isFinal: true,
+				isRSV1:  false,
+				isRSV2:  false,
+				isRSV3:  false,
+				length:  5n,
+				mask:    0x37FA213D,
+				opcode:  1,
+				opname:  "text",
+				trailer: [0x11, 0x22, 0x33, 0x44, 0x55, 0x66],
+			};
+			input.push(...frame.trailer);
+			for(let i = 0; i < 2; ++i){
+				expect(wsDecodeFrame(input)).to.eql({...frame, payload: unmasked});
+				expect(wsDecodeFrame(input, true)).to.eql({...frame, payload: masked});
+				frame.trailer.push(...input);
+				input.push(...input);
+			}
+		});
+		it("decodes messages of insufficient length", () => {
+			const input = [0x81, 0x8A, 0x37, 0xFA, 0x21, 0x3D, 0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const masked = [0x7F, 0x9F, 0x4D, 0x51, 0x58];
+			const unmasked = [0x48, 0x65, 0x6C, 0x6C, 0x6F];
+			const frame = {
+				isFinal: true,
+				isRSV1:  false,
+				isRSV2:  false,
+				isRSV3:  false,
+				length:  10n,
+				mask:    0x37FA213D,
+				opcode:  1,
+				opname:  "text",
+				trailer: [],
+			};
+			for(let i = 0; i < 2; ++i){
+				expect(wsDecodeFrame(input)).to.eql({...frame, payload: unmasked});
+				expect(wsDecodeFrame(input, true)).to.eql({...frame, payload: masked});
+				frame.length = 15n;
+				input[1] = 0x8F;
+			}
 		});
 	});
 	
