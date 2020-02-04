@@ -130,6 +130,39 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
+	describe("isByteArray()", () => {
+		const {isByteArray} = utils;
+		it("returns true for arrays of 8-bit integers", () => {
+			expect(isByteArray([0, 45])).to.be.true;
+			expect(isByteArray([255, 128])).to.be.true;
+			expect(isByteArray([256])).to.be.false;
+			expect(isByteArray([-1, 128])).to.be.false;
+			expect(isByteArray([1, -128])).to.be.false;
+			expect(isByteArray(new Int8Array([1, 8, -27]))).to.be.false;
+			expect(isByteArray(new Int8Array([1, 8, 127]))).to.be.true;
+			expect(isByteArray(new Uint8Array([145, 225]))).to.be.true;
+			expect(isByteArray(new Uint8ClampedArray([0]))).to.be.true;
+			expect(isByteArray(new ArrayBuffer([1, 2, 3]))).to.be.true;
+		});
+		it("returns false for arrays with floating-points", () => {
+			expect(isByteArray([0, 45.3])).to.be.false;
+			expect(isByteArray([255, 12.8])).to.be.false;
+			expect(isByteArray([2.56])).to.be.false;
+			expect(isByteArray([-1.5, 128])).to.be.false;
+			expect(isByteArray([-1.5, 128])).to.be.false;
+		});
+		it("returns false for empty arrays", () => {
+			expect(isByteArray([])).to.be.false;
+			expect(isByteArray(new Array(10))).to.be.false;
+		});
+		it("returns false for non-arrays", () => {
+			expect(isByteArray({})).to.be.false;
+			expect(isByteArray(null)).to.be.false;
+			expect(isByteArray(true)).to.be.false;
+			expect(isByteArray(undefined)).to.be.false;
+		});
+	});
+	
 	describe("isNativeDOM()", () => {
 		const {isNativeDOM} = utils;
 		if(isBrowser)
@@ -309,6 +342,25 @@ describe("Miscellaneous functions", () => {
 			expect("ABC").to.match(regexp);
 			expect(isRegExp(regexp)).to.be.true;
 		});
+	});
+	
+	describe("isTypedArray()", () => {
+		const {isTypedArray} = utils;
+		it("identifies Int8Arrays",         () => expect(isTypedArray(new Int8Array([1]))).to.be.true);
+		it("identifies Uint8Arrays",        () => expect(isTypedArray(new Uint8Array([1]))).to.be.true);
+		it("identifies Uint8ClampedArrays", () => expect(isTypedArray(new Uint8ClampedArray([1]))).to.be.true);
+		it("identifies Int16Arrays",        () => expect(isTypedArray(new Int16Array([1]))).to.be.true);
+		it("identifies Uint16Arrays",       () => expect(isTypedArray(new Uint16Array([1]))).to.be.true);
+		it("identifies Int32Arrays",        () => expect(isTypedArray(new Int32Array([1]))).to.be.true);
+		it("identifies Uint32Arrays",       () => expect(isTypedArray(new Uint32Array([1]))).to.be.true);
+		it("identifies Float32Arrays",      () => expect(isTypedArray(new Float32Array([1]))).to.be.true);
+		it("identifies Float64Arrays",      () => expect(isTypedArray(new Float64Array([1]))).to.be.true);
+		it("identifies BigInt64Arrays",     () => expect(isTypedArray(new BigInt64Array([1n]))).to.be.true);
+		it("identifies BigUint64Arrays",    () => expect(isTypedArray(new BigUint64Array([1n]))).to.be.true);
+		it("identifies ArrayBuffers",       () => expect(isTypedArray(new ArrayBuffer([1]))).to.be.false);
+		it("identifies Node's buffers",     () => expect(isTypedArray(Buffer.from([1]))).to.be.true);
+		it("identifies ordinary arrays",    () => expect(isTypedArray([1, 2, 3])).to.be.false);
+		it("identifies non-array values",   () => expect(isTypedArray(true)).to.be.false);
 	});
 	
 	describe("parseKeywords()", () => {

@@ -2,6 +2,8 @@
 	"extends": "@alhadis",
 	"globals": {
 		"BigInt": true,
+		"BigInt64Array": true,
+		"BigUint64Array": true,
 		"globalThis": true
 	},
 	"ignorePatterns": ["coverage/*"],
