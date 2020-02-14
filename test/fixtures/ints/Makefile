@@ -15,6 +15,6 @@ write-ints: write-ints.c
 
 # Nuke generated targets and build artefacts
 clean:
-	rm -f $(lists)
+	rm -f $(lists) write-ints
 
 .PHONY: clean

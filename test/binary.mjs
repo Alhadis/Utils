@@ -61,7 +61,7 @@ describe("Byte-level functions", () => {
 				expect(bytesToInt8(ints)).to.eql(ints).and.not.equal(ints);
 			}
 		});
-		it("encodes negative integers up to -128", async () => {
+		it("encodes negative integers up to -128", () => {
 			expect(bytesToInt8([0x80])).to.eql(new Int8Array([-128]));
 			expect(bytesToInt8([0x81])).to.eql(new Int8Array([-127]));
 			expect(bytesToInt8([0xFE])).to.eql(new Int8Array([-2]));
@@ -81,13 +81,11 @@ describe("Byte-level functions", () => {
 			return result;
 		};
 		const encode = (input, expected, le = false) => {
-			const hex = x => x.map(x => x.toString(16).padStart(2, "0").toUpperCase()).join(" ");
 			for(let i = 1; i < 6; ++i){
 				const bytes = repeat(input, i);
 				const ints = Int16Array.from(repeat(expected, i));
-				const msg = `Expected <${hex(bytes)}> to equal [${ints.join(", ")}]`;
-				assert.deepStrictEqual(bytesToInt16(bytes, le), ints, msg);
-				assert.deepStrictEqual(bytesToInt16(Uint8Array.from(bytes), le), ints, msg);
+				assert.deepStrictEqual(bytesToInt16(bytes, le), ints);
+				assert.deepStrictEqual(bytesToInt16(Uint8Array.from(bytes), le), ints);
 			}
 		};
 		it("encodes positive big-endian integers", () => {
@@ -158,13 +156,11 @@ describe("Byte-level functions", () => {
 			return result;
 		};
 		const encode = (input, expected, le = false) => {
-			const hex = x => x.map(x => x.toString(16).padStart(2, "0").toUpperCase()).join(" ");
 			for(let i = 1; i < 6; ++i){
 				const bytes = repeat(input, i);
 				const ints = Int32Array.from(repeat(expected, i));
-				const msg = `Expected <${hex(bytes)}> to equal [${ints.join(", ")}]`;
-				assert.deepStrictEqual(bytesToInt32(bytes, le), ints, msg);
-				assert.deepStrictEqual(bytesToInt32(Uint8Array.from(bytes), le), ints, msg);
+				assert.deepStrictEqual(bytesToInt32(bytes, le), ints);
+				assert.deepStrictEqual(bytesToInt32(Uint8Array.from(bytes), le), ints);
 			}
 		};
 		it("encodes positive big-endian integers", () => {
@@ -237,13 +233,11 @@ describe("Byte-level functions", () => {
 			return result;
 		};
 		const encode = (input, expected, le = false) => {
-			const hex = x => x.map(x => x.toString(16).padStart(2, "0").toUpperCase()).join(" ");
 			for(let i = 1; i < 6; ++i){
 				const bytes = repeat(input, i);
 				const ints = BigInt64Array.from(repeat(expected, i));
-				const msg = `Expected <${hex(bytes)}> to equal [${ints.join(", ")}]`;
-				assert.deepStrictEqual(bytesToInt64(bytes, le), ints, msg);
-				assert.deepStrictEqual(bytesToInt64(Uint8Array.from(bytes), le), ints, msg);
+				assert.deepStrictEqual(bytesToInt64(bytes, le), ints);
+				assert.deepStrictEqual(bytesToInt64(Uint8Array.from(bytes), le), ints);
 			}
 		};
 		it("encodes positive big-endian integers", () => {
@@ -450,6 +444,278 @@ describe("Byte-level functions", () => {
 			expect(crc32(A)).to.equal(0x2CD129D3);
 			expect(crc32(B)).to.equal(0x0F9640D1);
 			expect(crc32(Buffer.concat([A, B]))).to.equal(-0x2B751BDD);
+		});
+	});
+	
+	describe("int8ToBytes()", () => {
+		const {int8ToBytes} = utils;
+		it("decodes positive integers up to +127", () => {
+			for(let i = 0; i < 128; ++i)
+				expect(int8ToBytes([i])).to.eql(new Uint8Array([i]));
+			for(let i = 0; i < 125; i += 3){
+				const ints = new Uint8Array([i, i + 1, i + 2, i + 3]);
+				expect(int8ToBytes(ints)).to.eql(ints).and.not.equal(ints);
+			}
+		});
+		it("decodes negative integers up to -128", () => {
+			expect(int8ToBytes([-1]))  .to.eql(new Uint8Array([0xFF]));
+			expect(int8ToBytes([-2]))  .to.eql(new Uint8Array([0xFE]));
+			expect(int8ToBytes([-127])).to.eql(new Uint8Array([0x81]));
+			expect(int8ToBytes([-128])).to.eql(new Uint8Array([0x80]));
+			for(let i = 0; i < 128; ++i)
+				expect(int8ToBytes([-128 + i])).to.eql(new Uint8Array([i + 0x80]));
+		});
+		it("decodes single-integer arguments", () => {
+			expect(int8ToBytes(-1))        .to.eql(new Uint8Array([0xFF]));
+			expect(int8ToBytes(-2))        .to.eql(new Uint8Array([0xFE]));
+			expect(int8ToBytes(-127, true)).to.eql(new Uint8Array([0x81]));
+			expect(int8ToBytes(-128, true)).to.eql(new Uint8Array([0x80]));
+		});
+	});
+	
+	describe("int16ToBytes()", function(){
+		const {int16ToBytes} = utils;
+		this.slow(1000);
+		const repeat = (list, times = 2) => {
+			const result = [];
+			for(let i = 0; i < times; ++i)
+				result.push(...list);
+			return result;
+		};
+		const decode = (input, expected, le = false) => {
+			for(let i = 1; i < 6; ++i){
+				const ints = repeat(input, i);
+				const bytes = Uint8Array.from(repeat(expected, i));
+				assert.deepStrictEqual(int16ToBytes(ints, le), bytes);
+				assert.deepStrictEqual(int16ToBytes(Int16Array.from(ints), le), bytes);
+				1 === ints.length && assert.deepStrictEqual(int16ToBytes(ints[0], le), bytes);
+			}
+		};
+		it("decodes positive big-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([i], [0x00, i++]));
+			decode([847],    [0x03, 0x4F]);
+			decode([848],    [0x03, 0x50]);
+			decode([849],    [0x03, 0x51]);
+			decode([850],    [0x03, 0x52]);
+			decode([32764],  [0x7F, 0xFC]);
+			decode([32765],  [0x7F, 0xFD]);
+			decode([32766],  [0x7F, 0xFE]);
+			decode([32767],  [0x7F, 0xFF]);
+		});
+		it("decodes negative big-endian integers", () => {
+			decode([-1],     [0xFF, 0xFF]);
+			decode([-2],     [0xFF, 0xFE]);
+			decode([-3],     [0xFF, 0xFD]);
+			decode([-4],     [0xFF, 0xFC]);
+			decode([-5],     [0xFF, 0xFB]);
+			decode([-254],   [0xFF, 0x02]);
+			decode([-255],   [0xFF, 0x01]);
+			decode([-256],   [0xFF, 0x00]);
+			decode([-257],   [0xFE, 0xFF]);
+			decode([-258],   [0xFE, 0xFE]);
+			decode([-259],   [0xFE, 0xFD]);
+			decode([-32765], [0x80, 0x03]);
+			decode([-32766], [0x80, 0x02]);
+			decode([-32767], [0x80, 0x01]);
+			decode([-32768], [0x80, 0x00]);
+		});
+		it("decodes positive little-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([i], [i++, 0x00], true));
+			decode([847],    [0x4F, 0x03], true);
+			decode([848],    [0x50, 0x03], true);
+			decode([849],    [0x51, 0x03], true);
+			decode([850],    [0x52, 0x03], true);
+			decode([32764],  [0xFC, 0x7F], true);
+			decode([32765],  [0xFD, 0x7F], true);
+			decode([32766],  [0xFE, 0x7F], true);
+			decode([32767],  [0xFF, 0x7F], true);
+		});
+		it("decodes negative little-endian integers", () => {
+			decode([-1],     [0xFF, 0xFF], true);
+			decode([-2],     [0xFE, 0xFF], true);
+			decode([-3],     [0xFD, 0xFF], true);
+			decode([-4],     [0xFC, 0xFF], true);
+			decode([-5],     [0xFB, 0xFF], true);
+			decode([-254],   [0x02, 0xFF], true);
+			decode([-255],   [0x01, 0xFF], true);
+			decode([-256],   [0x00, 0xFF], true);
+			decode([-257],   [0xFF, 0xFE], true);
+			decode([-258],   [0xFE, 0xFE], true);
+			decode([-259],   [0xFD, 0xFE], true);
+			decode([-32765], [0x03, 0x80], true);
+			decode([-32766], [0x02, 0x80], true);
+			decode([-32767], [0x01, 0x80], true);
+			decode([-32768], [0x00, 0x80], true);
+		});
+	});
+	
+	describe("int32ToBytes()", function(){
+		const {int32ToBytes} = utils;
+		this.slow(1000);
+		const repeat = (list, times = 2) => {
+			const result = [];
+			for(let i = 0; i < times; ++i)
+				result.push(...list);
+			return result;
+		};
+		const decode = (input, expected, le = false) => {
+			for(let i = 1; i < 6; ++i){
+				const ints = repeat(input, i);
+				const bytes = Uint8Array.from(repeat(expected, i));
+				assert.deepStrictEqual(int32ToBytes(ints, le), bytes);
+				assert.deepStrictEqual(int32ToBytes(Int32Array.from(ints), le), bytes);
+				1 === ints.length && assert.deepStrictEqual(int32ToBytes(ints[0], le), bytes);
+			}
+		};
+		it("decodes positive big-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([i], [0, 0, 0, i++]));
+			decode([847],         [0x00, 0x00, 0x03, 0x4F]);
+			decode([848],         [0x00, 0x00, 0x03, 0x50]);
+			decode([849],         [0x00, 0x00, 0x03, 0x51]);
+			decode([850],         [0x00, 0x00, 0x03, 0x52]);
+			decode([2147483644],  [0x7F, 0xFF, 0xFF, 0xFC]);
+			decode([2147483645],  [0x7F, 0xFF, 0xFF, 0xFD]);
+			decode([2147483646],  [0x7F, 0xFF, 0xFF, 0xFE]);
+			decode([2147483647],  [0x7F, 0xFF, 0xFF, 0xFF]);
+		});
+		it("decodes negative big-endian integers", () => {
+			decode([-1],          [0xFF, 0xFF, 0xFF, 0xFF]);
+			decode([-2],          [0xFF, 0xFF, 0xFF, 0xFE]);
+			decode([-3],          [0xFF, 0xFF, 0xFF, 0xFD]);
+			decode([-4],          [0xFF, 0xFF, 0xFF, 0xFC]);
+			decode([-5],          [0xFF, 0xFF, 0xFF, 0xFB]);
+			decode([-254],        [0xFF, 0xFF, 0xFF, 0x02]);
+			decode([-255],        [0xFF, 0xFF, 0xFF, 0x01]);
+			decode([-256],        [0xFF, 0xFF, 0xFF, 0x00]);
+			decode([-257],        [0xFF, 0xFF, 0xFE, 0xFF]);
+			decode([-258],        [0xFF, 0xFF, 0xFE, 0xFE]);
+			decode([-259],        [0xFF, 0xFF, 0xFE, 0xFD]);
+			decode([-2147483644], [0x80, 0x00, 0x00, 0x04]);
+			decode([-2147483645], [0x80, 0x00, 0x00, 0x03]);
+			decode([-2147483646], [0x80, 0x00, 0x00, 0x02]);
+			decode([-2147483647], [0x80, 0x00, 0x00, 0x01]);
+			decode([-2147483648], [0x80, 0x00, 0x00, 0x00]);
+		});
+		it("decodes positive little-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([i], [i++, 0, 0, 0], true));
+			decode([847],         [0x4F, 0x03, 0x00, 0x00], true);
+			decode([848],         [0x50, 0x03, 0x00, 0x00], true);
+			decode([849],         [0x51, 0x03, 0x00, 0x00], true);
+			decode([850],         [0x52, 0x03, 0x00, 0x00], true);
+			decode([2147483644],  [0xFC, 0xFF, 0xFF, 0x7F], true);
+			decode([2147483645],  [0xFD, 0xFF, 0xFF, 0x7F], true);
+			decode([2147483646],  [0xFE, 0xFF, 0xFF, 0x7F], true);
+			decode([2147483647],  [0xFF, 0xFF, 0xFF, 0x7F], true);
+		});
+		it("decodes negative little-endian integers", () => {
+			decode([-1],          [0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-2],          [0xFE, 0xFF, 0xFF, 0xFF], true);
+			decode([-3],          [0xFD, 0xFF, 0xFF, 0xFF], true);
+			decode([-4],          [0xFC, 0xFF, 0xFF, 0xFF], true);
+			decode([-5],          [0xFB, 0xFF, 0xFF, 0xFF], true);
+			decode([-254],        [0x02, 0xFF, 0xFF, 0xFF], true);
+			decode([-255],        [0x01, 0xFF, 0xFF, 0xFF], true);
+			decode([-256],        [0x00, 0xFF, 0xFF, 0xFF], true);
+			decode([-257],        [0xFF, 0xFE, 0xFF, 0xFF], true);
+			decode([-258],        [0xFE, 0xFE, 0xFF, 0xFF], true);
+			decode([-259],        [0xFD, 0xFE, 0xFF, 0xFF], true);
+			decode([-2147483644], [0x04, 0x00, 0x00, 0x80], true);
+			decode([-2147483645], [0x03, 0x00, 0x00, 0x80], true);
+			decode([-2147483646], [0x02, 0x00, 0x00, 0x80], true);
+			decode([-2147483647], [0x01, 0x00, 0x00, 0x80], true);
+			decode([-2147483648], [0x00, 0x00, 0x00, 0x80], true);
+		});
+	});
+	
+	describe("int64ToBytes()", function(){
+		const {int64ToBytes} = utils;
+		this.slow(1000);
+		const repeat = (list, times = 2) => {
+			const result = [];
+			for(let i = 0; i < times; ++i)
+				result.push(...list);
+			return result;
+		};
+		const decode = (input, expected, le = false) => {
+			for(let i = 1; i < 6; ++i){
+				const ints = repeat(input, i);
+				const bytes = Uint8Array.from(repeat(expected, i));
+				assert.deepStrictEqual(int64ToBytes(ints, le), bytes);
+				assert.deepStrictEqual(int64ToBytes(BigInt64Array.from(ints), le), bytes);
+				1 === ints.length && assert.deepStrictEqual(int64ToBytes(ints[0], le), bytes);
+			}
+		};
+		it("decodes positive big-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([BigInt(i)], [0, 0, 0, 0, 0, 0, 0, i++]));
+			decode([256n],                  [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00]);
+			decode([257n],                  [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01]);
+			decode([258n],                  [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02]);
+			decode([259n],                  [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03]);
+			decode([1020n],                 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFC]);
+			decode([1021n],                 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFD]);
+			decode([1022n],                 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFE]);
+			decode([1023n],                 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFF]);
+			decode([9223372036854774783n],  [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB, 0xFF]);
+			decode([9223372036854775804n],  [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC]);
+			decode([9223372036854775805n],  [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD]);
+			decode([9223372036854775806n],  [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE]);
+			decode([9223372036854775807n],  [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+		});
+		it("decodes negative big-endian integers", () => {
+			decode([-1n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+			decode([-2n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE]);
+			decode([-3n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD]);
+			decode([-4n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC]);
+			decode([-5n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB]);
+			decode([-255n],                 [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]);
+			decode([-256n],                 [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]);
+			decode([-257n],                 [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFF]);
+			decode([-258n],                 [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFE]);
+			decode([-1021n],                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x03]);
+			decode([-1022n],                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x02]);
+			decode([-1023n],                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x01]);
+			decode([-1024n],                [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x00]);
+			decode([-9223372036854775804n], [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04]);
+			decode([-9223372036854775805n], [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03]);
+			decode([-9223372036854775806n], [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02]);
+			decode([-9223372036854775807n], [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]);
+			decode([-9223372036854775808n], [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+		});
+		it("decodes positive little-endian integers", () => {
+			for(let i = 0; i <= 0xFF; decode([BigInt(i)], [i++, 0, 0, 0, 0, 0, 0, 0], true));
+			decode([256n],                  [0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([257n],                  [0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([258n],                  [0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([259n],                  [0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([1020n],                 [0xFC, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([1021n],                 [0xFD, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([1022n],                 [0xFE, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([1023n],                 [0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
+			decode([9223372036854774783n],  [0xFF, 0xFB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], true);
+			decode([9223372036854775804n],  [0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], true);
+			decode([9223372036854775805n],  [0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], true);
+			decode([9223372036854775806n],  [0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], true);
+			decode([9223372036854775807n],  [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], true);
+		});
+		it("decodes negative little-endian integers", () => {
+			decode([-1n],                   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-2n],                   [0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-3n],                   [0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-4n],                   [0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-5n],                   [0xFB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-255n],                 [0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-256n],                 [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-257n],                 [0xFF, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-258n],                 [0xFE, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-1021n],                [0x03, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-1022n],                [0x02, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-1023n],                [0x01, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-1024n],                [0x00, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true);
+			decode([-9223372036854775804n], [0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80], true);
+			decode([-9223372036854775805n], [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80], true);
+			decode([-9223372036854775806n], [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80], true);
+			decode([-9223372036854775807n], [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80], true);
+			decode([-9223372036854775808n], [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80], true);
 		});
 	});
 	
