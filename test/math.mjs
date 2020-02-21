@@ -64,6 +64,84 @@ describe("Mathematical functions", () => {
 		it("converts radians to degrees", () => expect(radToDeg(Math.PI)).to.equal(180));
 	});
 	
+	describe("normalise()", () => {
+		const {normalise} = utils;
+		const cmp = (input, expected) => {
+			const actual = normalise(input);
+			const parsed = `${actual[0]}e${actual[1]}`;
+			expect(actual).to.eql(expected);
+			expect(parseFloat(parsed)).to.equal(input);
+			expect(input.toExponential().replace(/e\+/, "e")).to.equal(parsed);
+		};
+		it("normalises integers", () => {
+			cmp(+1e0, [+1, 0]);
+			cmp(-1e0, [-1, 0]);
+			cmp(+1e1, [+1, 1]);
+			cmp(-1e1, [-1, 1]);
+			cmp(+1e2, [+1, 2]);
+			cmp(-1e2, [-1, 2]);
+			cmp(+1e3, [+1, 3]);
+			cmp(-1e3, [-1, 3]);
+			cmp(+1e4, [+1, 4]);
+			cmp(-1e4, [-1, 4]);
+			cmp(+1e5, [+1, 5]);
+			cmp(-1e5, [-1, 5]);
+			cmp(+1e6, [+1, 6]);
+			cmp(-1e6, [-1, 6]);
+			cmp(+1e7, [+1, 7]);
+			cmp(-1e7, [-1, 7]);
+		});
+		it("normalises fractional numbers", () => {
+			cmp(+1.99875, [+1.99875, 0]);
+			cmp(-1.99875, [-1.99875, 0]);
+			cmp(+19.9875, [+1.99875, 1]);
+			cmp(-19.9875, [-1.99875, 1]);
+			cmp(+199.875, [+1.99875, 2]);
+			cmp(-199.875, [-1.99875, 2]);
+			cmp(+1998.75, [+1.99875, 3]);
+			cmp(-1998.75, [-1.99875, 3]);
+			cmp(+19987.5, [+1.99875, 4]);
+			cmp(-19987.5, [-1.99875, 4]);
+			cmp(+5.74012, [+5.74012, 0]);
+			cmp(-5.74012, [-5.74012, 0]);
+			cmp(+57.4012, [+5.74012, 1]);
+			cmp(-57.4012, [-5.74012, 1]);
+			cmp(+574.012, [+5.74012, 2]);
+			cmp(-574.012, [-5.74012, 2]);
+			cmp(+5740.12, [+5.74012, 3]);
+			cmp(-5740.12, [-5.74012, 3]);
+			cmp(+57401.2, [+5.74012, 4]);
+			cmp(-57401.2, [-5.74012, 4]);
+		});
+		it("normalises subnormal numbers", () => {
+			cmp(+0.00244,      [+2.44,       -3]);
+			cmp(-0.00244,      [-2.44,       -3]);
+			cmp(+0.00574012,   [+5.74012,    -3]);
+			cmp(-0.00574012,   [-5.74012,    -3]);
+			cmp(+0.0244140625, [+2.44140625, -2]);
+			cmp(-0.0244140625, [-2.44140625, -2]);
+		});
+		it("normalises recurring decimals", () => {
+			cmp(+1 / 9,        [+1.111111111111111,  -1]);
+			cmp(-1 / 9,        [-1.111111111111111,  -1]);
+			cmp(-1 / 3,        [-3.333333333333333,  -1]);
+			cmp(+1 / 3,        [+3.333333333333333,  -1]);
+			cmp(+99 + 1 / 9,   [+9.91111111111111111, 1]);
+			cmp(-99 - 1 / 9,   [-9.91111111111111111, 1]);
+			cmp(+999 + 1 / 9,  [+9.99111111111111111, 2]);
+			cmp(-999 - 1 / 9,  [-9.99111111111111111, 2]);
+		});
+		it("short-circuits infinite values", () => {
+			expect(normalise(Infinity)) .to.eql([Infinity,  0]);
+			expect(normalise(-Infinity)).to.eql([-Infinity, 0]);
+		});
+		it("short-circuits non-numeric values", () => {
+			expect(normalise({}))       .to.eql([NaN, 0]);
+			expect(normalise(NaN))      .to.eql([NaN, 0]);
+			expect(normalise(undefined)).to.eql([NaN, 0]);
+		});
+	});
+	
 	describe("random()", function(){
 		this.slow(5000);
 		const {random} = utils;
