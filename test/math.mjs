@@ -51,17 +51,17 @@ describe("Mathematical functions", () => {
 		});
 	});
 	
+	describe("degToRad() / radToDeg()", () => {
+		const {degToRad, radToDeg} = utils;
+		it("converts degrees to radians", () => expect(degToRad(180)).to.equal(Math.PI));
+		it("converts radians to degrees", () => expect(radToDeg(Math.PI)).to.equal(180));
+	});
+	
 	describe("distance()", () => {
 		const {distance} = utils;
 		it("measures positive distances", () => expect(distance([30, 0], [0, 40])).to.equal(50));
 		it("measures negative distances", () => expect(distance([0, 40], [30, 0])).to.equal(50));
 		it("measures empty distances",    () => expect(distance([32, 4], [32, 4])).to.equal(0));
-	});
-	
-	describe("degToRad() / radToDeg()", () => {
-		const {degToRad, radToDeg} = utils;
-		it("converts degrees to radians", () => expect(degToRad(180)).to.equal(Math.PI));
-		it("converts radians to degrees", () => expect(radToDeg(Math.PI)).to.equal(180));
 	});
 	
 	describe("normalise()", () => {

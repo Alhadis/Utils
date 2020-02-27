@@ -1,4 +1,4 @@
-all: lint types test
+all: hooks lint types test
 
 
 # Generate TypeScript declarations from JSDoc
@@ -14,8 +14,16 @@ index.d.ts: index.mjs lib/*.mjs
 	npx jg lint -t
 
 
+# Symlink pre-commit script
+hooks: .git/hooks/pre-commit
+.git/hooks/pre-commit:
+	ln -s ../../tools/pre-commit.sh $@
+	head $@ >/dev/null 2>&1
+
+
 # Check source for errors and style violations
 lint:
+	tools/check-sorted.mjs {lib,test}/*.mjs
 	npx jg lint
 
 .PHONY: lint

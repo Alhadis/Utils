@@ -96,40 +96,6 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
-	describe("keyGrep()", () => {
-		const {keyGrep} = utils;
-		it("filters properties that match a pattern", () => {
-			const obj = {foo: true, bar: false, 1: "one", 2: "two", footer: ""};
-			expect(keyGrep(obj, /^foo/)).to.eql({foo: true, footer: ""});
-			expect(keyGrep(obj, /\d/))  .to.eql({1: "one", 2: "two"});
-			expect(keyGrep(obj, /\t/))  .to.eql({});
-		});
-		it("matches string-type patterns literally", () => {
-			expect(keyGrep({".": true}, ".")).to.eql({".": true});
-			expect(keyGrep({"\\d+": true, 1: false}, "\\d+")).to.eql({"\\d+": true});
-		});
-		it("returns an object with a null prototype", () => {
-			const obj = keyGrep({}, /./);
-			expect(obj).to.eql({});
-			expect(obj).not.to.have.property("constructor");
-			expect(obj).not.to.have.property("__proto__");
-		});
-		it("ignores non-enumerable properties", () => {
-			let calls = 0;
-			const obj = {};
-			Object.defineProperty(obj, "bar", {configurable: true, get: () => ++calls});
-			expect(keyGrep(obj, /bar/)).to.eql({});
-			expect(calls).to.equal(0);
-			Object.defineProperty(obj, "bar", {enumerable: true});
-			expect(keyGrep(obj, /bar/)).to.eql({bar: 1});
-		});
-		it("doesn't mutate the subject", () => {
-			const obj = {foo: 1, bar: 2, baz: 3};
-			expect(keyGrep(obj, /^.a/)).to.eql({bar: 2, baz: 3}).and.not.equal(obj);
-			expect(obj).to.eql({foo: 1, bar: 2, baz: 3});
-		});
-	});
-	
 	describe("isByteArray()", () => {
 		const {isByteArray} = utils;
 		it("returns true for arrays of 8-bit integers", () => {
@@ -304,22 +270,6 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
-	describe("isString()", () => {
-		const {isString} = utils;
-		it("identifies literals",   () => void expect(isString("foo")).to.be.true);
-		it("identifies objects",    () => void expect(isString(new String("foo"))).to.be.true);
-		it("identifies subclasses", () => {
-			class IndentedString extends String {
-				constructor(source){
-					super((source + "").replace(/^/g, "\t"));
-				}
-			}
-			const str = new IndentedString("A");
-			expect(str).to.match(/^\tA$/);
-			expect(isString(str)).to.be.true;
-		});
-	});
-	
 	describe("isRegExp()", () => {
 		const {isRegExp} = utils;
 		it("identifies literals",   () => void expect(isRegExp(/A/)).to.be.true);
@@ -344,6 +294,22 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
+	describe("isString()", () => {
+		const {isString} = utils;
+		it("identifies literals",   () => void expect(isString("foo")).to.be.true);
+		it("identifies objects",    () => void expect(isString(new String("foo"))).to.be.true);
+		it("identifies subclasses", () => {
+			class IndentedString extends String {
+				constructor(source){
+					super((source + "").replace(/^/g, "\t"));
+				}
+			}
+			const str = new IndentedString("A");
+			expect(str).to.match(/^\tA$/);
+			expect(isString(str)).to.be.true;
+		});
+	});
+	
 	describe("isTypedArray()", () => {
 		const {isTypedArray} = utils;
 		it("identifies Int8Arrays",         () => expect(isTypedArray(new Int8Array([1]))).to.be.true);
@@ -361,6 +327,40 @@ describe("Miscellaneous functions", () => {
 		it("identifies Node's buffers",     () => expect(isTypedArray(Buffer.from([1]))).to.be.true);
 		it("identifies ordinary arrays",    () => expect(isTypedArray([1, 2, 3])).to.be.false);
 		it("identifies non-array values",   () => expect(isTypedArray(true)).to.be.false);
+	});
+	
+	describe("keyGrep()", () => {
+		const {keyGrep} = utils;
+		it("filters properties that match a pattern", () => {
+			const obj = {foo: true, bar: false, 1: "one", 2: "two", footer: ""};
+			expect(keyGrep(obj, /^foo/)).to.eql({foo: true, footer: ""});
+			expect(keyGrep(obj, /\d/))  .to.eql({1: "one", 2: "two"});
+			expect(keyGrep(obj, /\t/))  .to.eql({});
+		});
+		it("matches string-type patterns literally", () => {
+			expect(keyGrep({".": true}, ".")).to.eql({".": true});
+			expect(keyGrep({"\\d+": true, 1: false}, "\\d+")).to.eql({"\\d+": true});
+		});
+		it("returns an object with a null prototype", () => {
+			const obj = keyGrep({}, /./);
+			expect(obj).to.eql({});
+			expect(obj).not.to.have.property("constructor");
+			expect(obj).not.to.have.property("__proto__");
+		});
+		it("ignores non-enumerable properties", () => {
+			let calls = 0;
+			const obj = {};
+			Object.defineProperty(obj, "bar", {configurable: true, get: () => ++calls});
+			expect(keyGrep(obj, /bar/)).to.eql({});
+			expect(calls).to.equal(0);
+			Object.defineProperty(obj, "bar", {enumerable: true});
+			expect(keyGrep(obj, /bar/)).to.eql({bar: 1});
+		});
+		it("doesn't mutate the subject", () => {
+			const obj = {foo: 1, bar: 2, baz: 3};
+			expect(keyGrep(obj, /^.a/)).to.eql({bar: 2, baz: 3}).and.not.equal(obj);
+			expect(obj).to.eql({foo: 1, bar: 2, baz: 3});
+		});
 	});
 	
 	describe("parseKeywords()", () => {
