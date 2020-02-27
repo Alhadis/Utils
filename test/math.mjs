@@ -159,4 +159,198 @@ describe("Mathematical functions", () => {
 			}
 		});
 	});
+	
+	describe("roundTiesToAway()", () => {
+		const {roundTiesToAway} = utils;
+		it("rounds positive numbers", () => {
+			expect(roundTiesToAway(0.2)) .to.equal(0);
+			expect(roundTiesToAway(0.5)) .to.equal(1);
+			expect(roundTiesToAway(0.8)) .to.equal(1);
+			expect(roundTiesToAway(1.0)) .to.equal(1);
+			expect(roundTiesToAway(1.2)) .to.equal(1);
+			expect(roundTiesToAway(1.5)) .to.equal(2);
+			expect(roundTiesToAway(1.8)) .to.equal(2);
+			expect(roundTiesToAway(2.0)) .to.equal(2);
+			expect(roundTiesToAway(2.2)) .to.equal(2);
+			expect(roundTiesToAway(2.5)) .to.equal(3);
+			expect(roundTiesToAway(2.8)) .to.equal(3);
+			expect(roundTiesToAway(23.3)).to.equal(23);
+			expect(roundTiesToAway(23.5)).to.equal(24);
+			expect(roundTiesToAway(23.8)).to.equal(24);
+		});
+		it("rounds negative numbers", () => {
+			expect(roundTiesToAway(-0.2)).to.equal(-0);
+			expect(roundTiesToAway(-0.5)).to.equal(-1);
+			expect(roundTiesToAway(-0.8)).to.equal(-1);
+			expect(roundTiesToAway(-1.0)).to.equal(-1);
+			expect(roundTiesToAway(-1.2)).to.equal(-1);
+			expect(roundTiesToAway(-1.5)).to.equal(-2);
+			expect(roundTiesToAway(-1.8)).to.equal(-2);
+			expect(roundTiesToAway(-2.0)).to.equal(-2);
+			expect(roundTiesToAway(-2.2)).to.equal(-2);
+			expect(roundTiesToAway(-2.5)).to.equal(-3);
+			expect(roundTiesToAway(-2.8)).to.equal(-3);
+			expect(roundTiesToAway(-23.3)).to.equal(-23);
+			expect(roundTiesToAway(-23.5)).to.equal(-24);
+			expect(roundTiesToAway(-23.8)).to.equal(-24);
+		});
+		it("does nothing with infinities", () => {
+			expect(roundTiesToAway(Infinity)) .to.equal(Infinity);
+			expect(roundTiesToAway(-Infinity)).to.equal(-Infinity);
+			expect(roundTiesToAway(+NaN)).to.be.NaN;
+			expect(roundTiesToAway(-NaN)).to.be.NaN;
+			expect(roundTiesToAway(+0)).to.equal(0);
+			expect(roundTiesToAway(-0)).to.equal(0);
+		});
+	});
+	
+	describe("roundTiesToEven()", () => {
+		const {roundTiesToEven} = utils;
+		it("rounds positive odd numbers", () => {
+			expect(roundTiesToEven(1.2)) .to.equal(1);
+			expect(roundTiesToEven(1.5)) .to.equal(2);
+			expect(roundTiesToEven(1.8)) .to.equal(2);
+			expect(roundTiesToEven(23.0)).to.equal(23);
+			expect(roundTiesToEven(23.3)).to.equal(23);
+			expect(roundTiesToEven(23.5)).to.equal(24);
+			expect(roundTiesToEven(23.7)).to.equal(24);
+			expect(roundTiesToEven(25.0)).to.equal(25);
+			expect(roundTiesToEven(25.3)).to.equal(25);
+			expect(roundTiesToEven(25.5)).to.equal(26);
+			expect(roundTiesToEven(25.7)).to.equal(26);
+		});
+		it("rounds positive even numbers", () => {
+			expect(roundTiesToEven(0.2)) .to.equal(0);
+			expect(roundTiesToEven(0.5)) .to.equal(0);
+			expect(roundTiesToEven(0.8)) .to.equal(1);
+			expect(roundTiesToEven(24.0)).to.equal(24);
+			expect(roundTiesToEven(24.3)).to.equal(24);
+			expect(roundTiesToEven(24.5)).to.equal(24);
+			expect(roundTiesToEven(24.7)).to.equal(25);
+		});
+		it("rounds negative odd numbers", () => {
+			expect(roundTiesToEven(-1.2)) .to.equal(-1);
+			expect(roundTiesToEven(-1.5)) .to.equal(-2);
+			expect(roundTiesToEven(-1.8)) .to.equal(-2);
+			expect(roundTiesToEven(-23.0)).to.equal(-23);
+			expect(roundTiesToEven(-23.3)).to.equal(-23);
+			expect(roundTiesToEven(-23.5)).to.equal(-24);
+			expect(roundTiesToEven(-23.7)).to.equal(-24);
+			expect(roundTiesToEven(-25.0)).to.equal(-25);
+			expect(roundTiesToEven(-25.3)).to.equal(-25);
+			expect(roundTiesToEven(-25.5)).to.equal(-26);
+			expect(roundTiesToEven(-25.7)).to.equal(-26);
+		});
+		it("rounds negative even numbers", () => {
+			expect(roundTiesToEven(-0.2)) .to.equal(0);
+			expect(roundTiesToEven(-0.5)) .to.equal(0);
+			expect(roundTiesToEven(-0.8)) .to.equal(-1);
+			expect(roundTiesToEven(-24.0)).to.equal(-24);
+			expect(roundTiesToEven(-24.3)).to.equal(-24);
+			expect(roundTiesToEven(-24.5)).to.equal(-24);
+			expect(roundTiesToEven(-24.7)).to.equal(-25);
+		});
+		it("ignores anything else", () => {
+			expect(roundTiesToEven(Infinity)) .to.equal(Infinity);
+			expect(roundTiesToEven(-Infinity)).to.equal(-Infinity);
+			expect(roundTiesToEven(+NaN)).to.be.NaN;
+			expect(roundTiesToEven(-NaN)).to.be.NaN;
+			expect(roundTiesToEven(+0)).to.equal(0);
+			expect(roundTiesToEven(-0)).to.equal(0);
+		});
+	});
+	
+	describe("roundTowardNegative()", () => {
+		const {roundTowardNegative} = utils;
+		it("rounds positive numbers", () => {
+			expect(roundTowardNegative(0.2)) .to.equal(0);
+			expect(roundTowardNegative(0.5)) .to.equal(0);
+			expect(roundTowardNegative(0.8)) .to.equal(0);
+			expect(roundTowardNegative(1.0)) .to.equal(1);
+			expect(roundTowardNegative(1.2)) .to.equal(1);
+			expect(roundTowardNegative(1.5)) .to.equal(1);
+			expect(roundTowardNegative(1.8)) .to.equal(1);
+			expect(roundTowardNegative(2.0)) .to.equal(2);
+			expect(roundTowardNegative(23.0)).to.equal(23);
+			expect(roundTowardNegative(23.3)).to.equal(23);
+			expect(roundTowardNegative(23.5)).to.equal(23);
+			expect(roundTowardNegative(23.7)).to.equal(23);
+			expect(roundTowardNegative(24.0)).to.equal(24);
+			expect(roundTowardNegative(24.3)).to.equal(24);
+			expect(roundTowardNegative(24.5)).to.equal(24);
+			expect(roundTowardNegative(24.7)).to.equal(24);
+		});
+		it("rounds negative numbers", () => {
+			expect(roundTowardNegative(-0.2)) .to.equal(-1);
+			expect(roundTowardNegative(-0.5)) .to.equal(-1);
+			expect(roundTowardNegative(-0.8)) .to.equal(-1);
+			expect(roundTowardNegative(-1.0)) .to.equal(-1);
+			expect(roundTowardNegative(-1.2)) .to.equal(-2);
+			expect(roundTowardNegative(-1.5)) .to.equal(-2);
+			expect(roundTowardNegative(-1.8)) .to.equal(-2);
+			expect(roundTowardNegative(-2.0)) .to.equal(-2);
+			expect(roundTowardNegative(-23.0)).to.equal(-23);
+			expect(roundTowardNegative(-23.3)).to.equal(-24);
+			expect(roundTowardNegative(-23.5)).to.equal(-24);
+			expect(roundTowardNegative(-23.7)).to.equal(-24);
+			expect(roundTowardNegative(-24.0)).to.equal(-24);
+			expect(roundTowardNegative(-24.3)).to.equal(-25);
+			expect(roundTowardNegative(-24.5)).to.equal(-25);
+			expect(roundTowardNegative(-24.7)).to.equal(-25);
+		});
+		it("ignores anything else", () => {
+			expect(roundTowardNegative(Infinity)) .to.equal(Infinity);
+			expect(roundTowardNegative(-Infinity)).to.equal(-Infinity);
+			expect(roundTowardNegative(+NaN)).to.be.NaN;
+			expect(roundTowardNegative(-NaN)).to.be.NaN;
+			expect(roundTowardNegative(+0)).to.equal(0);
+			expect(roundTowardNegative(-0)).to.equal(0);
+		});
+	});
+	
+	describe("roundTowardPositive()", () => {
+		const {roundTowardPositive} = utils;
+		it("rounds positive numbers", () => {
+			expect(roundTowardPositive(0.2)) .to.equal(1);
+			expect(roundTowardPositive(0.5)) .to.equal(1);
+			expect(roundTowardPositive(0.8)) .to.equal(1);
+			expect(roundTowardPositive(1.0)) .to.equal(1);
+			expect(roundTowardPositive(1.2)) .to.equal(2);
+			expect(roundTowardPositive(1.5)) .to.equal(2);
+			expect(roundTowardPositive(1.8)) .to.equal(2);
+			expect(roundTowardPositive(23.0)).to.equal(23);
+			expect(roundTowardPositive(23.3)).to.equal(24);
+			expect(roundTowardPositive(23.5)).to.equal(24);
+			expect(roundTowardPositive(23.7)).to.equal(24);
+			expect(roundTowardPositive(24.0)).to.equal(24);
+			expect(roundTowardPositive(24.3)).to.equal(25);
+			expect(roundTowardPositive(24.5)).to.equal(25);
+			expect(roundTowardPositive(24.7)).to.equal(25);
+		});
+		it("rounds negative numbers", () => {
+			expect(roundTowardPositive(-0.2)) .to.equal(0);
+			expect(roundTowardPositive(-0.5)) .to.equal(0);
+			expect(roundTowardPositive(-0.8)) .to.equal(0);
+			expect(roundTowardPositive(-1.0)) .to.equal(-1);
+			expect(roundTowardPositive(-1.2)) .to.equal(-1);
+			expect(roundTowardPositive(-1.5)) .to.equal(-1);
+			expect(roundTowardPositive(-1.8)) .to.equal(-1);
+			expect(roundTowardPositive(-23.0)).to.equal(-23);
+			expect(roundTowardPositive(-23.3)).to.equal(-23);
+			expect(roundTowardPositive(-23.5)).to.equal(-23);
+			expect(roundTowardPositive(-23.7)).to.equal(-23);
+			expect(roundTowardPositive(-24.0)).to.equal(-24);
+			expect(roundTowardPositive(-24.3)).to.equal(-24);
+			expect(roundTowardPositive(-24.5)).to.equal(-24);
+			expect(roundTowardPositive(-24.7)).to.equal(-24);
+		});
+		it("ignores anything else", () => {
+			expect(roundTowardPositive(Infinity)) .to.equal(Infinity);
+			expect(roundTowardPositive(-Infinity)).to.equal(-Infinity);
+			expect(roundTowardPositive(+NaN)).to.be.NaN;
+			expect(roundTowardPositive(-NaN)).to.be.NaN;
+			expect(roundTowardPositive(+0)).to.equal(0);
+			expect(roundTowardPositive(-0)).to.equal(0);
+		});
+	});
 });

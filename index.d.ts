@@ -122,6 +122,10 @@ export declare function rgba(r: number, g: number, b: number, a: number): number
 export declare function rmrf(paths: string | string[], ignoreErrors?: boolean): Promise<void>;
 export declare function rotl(value: number, count: number): number;
 export declare function rotr(value: number, count: number): number;
+export declare function roundTiesToAway(input: number): number;
+export declare function roundTiesToEven(input: number): number;
+export declare function roundTowardNegative(input: number): number;
+export declare function roundTowardPositive(input: number): number;
 export declare function sha1(input: number[]): string;
 export declare function slug(name: string): string;
 export declare function sortn(a: string, b: string): number;
