@@ -27,6 +27,9 @@
 		"rules": {"keyword-spacing": 0},
 		"globals": {"expect": true}
 	},{
+		"files": ["test/fixtures/ints/run-tests.mjs"],
+		"rules": {"import/no-unresolved": 0}
+	},{
 		"files": ["test/misc.mjs"],
 		"rules": {"comma-spacing": 0}
 	}]
