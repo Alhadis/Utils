@@ -556,6 +556,34 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 
+	describe("sortn()", () => {
+		const {sortn} = utils;
+		it("sorts case-insensitively", () => {
+			expect(["X", "z", "A", "x"]  .sort(sortn)).to.eql(["A", "X", "x", "z"]);
+			expect(["abcXYZ2", "abcxyz1"].sort(sortn)).to.eql(["abcxyz1", "abcXYZ2"]);
+		});
+		it("sorts numeric segments", () => {
+			expect(["foo128", "foo8"]                  .sort(sortn)).to.eql(["foo8", "foo128"]);
+			expect(["xyz2", "foo8", "xyz1", "foo123"]  .sort(sortn)).to.eql(["foo8", "foo123", "xyz1", "xyz2"]);
+			expect(["foo128", "foo16", "foo32", "foo8"].sort(sortn)).to.eql(["foo8", "foo16", "foo32", "foo128"]);
+			expect(["foo123bar456", "foo123bar90"]     .sort(sortn)).to.eql(["foo123bar90", "foo123bar456"]);
+		});
+		it("ignores whitespace", () => {
+			expect([" foo", "bar", " "]  .sort(sortn)).to.eql([" ", "bar", " foo"]);
+			expect(["f1", "f   3", "f 2"].sort(sortn)).to.eql(["f1", "f 2", "f   3"]);
+			expect(["f3", "f 2", " f1"]  .sort(sortn)).to.eql([" f1", "f 2", "f3"]);
+		});
+		it("picks shorter strings when tied", () => {
+			expect(["foo123", "foo", "bar4a", "bar4"].sort(sortn)).to.eql(["bar4", "bar4a", "foo", "foo123"]);
+			expect(["foo", "foo123", "bar4", "bar4a"].sort(sortn)).to.eql(["bar4", "bar4a", "foo", "foo123"]);
+			expect(["foo123bar", "foo456", "foo123"] .sort(sortn)).to.eql(["foo123", "foo123bar", "foo456"]);
+		});
+		it("sorts by length as a last-resort", () => {
+			expect(["foo1 ", "foo1"].sort(sortn)).to.eql(["foo1", "foo1 "]);
+			expect([" ", ""].sort(sortn)).to.eql(["", " "]);
+		});
+	});
+
 	describe("tween()", function(){
 		const {tween, wait} = utils;
 		const duration = 600;

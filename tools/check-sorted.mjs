@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {readFileSync, writeFileSync} from "fs";
-import {exec, sha1} from "../index.mjs";
+import {exec, sha1, sortn} from "../index.mjs";
 import {join} from "path";
 import {tmpdir} from "os";
 
@@ -55,39 +55,4 @@ export async function getSortDiff(input){
 			.replace(/^-(.*)$/gm,  "\x1B[31m-$1\x1B[0m")
 			.replace(/^\+(.*)$/gm, "\x1B[32m+$1\x1B[0m")
 			.trim();
-}
-
-
-/**
- * Compare two strings numerically and case-insensitively.
- *
- * Analogous to the `-fin` switches of the sort(1) utility, except
- * numbers after non-numeric segments are also compared.
- *
- * @example ["foo128", "foo8"].sort(sortn) == ["foo8", "foo128"];
- * @see String.prototype.sort
- * @param {String} a
- * @param {String} b
- * @return {Number}
- */
-export function sortn(a, b){
-	[a, b] = [a, b].map(x => String(x).match(/\d+|\D*/g).filter(Boolean).map(x => x.trim().toLowerCase()));
-	for(let A, B, i = 0, l = Math.max(a.length, b.length); i < l; ++i){
-		if(null == a[i]) return -1;
-		if(null == b[i]) return 1;
-		if(/\d/.test(a[i]) && /\d/.test(b[i])){
-			A = +a[i];
-			B = +b[i];
-			if(A < B) return -1;
-			if(A > B) return 1;
-			continue;
-		}
-		const c = a[i].localeCompare(b[i]);
-		if(0 !== c) return c;
-	}
-	a = a.length;
-	b = b.length;
-	if(a < b) return -1;
-	if(a > b) return 1;
-	return 0;
 }

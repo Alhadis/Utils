@@ -124,6 +124,7 @@ export declare function rotl(value: number, count: number): number;
 export declare function rotr(value: number, count: number): number;
 export declare function sha1(input: number[]): string;
 export declare function slug(name: string): string;
+export declare function sortn(a: string, b: string): number;
 export declare function splitOptions(argv: Array<Array<string>>, niladicShort?: string, monadicShort?: string, monadicLong?: string): string[];
 export declare function splitStrings(input: string, options?: {delimiters?: string; quoteChars?: string; escapeChars?: string; keepQuotes?: boolean; keepEscapes?: boolean}): string[];
 export declare function supportsCSSProperty(name: string): boolean;
