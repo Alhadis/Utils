@@ -638,7 +638,7 @@ describe("Shell-specific functions", () => {
 		it("safely handles shell metacharacters in filenames", async () => {
 			if("win32" === process.platform) return; // TODO: Handle Windows
 			await makeUnsafe();
-			await exec(path.join(fixtures, "rmunsafe"), [], null, {env: {foo: "bar"}});
+			await exec(path.join(fixtures, "rmunsafe.mjs"), [], null, {env: {foo: "bar"}});
 			expect(fs.existsSync("junk/$foo")).to.be.false;
 			expect(fs.existsSync("junk/bar")) .to.be.true;
 			await makeUnsafe();

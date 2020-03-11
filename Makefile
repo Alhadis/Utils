@@ -36,6 +36,17 @@ test:
 .PHONY: test
 
 
+# Nuke generated and untracked files
+clean:
+	cd test/fixtures/ints && make clean
+	rm -rf test/fixtures/rmrf/{junk*,rm}
+	rm -rf test/fixtures/ls/{*.lnk,tmp}
+	rm -rf coverage
+	rm  -f lib/*.d.ts
+
+.PHONY: clean
+
+
 # Generate an HTML coverage report
 html-report: coverage/index.html
 coverage/index.html: index.mjs lib/*.mjs test/*.mjs
