@@ -779,6 +779,11 @@ describe("Text-related functions", () => {
 				expect(getUnusedChar(s.substr(1))).to.equal("\0");
 			}
 		});
+		it("returns multiple characters with unused codepoints", () => {
+			expect(getUnusedChar("ABC", 2)).to.equal("\0\x01");
+			expect(getUnusedChar("ABC", 3)).to.equal("\0\x01\x02");
+			expect(getUnusedChar("\x00\x02", 2)).to.equal("\x01\x03");
+		});
 	});
 	
 	describe("isplit()", () => {

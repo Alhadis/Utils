@@ -71,7 +71,7 @@ export declare function formatTime(input: number): string;
 export declare function getCanvasFont(context: CanvasRenderingContext2D): FontStyle;
 export declare function getProperties(subject: object): Map<(string|symbol), PropertyDescriptor>;
 export declare function getScrollbarWidth(): number;
-export declare function getUnusedChar(input: string): string;
+export declare function getUnusedChar(input: string, count?: number): string;
 export declare function getWebGLSupport(): string;
 export declare function hexToRGB(input: string | number): RGBColour;
 export declare function hslToHSV(input: HSLColour): HSVColour;
