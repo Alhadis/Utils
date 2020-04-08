@@ -270,34 +270,22 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
-	describe("isRegExp()", () => {
-		const {isRegExp} = utils;
-		it("identifies literals",   () => void expect(isRegExp(/A/)).to.be.true);
-		it("identifies subclasses", () => {
-			class ExtendedRegExp extends RegExp {
-				constructor(source, flags){
-					source = source
-						.replace(/\[[^\]]+\]/g, s => s
-							.replace(/ /, "\\x20")
-							.replace(/\t/, "\\t"))
-						.replace(/\s+/g, "");
-					super(source, flags);
-					
-					Object.defineProperty(this, "source", {
-						get: () => source,
-					});
-				}
-			}
-			const regexp = new ExtendedRegExp("^ A B C $");
-			expect("ABC").to.match(regexp);
-			expect(isRegExp(regexp)).to.be.true;
-		});
-	});
-	
 	describe("isString()", () => {
 		const {isString} = utils;
-		it("identifies literals",   () => void expect(isString("foo")).to.be.true);
-		it("identifies objects",    () => void expect(isString(new String("foo"))).to.be.true);
+		it("identifies literals", () => {
+			expect(isString("foo")).to.be.true;
+			expect(isString("")).to.be.true;
+			expect(isString(0xF00)).to.be.false;
+			expect(isString(null)).to.be.false;
+			expect(isString(undefined)).to.be.false;
+		});
+		it("identifies objects", () => {
+			expect(isString(new String("foo"))).to.be.true;
+			expect(isString(new String(""))).to.be.true;
+			expect(isString({})).to.be.false;
+			expect(isString(/a/)).to.be.false;
+			expect(isString({[Symbol.toStringTag]: "String"})).to.be.false;
+		});
 		it("identifies subclasses", () => {
 			class IndentedString extends String {
 				constructor(source){
