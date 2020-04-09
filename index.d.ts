@@ -73,6 +73,7 @@ export declare function getProperties(subject: object): Map<(string|symbol), Pro
 export declare function getScrollbarWidth(): number;
 export declare function getUnusedChar(input: string, count?: number): string;
 export declare function getWebGLSupport(): string;
+export declare function hex(...args: any[]): string;
 export declare function hexToRGB(input: string | number): RGBColour;
 export declare function hslToHSV(input: HSLColour): HSVColour;
 export declare function hslToRGB(input: HSLColour): RGBColour;

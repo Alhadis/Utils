@@ -96,6 +96,82 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
+	describe("hex()", () => {
+		const {hex} = utils;
+		it("formats numbers as hexadecimal", () => {
+			expect(hex(0))            .to.equal("00");
+			expect(hex(5))            .to.equal("05");
+			expect(hex(12))           .to.equal("0C");
+			expect(hex(127))          .to.equal("7F");
+			expect(hex(1, 2))         .to.equal("01 02");
+			expect(hex(30, 31, 32))   .to.equal("1E 1F 20");
+			expect(hex(-7))           .to.equal("-07");
+			expect(hex(-15))          .to.equal("-0F");
+			expect(hex(256, 1020))    .to.equal("100 3FC");
+		});
+		it("formats bigints as hexadecimal", () => {
+			expect(hex(5n))           .to.equal("05");
+			expect(hex(12n))          .to.equal("0C");
+			expect(hex(127n))         .to.equal("7F");
+			expect(hex(1n, 2n))       .to.equal("01 02");
+			expect(hex(30n, 31n, 32n)).to.equal("1E 1F 20");
+		});
+		it("formats strings as a list of codepoints", () => {
+			expect(hex("ABC"))        .to.equal("41 42 43");
+			expect(hex("A Z"))        .to.equal("41 20 5A");
+			expect(hex("ABC", "XYZ")) .to.equal("41 42 43 58 59 5A");
+		});
+		it("formats arrays of numbers", () => {
+			expect(hex([20, 35, 4]))   .to.equal("14 23 04");
+			expect(hex([-10, 512]))    .to.equal("-0A 200");
+			expect(hex([4], [6]))      .to.equal("04 06");
+		});
+		it("formats arrays of bigints", () => {
+			expect(hex([20n, 35n, 4n])).to.equal("14 23 04");
+			expect(hex([-10n, 512n]))  .to.equal("-0A 200");
+			expect(hex([4n], [6n]))    .to.equal("04 06");
+		});
+		it("formats booleans", () => {
+			expect(hex(false))         .to.equal("00");
+			expect(hex(true))          .to.equal("01");
+			expect(hex(true, false))   .to.equal("01 00");
+			expect(hex(false, true))   .to.equal("00 01");
+		});
+		it("formats typed arrays", () => {
+			expect(hex(new Int8Array([24, -5, 0]))) .to.equal("18 -05 00");
+			expect(hex(new Int16Array([125, -256]))).to.equal("7D -100");
+			expect(hex(new Uint8Array([4, 0, 255]))).to.equal("04 00 FF");
+			expect(hex(new Uint16Array([10, 512]))) .to.equal("0A 200");
+		});
+		it("formats array buffers", () => {
+			const {buffer} = new Uint8Array([0, 1, 2, 3, 4]);
+			expect(hex(buffer)).to.equal("00 01 02 03 04");
+		});
+		it("formats boxed primitives", () => {
+			expect(hex(new Number(65)))   .to.equal("41");
+			expect(hex(new String("ABC"))).to.equal("41 42 43");
+			expect(hex(new Boolean(true))).to.equal("01");
+			expect(hex(new Boolean(false))).to.equal("00");
+		});
+		it("formats subclassed boxed primitives", () => {
+			class Metric extends Number  {}
+			class Name   extends String  {}
+			class Switch extends Boolean {}
+			expect(hex(new Metric(65)))   .to.equal("41");
+			expect(hex(new Name("ABC")))  .to.equal("41 42 43");
+			expect(hex(new Switch(true))) .to.equal("01");
+			expect(hex(new Switch(false))).to.equal("00");
+		});
+		it("formats non-numeric values as `--`", () => {
+			expect(hex(NaN))          .to.equal("--");
+			expect(hex({}))           .to.equal("--");
+			expect(hex(1, NaN, 3))    .to.equal("01 -- 03");
+			expect(hex([1, NaN, 3]))  .to.equal("01 -- 03");
+			expect(hex(NaN, NaN))     .to.equal("-- --");
+			expect(hex([NaN, NaN]))   .to.equal("-- --");
+		});
+	});
+	
 	describe("isByteArray()", () => {
 		const {isByteArray} = utils;
 		it("returns true for arrays of 8-bit integers", () => {
