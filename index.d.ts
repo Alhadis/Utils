@@ -131,6 +131,7 @@ export declare function slug(name: string): string;
 export declare function sortn(a: string, b: string): number;
 export declare function splitOptions(argv: Array<Array<string>>, niladicShort?: string, monadicShort?: string, monadicLong?: string): string[];
 export declare function splitStrings(input: string, options?: {delimiters?: string; quoteChars?: string; escapeChars?: string; keepQuotes?: boolean; keepEscapes?: boolean}): string[];
+export declare function sum(...values: number[] | bigint[]): number;
 export declare function supportsCSSProperty(name: string): boolean;
 export declare function supportsCSSSelector(selector: string): boolean;
 export declare function supportsCSSUnit(name: string): boolean;

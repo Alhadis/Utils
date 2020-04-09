@@ -353,4 +353,17 @@ describe("Mathematical functions", () => {
 			expect(roundTowardPositive(-0)).to.equal(0);
 		});
 	});
+	
+	describe("sum()", () => {
+		const {sum} = utils;
+		it("returns 0 by default",  () => expect(sum()).to.equal(0));
+		it("adds numbers together", () => expect(sum(1, 3)).to.equal(4));
+		it("adds bigints together", () => expect(sum(1n, 3n)).to.equal(4));
+		it("adds both numbers and bigints", () => {
+			expect(sum(1n, 3)).to.equal(4);
+			expect(sum(1, 3n)).to.equal(4);
+			expect(sum(-4n, 2)).to.equal(-2);
+			expect(sum(-4, 2n)).to.equal(-2);
+		});
+	});
 });
