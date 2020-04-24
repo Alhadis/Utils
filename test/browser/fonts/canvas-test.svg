@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<font id="canvas-test" horiz-adv-x="1000">
+			<font-face units-per-em="1000" ascent="960" descent="-64" />
+			<missing-glyph horiz-adv-x="1000" />
+			<glyph unicode="&#x20;" horiz-adv-x="1000" d="" />
+			<glyph unicode="A" glyph-name="A"><polygon points="1000,1000 0,1000 0,0" /></glyph>
+			<glyph unicode="B" glyph-name="B"><rect width="500" height="1000" /></glyph>
+			<glyph unicode="C" glyph-name="C"><rect width="1000" height="500" /></glyph>
+			<glyph unicode="D" glyph-name="D"><polygon points="500,0 1000,500 500,1000 0,500" /></glyph>
+			<glyph unicode="a" glyph-name="a"><polygon points="0,0 1000,0 1000,1000" /></glyph>
+			<glyph unicode="b" glyph-name="b"><rect x="500" width="500" height="1000" /></glyph>
+			<glyph unicode="c" glyph-name="c"><rect y="500" width="1000" height="500" /></glyph>
+			<glyph unicode="d" glyph-name="d">
+				<polygon points="0,500 0,0 500,0" />
+				<polygon points="500,0 1000,0 1000,500" />
+				<polygon points="1000,500 1000,1000 500,1000" />
+				<polygon points="500,1000 0,1000 0,500" />
+			</glyph>
+		</font>
+	</defs>
+</svg>

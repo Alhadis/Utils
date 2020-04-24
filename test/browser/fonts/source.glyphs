@@ -1,0 +1,259 @@
+{
+	.appVersion = "1286";
+	copyright = "-";
+	customParameters = (
+		{name = vendorID; value = PfEd;},
+		{name = panose; value = (2, 0, 5, 9, 0, 0, 0, 0, 0, 0);},
+		{name = fsType; value = ();},
+		{name = unicodeRanges; value = (0);},
+		{name = glyphOrder; value = (.notdef, .null, CR, A, B, C, D, a, b, c, d);}
+	);
+	date = "2020-04-23 16:43:22 +0000";
+	disablesAutomaticAlignment = 1;
+	disablesNiceNames = 1;
+	familyName = "canvas-test";
+	unitsPerEm = 1000;
+	versionMajor = 1;
+	versionMinor = 0;
+	fontMaster = ({
+		ascender = 800;
+		capHeight = 800;
+		customParameters = (
+			{name = typoAscender;      value = 800;},
+			{name = typoDescender;     value = -200;},
+			{name = typoLineGap;       value = 90;},
+			{name = winAscent;         value = 800;},
+			{name = winDescent;        value = 200;},
+			{name = hheaAscender;      value = 800;},
+			{name = hheaDescender;     value = -200;},
+			{name = strikeoutPosition; value = 258;},
+			{name = strikeoutSize;     value = 49;},
+			{name = "CVT Table";       value = (33, 633);}
+		);
+		descender = -200;
+		id = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+		weightValue = 400;
+		widthValue = 5;
+		xHeight = 550;
+	});
+	instances = ({
+		name = Regular;
+		weightClass = Normal;
+		customParameters = (
+			{name = postscriptFullName; value = "canvas-test";},
+			{name = postscriptFontName; value = "canvas-test";}
+		);
+		instanceInterpolations = {
+			"A5132172-D408-497E-97D6-EA3C63A9F3CF" = 1;
+		};
+	});
+	glyphs = ({
+		glyphname = .notdef;
+		note = .notdef;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"298 0 LINE",
+					"298 666 LINE",
+					"33 666 LINE",
+					"33 0 LINE",
+					"33 0 LINE"
+				);
+			},{
+				closed = 1;
+				nodes = (
+					"66 633 LINE",
+					"265 633 LINE",
+					"265 33 LINE",
+					"66 33 LINE",
+					"66 33 LINE"
+				);
+			});
+			userData = {
+				assembly = "PUSHB[ ]	/* 2 values pushed */\0121 0 \012MDAP[1]	/* MoveDirectAbsPt */\012ALIGNRP[ ]	/* AlignRelativePt */\012PUSHB[ ]	/* 3 values pushed */\0127 4 0 \012MIRP[01101]	/* MoveIndirectRelPt */\012SHP[0]	/* ShiftPointByLastPoint */\012PUSHB[ ]	/* 2 values pushed */\0126 5 \012MDRP[11100]	/* MoveDirectRelPt */\012ALIGNRP[ ]	/* AlignRelativePt */\012PUSHB[ ]	/* 3 values pushed */\0123 2 0 \012MIRP[01101]	/* MoveIndirectRelPt */\012SHP[0]	/* ShiftPointByLastPoint */\012SVTCA[0]	/* SetFreedomAndProjectionVectorToAxis */\012PUSHB[ ]	/* 2 values pushed */\0123 0 \012MDAP[1]	/* MoveDirectAbsPt */\012ALIGNRP[ ]	/* AlignRelativePt */\012PUSHB[ ]	/* 3 values pushed */\0125 4 0 \012MIRP[01101]	/* MoveIndirectRelPt */\012SHP[0]	/* ShiftPointByLastPoint */\012PUSHB[ ]	/* 3 values pushed */\0127 6 1 \012MIRP[11100]	/* MoveIndirectRelPt */\012ALIGNRP[ ]	/* AlignRelativePt */\012PUSHB[ ]	/* 3 values pushed */\0121 2 0 \012MIRP[01101]	/* MoveIndirectRelPt */\012SHP[0]	/* ShiftPointByLastPoint */";
+			};
+		});
+	},{
+		glyphname = .null;
+		note = .null;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 0;
+		});
+	},{
+		glyphname = CR;
+		note = CR;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+		});
+	},{
+		unicode = 0041;
+		glyphname = A;
+		note = A;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"0 800 LINE",
+					"0 -200 LINE",
+					"1000 -200 LINE",
+					"1000 -200 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0042;
+		glyphname = B;
+		note = B;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"500 -200 LINE",
+					"500 800 LINE",
+					"0 800 LINE",
+					"0 -200 LINE",
+					"0 -200 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0043;
+		glyphname = C;
+		note = C;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"1000 300 LINE",
+					"1000 800 LINE",
+					"0 800 LINE",
+					"0 300 LINE",
+					"0 300 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0044;
+		glyphname = D;
+		note = D;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"0 300 LINE",
+					"500 -200 LINE",
+					"1000 300 LINE",
+					"500 800 LINE",
+					"500 800 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0061;
+		glyphname = a;
+		note = a;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"1000 -200 LINE",
+					"1000 800 LINE",
+					"0 800 LINE",
+					"0 800 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0062;
+		glyphname = b;
+		note = b;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"1000 -200 LINE",
+					"1000 800 LINE",
+					"500 800 LINE",
+					"500 -200 LINE",
+					"500 -200 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0063;
+		glyphname = c;
+		note = c;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"1000 -200 LINE",
+					"1000 300 LINE",
+					"0 300 LINE",
+					"0 -200 LINE",
+					"0 -200 LINE"
+				);
+			});
+		});
+	},{
+		unicode = 0064;
+		glyphname = d;
+		note = d;
+		layers = ({
+			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"500 800 LINE",
+					"0 800 LINE",
+					"0 300 LINE",
+					"0 300 LINE"
+				);
+			},{
+				closed = 1;
+				nodes = (
+					"1000 300 LINE",
+					"1000 800 LINE",
+					"500 800 LINE",
+					"500 800 LINE"
+				);
+			},{
+				closed = 1;
+				nodes = (
+					"500 -200 LINE",
+					"1000 -200 LINE",
+					"1000 300 LINE",
+					"1000 300 LINE"
+				);
+			},{
+				closed = 1;
+				nodes = (
+					"0 300 LINE",
+					"0 -200 LINE",
+					"500 -200 LINE",
+					"500 -200 LINE"
+				);
+			});
+		});
+	});
+}

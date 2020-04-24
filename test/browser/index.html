@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="initial-scale=1, minimum-scale=1" />
+<title>Browser tests</title>
+<link rel="stylesheet" type="text/css" href="mocha.css" />
+<script src="/mocha/mocha.js"></script>
+<script src="/chai/chai.js"></script>
+<script>
+	"use strict";
+	globalThis.expect = chai.expect;
+	document.addEventListener("DOMContentLoaded", () => {
+		mocha.setup({ui: "bdd", slow: 1000});
+		import("../canvas.mjs").then(() => mocha.run());
+	});
+</script>
+</head>
+
+<body>
+	<div id="mocha"></div>
+</body>
+</html>

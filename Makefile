@@ -36,6 +36,14 @@ test:
 .PHONY: test
 
 
+# Run browser-based tests
+test-browser:
+	eval `jg where -s mocha chai`; \
+	jg serve --mount "$$mocha" --mount "$$chai" .
+
+.PHONY: test-browser
+
+
 # Nuke generated and untracked files
 clean:
 	cd test/fixtures/ints && make clean
@@ -65,3 +73,12 @@ test/fixtures/base64/rgba.json:
 		printf '\n\t"%s": "%s",' "$${i#test/fixtures/}" `base64 $$i` >> $@; \
 	done
 	perl -0 -pi -e 's/,\z/\n}\n/' $@
+
+
+# Regenerate font used for testing HTML <canvas> rendering
+test/browser/fonts/canvas-test.woff2:
+	@ command 2>&1 >/dev/null -v fontforge      || { echo "FontForge is required"; exit 1; }
+	@ command 2>&1 >/dev/null -v woff2_compress || { echo "woff2_compress not found"; exit 1; }
+	font=`printf '%s' '$@' | sed 's/\.woff2$$//'`; \
+	fontforge 2>/dev/null -lang=ff -c 'Open($$1); Generate($$2)' "$$font.svg" "$$font.ttf"; \
+	woff2_compress "$$font.ttf" && rm -f "$$font.ttf"

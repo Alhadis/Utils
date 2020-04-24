@@ -1,0 +1,3 @@
+*.glyphs linguist-language=OpenStep-Property-List
+*.css    linguist-vendored=true
+*.html   linguist-vendored=true

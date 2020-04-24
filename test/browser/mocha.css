@@ -1,0 +1,36 @@
+@import url("/mocha/mocha.css");
+
+*{
+	box-sizing: border-box;
+	tab-size: 4 !important;
+}
+
+/** Mocha's HTML reporter */
+html, body, #mocha{
+	position: fixed;
+	margin: 0;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+html{ background: #999; }
+body{ right: 50%; }
+#mocha{
+	box-shadow: 0 0 1.5em #000;
+	background: #fff;
+	left: 50%;
+	z-index: 2;
+}
+
+@media (max-width: 1160px){
+	body   { right: auto; width: calc(100vw - 580px); }
+	#mocha { left:  auto; width: 580px; }
+}
+
+
+/** Test-specific */
+@font-face{
+	font-family: canvas-test;
+	src: url("./fonts/canvas-test.woff2") format("woff2");
+}
