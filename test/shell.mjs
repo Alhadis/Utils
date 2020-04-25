@@ -666,6 +666,49 @@ describe("Shell-specific functions", () => {
 		});
 	});
 	
+	describe("sip()", () => {
+		const {sip} = utils;
+		const fixturePath  = path.join(dir, "fixtures", "stdin.mjs");
+		const fixtureText  = fs.readFileSync(fixturePath, "utf8");
+		const fixtureBytes = Uint8Array.from(fs.readFileSync(fixturePath));
+		
+		it("reads the first 80 bytes by default", async () => {
+			const expected = fixtureText.substr(0, 80);
+			expect(await sip(fixturePath)).to.equal(expected);
+		});
+		
+		it("reads no more than what it needs to", async () =>
+			expect(await sip("/dev/zero")).to.equal("\0".repeat(80)));
+		
+		it("can read portions of arbitrary length", async () => {
+			expect(await sip(fixturePath, 6)).to.equal("import");
+			for(let i = 0; i < 24; ++i){
+				const expected = fixtureText.substr(0, i);
+				expect(await sip(fixturePath, i)).to.equal(expected);
+			}
+		});
+		
+		it("can read starting at an arbitrary offset", async () => {
+			for(let i = 1; i < 5; ++i){
+				const expected = fixtureText.substr(i, 24);
+				expect(await sip(fixturePath, 24, i)).to.equal(expected);
+			}
+		});
+		
+		it("returns a byte-array if requested", async () => {
+			expect(await sip(fixturePath, 10, 0, true)).to.eql(fixtureBytes.subarray(0, 10));
+			expect(await sip(fixturePath, 10, 5, true)).to.eql(fixtureBytes.subarray(5, 15));
+			expect(await sip("/dev/zero", 80, 0, true)).to.eql(new Uint8Array(80));
+		});
+		
+		it("returns empty results for invalid arguments", async () => {
+			expect(await sip(null)).to.equal("");
+			expect(await sip(fixturePath, -1)).to.equal("");
+			expect(await sip(fixturePath, -1, 0, true)).to.eql(new Uint8Array([]));
+			expect(await sip(null, 80, 0, true))       .to.eql(new Uint8Array([]));
+		});
+	});
+	
 	describe("tildify()", () => {
 		const {tildify} = utils;
 		const HOME      = process.env.HOME || homedir();
