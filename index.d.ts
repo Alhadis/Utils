@@ -84,10 +84,10 @@ export declare function int16ToBytes(input: number | number[], littleEndian?: bo
 export declare function int32ToBytes(input: number | number[], littleEndian?: boolean): Uint8Array;
 export declare function int64ToBytes(input: bigint | bigint[], littleEndian?: boolean): Uint8Array;
 export declare function int8ToBytes(input: number | number[]): Uint8Array;
+export declare function isBrowser(): boolean;
 export declare function isByteArray(input: any): boolean;
 export declare function isFixedWidth(font: string): boolean;
 export declare function isIE(version: string, operand: string): boolean;
-export declare function isNativeDOM(): boolean;
 export declare function isPrimitive(input: any): boolean;
 export declare function isString(input: any): boolean;
 export declare function isTypedArray(input: any): boolean;

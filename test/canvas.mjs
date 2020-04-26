@@ -2,7 +2,7 @@ import * as utils from "../index.mjs";
 import {addCanvas, matchPixels, resetDOM} from "./browser/helpers.mjs";
 
 // Skip suite unless running in a browser
-utils.isNativeDOM() && describe("Canvas-drawing functions", () => {
+utils.isBrowser() && describe("Canvas-drawing functions", () => {
 	describe("drawHTML()", () => {
 		const {drawHTML} = utils;
 		afterEach(() => resetDOM());
@@ -31,7 +31,7 @@ utils.isNativeDOM() && describe("Canvas-drawing functions", () => {
 			}
 			matchPixels(rgba, ctx.getImageData(0, 0, w, h).data, w);
 			ctx.clearRect(0, 0, w, h);
-		};
+		}
 		
 		it("renders HTML elements", async () => {
 			const ctx = addCanvas(25);

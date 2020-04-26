@@ -2,7 +2,7 @@ import * as utils from "../index.mjs";
 
 describe("Miscellaneous functions", () => {
 	const htmlAllFn = "function HTMLAllCollection() { [native code] }";
-	const isBrowser = (
+	const haveHTMLAll = (
 		"object"    === typeof window &&
 		"undefined" === typeof module &&
 		"function"  === typeof window.HTMLAllCollection &&
@@ -172,6 +172,22 @@ describe("Miscellaneous functions", () => {
 		});
 	});
 	
+	describe("isBrowser()", () => {
+		const {isBrowser} = utils;
+		if(haveHTMLAll)
+			it("returns `true` for browser environments", () =>
+				expect(isBrowser()).to.be.true);
+		else{
+			afterEach(() => unspoofBrowser());
+			it("returns `false` for non-browser environments", () =>
+				expect(isBrowser()).to.be.false);
+			it("isn't fooled by user-created globals", () => {
+				spoofBrowser();
+				expect(isBrowser()).to.be.false;
+			});
+		}
+	});
+	
 	describe("isByteArray()", () => {
 		const {isByteArray} = utils;
 		it("returns true for arrays of 8-bit integers", () => {
@@ -203,22 +219,6 @@ describe("Miscellaneous functions", () => {
 			expect(isByteArray(true)).to.be.false;
 			expect(isByteArray(undefined)).to.be.false;
 		});
-	});
-	
-	describe("isNativeDOM()", () => {
-		const {isNativeDOM} = utils;
-		if(isBrowser)
-			it("returns `true` for browser environments", () =>
-				expect(isNativeDOM()).to.be.true);
-		else{
-			afterEach(() => unspoofBrowser());
-			it("returns `false` for non-browser environments", () =>
-				expect(isNativeDOM()).to.be.false);
-			it("isn't fooled by user-created globals", () => {
-				spoofBrowser();
-				expect(isNativeDOM()).to.be.false;
-			});
-		}
 	});
 	
 	describe("isPrimitive()", () => {
@@ -327,12 +327,12 @@ describe("Miscellaneous functions", () => {
 		// is impossible to reliably test without a host-provided exotic object (meaning
 		// the function won't be fooled by spoofed or emulated browser globals).
 		describe("When identifying `document.all`", () => {
-			if(!isBrowser){
+			if(!haveHTMLAll){
 				before(() => spoofBrowser());
 				after(() => unspoofBrowser());
 			}
 			it("uses its [[IsHTMLDDA]] internal slot", () => {
-				if(isBrowser){
+				if(haveHTMLAll){
 					expect(isPrimitive(document.all)).to.be.false;
 					expect("undefined" === typeof document.all).to.be.true;
 					expect(window.HTMLAllCollection === document.all.constructor).to.be.true;
@@ -791,7 +791,7 @@ describe("Miscellaneous functions", () => {
 	 * @internal
 	 */
 	function spoofBrowser(){
-		if(isBrowser) return;
+		if(haveHTMLAll) return;
 		class HTMLAllCollection{
 			constructor(){ return undefined; }
 			valueOf(){ return undefined; }
@@ -808,7 +808,7 @@ describe("Miscellaneous functions", () => {
 	 * @internal
 	 */
 	function unspoofBrowser(){
-		if(isBrowser) return;
+		if(haveHTMLAll) return;
 		delete globalThis.HTMLAllCollection;
 		delete globalThis.window;
 		delete globalThis.document;
