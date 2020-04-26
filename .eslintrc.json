@@ -24,7 +24,9 @@
 		"rules": {"keyword-spacing": 0}
 	},{
 		"files": ["test/*.mjs"],
-		"rules": {"keyword-spacing": 0},
+		"rules": {"keyword-spacing": 0}
+	},{
+		"files": ["test/*.mjs", "test/**/*.mjs"],
 		"globals": {"expect": true}
 	},{
 		"files": ["test/fixtures/ints/run-tests.mjs"],

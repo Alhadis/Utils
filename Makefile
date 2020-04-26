@@ -44,6 +44,10 @@ test-browser:
 .PHONY: test-browser
 
 
+# Aliased tasks
+browser-tests browser-test: test-browser
+
+
 # Nuke generated and untracked files
 clean:
 	cd test/fixtures/ints && make clean

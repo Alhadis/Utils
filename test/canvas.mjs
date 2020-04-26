@@ -59,15 +59,14 @@ utils.isBrowser() && describe("Canvas-drawing functions", () => {
 
 	describe("drawPolygon()", () => {
 		const {drawPolygon} = utils;
+		
 		it("draws polygons from a list of points", () => {
 			const ctx = addCanvas(25);
-			ctx.fill = "#000";
-			ctx.lineWidth = 0;
 			drawPolygon(ctx, [
-				[0, 0],   [0, 9],   [4, 9],   [4, 19], [9, 19],
-				[9, 6],   [2, 6],   [2, 2],   [11, 2], [11, 22],
-				[19, 22], [19, 15], [15, 15], [15, 0],
-			]);
+				[1, 1],   [1, 10],  [5, 10],  [5, 20], [10, 20],
+				[10, 7],  [3, 7],   [3, 3],   [12, 3], [12, 23],
+				[20, 23], [20, 16], [16, 16], [16, 1],
+			], true);
 			const {data} = ctx.getImageData(0, 0, 25, 25);
 			matchPixels(data, utils.bitmapToRGBA([
 				0b0000000000000000000000000,
@@ -96,6 +95,45 @@ utils.isBrowser() && describe("Canvas-drawing functions", () => {
 				0b0000000000000000000000000,
 				0b0000000000000000000000000,
 			], 25));
+		});
+		
+		it("strokes the result by default", () => {
+			const size    = 40;
+			const empty   = new Uint8ClampedArray(size * 4);
+			const red     = empty.map((n, i) => [0xFF, 0, 0, 0xFF][i % 4]);
+			const blue    = empty.map((n, i) => [0, 0, 0xFF, 0xFF][i % 4]);
+			const ctx     = addCanvas(size);
+			ctx.lineWidth = size / 2;
+			matchPixels(ctx.getImageData(0, 0, size, 1), empty);
+			
+			ctx.strokeStyle = "#f00";
+			drawPolygon(ctx, [[0, 0], [size, 0]]);
+			matchPixels(ctx.getImageData(0, 0, size, 1), red);
+			
+			ctx.strokeStyle = "#00f";
+			drawPolygon(ctx, [[0, 0], [size, 0]]);
+			matchPixels(ctx.getImageData(0, 0, size, 1), blue);
+		});
+		
+		it("closes the path automatically", () => {
+			const size    = 40;
+			const empty   = new Uint8ClampedArray(4);
+			const red     = Uint8ClampedArray.from([0xFF, 0, 0, 0xFF]);
+			const blue    = Uint8ClampedArray.from([0, 0, 0xFF, 0xFF]);
+			const ctx     = addCanvas(size);
+			ctx.lineWidth = 3;
+			matchPixels(ctx.getImageData(size * 0.50, size * 0.50, 1, 1), empty);
+			matchPixels(ctx.getImageData(size * 0.75, size * 0.25, 1, 1), empty);
+			matchPixels(ctx.getImageData(size * 0.25, size * 0.75, 1, 1), empty);
+			
+			ctx.strokeStyle = "#f00";
+			ctx.fillStyle   = "#00f";
+			drawPolygon(ctx, [[0, 0], [size, 0], [size, size]]);
+			ctx.fill();
+			ctx.stroke();
+			matchPixels(ctx.getImageData(size * 0.50, size * 0.50, 1, 1), red);
+			matchPixels(ctx.getImageData(size * 0.75, size * 0.25, 1, 1), blue);
+			matchPixels(ctx.getImageData(size * 0.25, size * 0.75, 1, 1), empty);
 		});
 	});
 });

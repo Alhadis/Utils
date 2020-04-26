@@ -16,6 +16,7 @@ export function addCanvas(width = 100, height = width){
 	canvas.width  = width;
 	canvas.height = height;
 	const context = canvas.getContext("2d");
+	canvas.style.display = "block";
 	context.imageSmoothingEnabled = false;
 	document.body.appendChild(canvas);
 	return context;
@@ -32,11 +33,12 @@ export function addCanvas(width = 100, height = width){
  * @return {void}
  * @internal
  */
-export function matchPixels(expected, actual, width){
+export function matchPixels(actual, expected, width){
+	if("function" === typeof ImageData && actual instanceof ImageData)
+		actual = actual.data;
 	expect(actual).to.have.lengthOf(expected.length);
 	const merge = ([r, g, b, a]) => (r << 24 | g << 16 | b << 8 | a) >>> 0;
 	const toHex = colour => `#${colour.toString(16).padStart(8, "0").toUpperCase()}`;
-	const channels = "red green blue alpha".split(" ");
 	for(let i = 0; i < expected.length; i += 4){
 		const x = (Math.floor(i / 4) % width) >>> 0;
 		const y = (Math.floor(i / 4) / width) >>> 0;
