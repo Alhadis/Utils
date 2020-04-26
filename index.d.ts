@@ -1,6 +1,7 @@
 // Generated file; run `make types` to update.
 declare interface OutlineNode extends Array<OutlineNode> {name: string; level: number; parent?: OutlineNode}
 declare interface Point extends Array<number> {x: number; y: number}
+declare type Bitmap = number | bigint | (number|bigint)[];
 declare type CMYColour = [number, number, number];
 declare type CMYKColour = [number, number, number, number];
 declare type CommandList = Array<(string|Array<string>)>;
@@ -26,6 +27,7 @@ export declare function angleTo(a: Point, b: Point): number;
 export declare function base64Decode(data: string): number[];
 export declare function base64Encode(bytes: number[]): string;
 export declare function bindMethods(subject: object): object;
+export declare function bitmapToRGBA(bitmap: Bitmap, width?: number, height?: number, colour?: number): Uint8ClampedArray;
 export declare function buildDict(dl: HTMLDListElement, valueKey?: boolean, filter?: Function | RegExp): object;
 export declare function byteCount(value: number, byteSize?: number): number;
 export declare function bytesToFloat32(bytes: number[], littleEndian?: boolean): Float32Array;

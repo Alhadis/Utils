@@ -3,6 +3,61 @@ import * as utils from "../index.mjs";
 describe("Colour-related functions", function(){
 	this.slow(1000);
 	
+	describe("bitmapToRGBA()", () => {
+		const {bitmapToRGBA} = utils;
+		
+		it("expands bits into RGBA channels", () => {
+			const rgba = bitmapToRGBA([0b10, 0b01], 2, 0xFF0000FF);
+			expect(rgba).to.eql(new Uint8ClampedArray([
+				0xFF, 0x00, 0x00, 0xFF, // Top-left
+				0x00, 0x00, 0x00, 0x00, // Top-right
+				0x00, 0x00, 0x00, 0x00, // Bottom-left
+				0xFF, 0x00, 0x00, 0xFF, // Bottom-right
+			]));
+		});
+		
+		it("expands bitmaps longer than 32 bits", () => {
+			const input = [0b0111110011111111111111111000000000000000];
+			const expected = new Array(160).fill(0);
+			expected.splice(4,  20, ...new Array(20).fill(0xFF));
+			expected.splice(32, 68, ...new Array(68).fill(0xFF));
+			const rgba = bitmapToRGBA(input, 40, 1, 0xFFFFFFFF);
+			expect(rgba).to.eql(Uint8ClampedArray.from(expected));
+		});
+		
+		it("accepts both numbers and bigints", () => {
+			const expected = new Uint8ClampedArray([0xAB, 0xCD, 0xEF, 0x12]);
+			expect(bitmapToRGBA([1],  1, 0xABCDEF12)).to.eql(expected);
+			expect(bitmapToRGBA([1n], 1, 0xABCDEF12)).to.eql(expected);
+		});
+		
+		it("accepts a single number instead of an array", () => {
+			const expected = new Uint8ClampedArray([0xAA, 0xBB, 0xCC, 0xDD]);
+			expect(bitmapToRGBA(1,  1, 0xAABBCCDD)).to.eql(expected);
+			expect(bitmapToRGBA(1n, 1, 0xAABBCCDD)).to.eql(expected);
+		});
+		
+		it("truncates bitmaps to their advertised dimensions", () => {
+			const fill = 0xFFFFFFFF;
+			for(let w = 0, h = 1; w < 9; ++w, ++h){
+				const zeroes = new Uint8ClampedArray(w * 4);
+				const ones   = new Uint8ClampedArray(w * 4).fill(255);
+				expect(bitmapToRGBA([0x00], w, 1, fill)).to.eql(zeroes);
+				expect(bitmapToRGBA([0xFF], w, 1, fill)).to.eql(ones);
+				
+				const input    = new Uint8ClampedArray(60).fill(255);
+				const expected = new Uint8ClampedArray(h * 4).fill(255);
+				expect(bitmapToRGBA(input, 1, h, fill)).to.eql(expected);
+			}
+		});
+		
+		it("zero-fills missing bitmap data", () => {
+			const expected = new Uint8ClampedArray(40);
+			expected.set([255, 255, 255, 255]);
+			expect(bitmapToRGBA([0xFF], 1, 10, 0xFFFFFFFF)).to.eql(expected);
+		});
+	});
+	
 	describe("Blending modes", () => {
 		// NB: Subtract is omitted because it's inconsistent with Photoshop's behaviour
 		const {BlendModes} = utils;
