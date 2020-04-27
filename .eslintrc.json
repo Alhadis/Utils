@@ -11,9 +11,6 @@
 		"files": ["lib/{binary,text}.mjs"],
 		"rules": {"multiline-ternary": 0}
 	},{
-		"files": ["lib/*.mjs", "test/*.mjs"],
-		"rules": {"require-atomic-updates": 0}
-	},{
 		"files": ["index.mjs", "test/{binary,shell}.mjs"],
 		"parser": "babel-eslint"
 	},{
@@ -23,7 +20,7 @@
 		"files": ["lib/{binary,functions}.mjs"],
 		"rules": {"keyword-spacing": 0}
 	},{
-		"files": ["test/*.mjs"],
+		"files": ["test/{misc,shell}.mjs"],
 		"rules": {"keyword-spacing": 0}
 	},{
 		"files": ["test/*.mjs", "test/**/*.mjs"],
@@ -34,6 +31,9 @@
 	},{
 		"files": ["test/{canvas,dom}.mjs"],
 		"rules": {"no-debugger": 0}
+	},{
+		"files": ["test/canvas.mjs"],
+		"rules": {"spaced-comment": 0}
 	},{
 		"files": ["test/misc.mjs"],
 		"rules": {"comma-spacing": 0}
