@@ -32,6 +32,9 @@
 		"files": ["test/fixtures/ints/run-tests.mjs"],
 		"rules": {"import/no-unresolved": 0}
 	},{
+		"files": ["test/{canvas,dom}.mjs"],
+		"rules": {"no-debugger": 0}
+	},{
 		"files": ["test/misc.mjs"],
 		"rules": {"comma-spacing": 0}
 	}]

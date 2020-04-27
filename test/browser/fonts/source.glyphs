@@ -6,7 +6,7 @@
 		{name = panose; value = (2, 0, 5, 9, 0, 0, 0, 0, 0, 0);},
 		{name = fsType; value = ();},
 		{name = unicodeRanges; value = (0);},
-		{name = glyphOrder; value = (.notdef, .null, CR, A, B, C, D, a, b, c, d);}
+		{name = glyphOrder; value = (.notdef, .null, CR, hyphen, A, B, C, D, a, b, c, d);}
 	);
 	date = "2020-04-23 16:43:22 +0000";
 	disablesAutomaticAlignment = 1;
@@ -89,6 +89,26 @@
 		layers = ({
 			layerId = "A5132172-D408-497E-97D6-EA3C63A9F3CF";
 			width = 1000;
+		});
+	},{
+		unicode = 002D;
+		glyphname = hyphen;
+		note = "-";
+		layers = ({
+			layerId = "51402F64-951E-4831-B687-0C554100BC2A";
+			width = 1000;
+			paths = ({
+				closed = 1;
+				nodes = (
+					"666 800 LINE",
+					"666 -200 LINE",
+					"0 -200 LINE",
+					"0 133 LINE",
+					"333 133 LINE",
+					"333 800 LINE",
+					"333 800 LINE"
+				);
+			});
 		});
 	},{
 		unicode = 0041;

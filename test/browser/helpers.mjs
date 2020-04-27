@@ -24,6 +24,74 @@ export function addCanvas(width = 100, height = width){
 
 
 /**
+ * Clear the contents of a <canvas> element or drawing context.
+ *
+ * Defaults to the last (most recently-added) canvas in the DOM.
+ *
+ * @param {CanvasRenderingContext2D|HTMLCanvasElement} [subject]
+ * @return {void}
+ * @internal
+ */
+export function clearCanvas(subject = null){
+	if(!subject)
+		[subject] = [...document.getElementsByTagName("canvas")].reverse();
+	if(subject instanceof HTMLCanvasElement)
+		subject = subject.getContext("2d");
+	if(!subject)
+		throw new ReferenceError("Nothing to clear");
+	const {width, height} = subject.canvas;
+	subject.clearRect(0, 0, width, height);
+}
+
+
+/**
+ * Ensure a webfont is loaded and rendered.
+ *
+ * @example await loadFont("Cambria");
+ * @param {String} family
+ * @return {Promise<void>}
+ * @internal
+ */
+export async function loadFont(family){
+	const text = document.createElement("span");
+	text.style.font = `32px ${family}`;
+	text.textContent = "A";
+	document.body.appendChild(text);
+	await document.fonts.ready;
+	document.body.removeChild(text);
+}
+
+
+/**
+ * Assert the colour of a single pixel.
+ *
+ * @throws {AssertionError}
+ * @param {CanvasRenderingContext2D} context
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} colour
+ * @return {void}
+ */
+export function matchPixel(context, x, y, colour){
+	const {width, height} = context.canvas;
+	x = x > 0 && x < 1 ? Math.round(width  * x) : ~~x;
+	y = y > 0 && y < 1 ? Math.round(height * y) : ~~y;
+	expect(x).to.be.within(0, width);
+	expect(y).to.be.within(0, height);
+	const expected = new Uint8ClampedArray([
+		(colour >> 24) & 255,
+		(colour >> 16) & 255,
+		(colour >> 8)  & 255,
+		(colour >> 0)  & 255,
+	]);
+	const actual = context.getImageData(x, y, 1, 1).data;
+	const toHex  = x => "0x" + x.toString(16).padStart(8, "0").toUpperCase();
+	const msg    = `Expected pixel @ [${x}, ${y}] to equal ${toHex(colour)}`;
+	expect(actual, msg).to.eql(expected);
+}
+
+
+/**
  * Compare two lists of RGBA values for equality.
  *
  * @throws {AssertionError}
@@ -60,4 +128,7 @@ export function resetDOM(){
 	for(const node of [...document.body.childNodes])
 		if(node !== mocha)
 			node.remove();
+	for(const style of document.styleSheets)
+		if(style.ownerNode instanceof HTMLStyleElement)
+			style.ownerNode.remove();
 }

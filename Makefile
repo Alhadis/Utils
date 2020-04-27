@@ -80,9 +80,13 @@ test/fixtures/base64/rgba.json:
 
 
 # Regenerate font used for testing HTML <canvas> rendering
-test/browser/fonts/canvas-test.woff2:
-	@ command 2>&1 >/dev/null -v fontforge      || { echo "FontForge is required"; exit 1; }
+font = test/browser/fonts/canvas-test
+canvas-font: $(font).woff2
+$(font).woff2: $(font).ttf
 	@ command 2>&1 >/dev/null -v woff2_compress || { echo "woff2_compress not found"; exit 1; }
-	font=`printf '%s' '$@' | sed 's/\.woff2$$//'`; \
-	fontforge 2>/dev/null -lang=ff -c 'Open($$1); Generate($$2)' "$$font.svg" "$$font.ttf"; \
-	woff2_compress "$$font.ttf" && rm -f "$$font.ttf"
+	woff2_compress $^
+	rm -f $^
+
+$(font).ttf: $(font).svg
+	@ command 2>&1 >/dev/null -v fontforge || { echo "FontForge is required"; exit 1; }
+	fontforge 2>/dev/null -lang=ff -c 'Open("$^"); Generate("$@");'

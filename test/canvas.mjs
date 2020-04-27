@@ -1,11 +1,17 @@
 import * as utils from "../index.mjs";
-import {addCanvas, matchPixels, resetDOM} from "./browser/helpers.mjs";
+import {addCanvas, clearCanvas, loadFont, matchPixel, matchPixels, resetDOM} from "./browser/helpers.mjs";
 
 // Skip suite unless running in a browser
 utils.isBrowser() && describe("Canvas-drawing functions", () => {
+	afterEach(function(){
+		if("failed" === this.currentTest.state
+		&& "#debug" === document.location.hash)
+			debugger;
+		resetDOM();
+	});
+	
 	describe("drawHTML()", () => {
 		const {drawHTML} = utils;
-		afterEach(() => resetDOM());
 		
 		async function testBox(ctx, colour, dx, dy, dw, dh){
 			const w = ctx.canvas.width;  dx = +dx || 0; dw = +dw || w;
@@ -29,7 +35,7 @@ utils.isBrowser() && describe("Canvas-drawing functions", () => {
 					rgba[i + 3] = 255;
 				}
 			}
-			matchPixels(rgba, ctx.getImageData(0, 0, w, h).data, w);
+			matchPixels(ctx.getImageData(0, 0, w, h).data, rgba, w);
 			ctx.clearRect(0, 0, w, h);
 		}
 		
@@ -117,23 +123,255 @@ utils.isBrowser() && describe("Canvas-drawing functions", () => {
 		
 		it("closes the path automatically", () => {
 			const size    = 40;
-			const empty   = new Uint8ClampedArray(4);
-			const red     = Uint8ClampedArray.from([0xFF, 0, 0, 0xFF]);
-			const blue    = Uint8ClampedArray.from([0, 0, 0xFF, 0xFF]);
 			const ctx     = addCanvas(size);
 			ctx.lineWidth = 3;
-			matchPixels(ctx.getImageData(size * 0.50, size * 0.50, 1, 1), empty);
-			matchPixels(ctx.getImageData(size * 0.75, size * 0.25, 1, 1), empty);
-			matchPixels(ctx.getImageData(size * 0.25, size * 0.75, 1, 1), empty);
+			matchPixel(ctx, 0.50, 0.50, 0x00000000);
+			matchPixel(ctx, 0.75, 0.25, 0x00000000);
+			matchPixel(ctx, 0.25, 0.75, 0x00000000);
 			
 			ctx.strokeStyle = "#f00";
 			ctx.fillStyle   = "#00f";
 			drawPolygon(ctx, [[0, 0], [size, 0], [size, size]]);
 			ctx.fill();
 			ctx.stroke();
-			matchPixels(ctx.getImageData(size * 0.50, size * 0.50, 1, 1), red);
-			matchPixels(ctx.getImageData(size * 0.75, size * 0.25, 1, 1), blue);
-			matchPixels(ctx.getImageData(size * 0.25, size * 0.75, 1, 1), empty);
+			matchPixel(ctx, 0.50, 0.50, 0xFF0000FF);
+			matchPixel(ctx, 0.75, 0.25, 0x0000FFFF);
+			matchPixel(ctx, 0.25, 0.75, 0x00000000);
+		});
+	});
+	
+	describe("drawTextArea()", () => {
+		const {drawTextArea} = utils;
+		before(() => loadFont("canvas-test"));
+		
+		function assertGlyph(ctx, char, fontSize, colour, column = 0, row = 0){
+			let antipodes;
+			switch(char){
+				default: throw new TypeError(`Unsupported character: ${char}`);
+				case "-": antipodes = [[
+					0.50, 0.25, //   ┃ ← Vertical stem
+					0.50, 0.50, //   ┃
+					0.50, 0.75, //   ┃ ← Left-turned hook
+					0.25, 0.75, //━━━┛ ←──┘
+				], [
+					0.25, 0.25, // Top-left
+					0.75, 0.25, // Top-right
+					0.75, 0.50, // Centre-right
+					0.75, 0.75, // Bottom-right
+					0.25, 0.50, // Centre-left
+				]]; break;
+				case "A": antipodes = [[0.25, 0.75], [0.75, 0.25]]; break; // ◣
+				case "a": antipodes = [[0.75, 0.25], [0.25, 0.75]]; break; // ◥
+				case "B": antipodes = [[0.25, 0.50], [0.75, 0.50]]; break; // ▌
+				case "b": antipodes = [[0.75, 0.50], [0.25, 0.50]]; break; // ▐
+				case "C": antipodes = [[0.50, 0.25], [0.50, 0.75]]; break; // ▀
+				case "c": antipodes = [[0.50, 0.75], [0.50, 0.25]]; break; // ▄
+				case "D": antipodes = [[0.50, 0.50], [
+					0.15, 0.15, // Top-left
+					0.85, 0.15, // Top-right         ◆
+					0.85, 0.85, // Bottom-right
+					0.15, 0.85, // Bottom-left
+				]]; break;
+				case "d": antipodes = [[
+					0.15, 0.15, // Top-left
+					0.85, 0.15, // Top-right        ◤ ◥
+					0.85, 0.85, // Bottom-right     ◣ ◢
+					0.15, 0.85, // Bottom-left
+				], [0.50, 0.50]];
+			}
+			const {width} = ctx.measureText(char);
+			antipodes.forEach((set, index) => {
+				const {length} = set;
+				const fill = index ? 0x00000000 : colour;
+				for(let i = 0; i < length; i += 2){
+					const x = width * column + fontSize * set[i];
+					const y = width * row    + fontSize * set[i + 1];
+					matchPixel(ctx, x, y, fill);
+				}
+			});
+		}
+		
+		describe("Drawing", () => {
+			it("draws single characters", async () => {
+				const fontSize = 32;
+				const areaSize = fontSize * 2;
+				const ctx      = addCanvas(areaSize);
+				ctx.font       = `${fontSize}px canvas-test`;
+				ctx.fillStyle  = "#f00";
+				
+				// Sanity checks
+				const empty = new Uint8ClampedArray(areaSize * areaSize * 4);
+				matchPixels(ctx.getImageData(0, 0, areaSize, areaSize), empty);
+				expect(ctx.measureText(" ").width).to.equal(ctx.measureText("A").width);
+				drawTextArea(ctx, " ");
+				expect(ctx.getImageData(0, 0, areaSize, areaSize), empty);
+				
+				for(const char of "AaBbCcDd-"){
+					drawTextArea(ctx, char);
+					assertGlyph(ctx, char, fontSize, 0xFF0000FF);
+					clearCanvas(ctx);
+				}
+			});
+			
+			it("draws multiple characters", async () => {
+				const fontSize = 32;
+				const areaSize = 256;
+				const fill     = 0x00FF00FF;
+				const ctx      = addCanvas(areaSize);
+				ctx.font       = `${fontSize}px canvas-test`;
+				ctx.fillStyle  = "#0f0";
+				
+				drawTextArea(ctx, "ABCD");
+				assertGlyph(ctx, "A", fontSize, fill, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1);
+				assertGlyph(ctx, "C", fontSize, fill, 2);
+				assertGlyph(ctx, "D", fontSize, fill, 3);
+				
+				// More sanity checks
+				expect(() => assertGlyph(ctx, "a", fontSize, fill, 0)).to.throw();
+				expect(() => assertGlyph(ctx, "b", fontSize, fill, 1)).to.throw();
+				expect(() => assertGlyph(ctx, "c", fontSize, fill, 2)).to.throw();
+				expect(() => assertGlyph(ctx, "d", fontSize, fill, 3)).to.throw();
+				
+				clearCanvas(ctx);
+				drawTextArea(ctx, "DCBA");
+				assertGlyph(ctx, "A", fontSize, fill, 3);
+				assertGlyph(ctx, "B", fontSize, fill, 2);
+				assertGlyph(ctx, "C", fontSize, fill, 1);
+				assertGlyph(ctx, "D", fontSize, fill, 0);
+			});
+			
+			it("draws multiple lines", async () => {
+				const fontSize = 32;
+				const areaSize = 256;
+				const fill     = 0x0000FFFF;
+				const ctx      = addCanvas(areaSize);
+				ctx.font       = `${fontSize}px canvas-test`;
+				ctx.fillStyle  = "#00f";
+				
+				drawTextArea(ctx, "AB\nCD");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "C", fontSize, fill, 0, 1);
+				assertGlyph(ctx, "D", fontSize, fill, 1, 1);
+				clearCanvas(ctx);
+				
+				drawTextArea(ctx, "abc\nd");
+				assertGlyph(ctx, "a", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "b", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "c", fontSize, fill, 2, 0);
+				assertGlyph(ctx, "d", fontSize, fill, 0, 1);
+				clearCanvas(ctx);
+				
+				drawTextArea(ctx, "A\nBCD\nab\nc\nd");
+				for(const [char, col, row] of [
+					["A", 0, 0],
+					["B", 0, 1], ["C", 1, 1], ["D", 2, 1],
+					["a", 0, 2], ["b", 1, 2],
+					["c", 0, 3],
+					["d", 0, 4],
+				]) assertGlyph(ctx, char, fontSize, fill, col, row);
+				clearCanvas(ctx);
+			});
+		});
+	
+		describe("Line-wrapping", () => {
+			it("wraps lines too long to fit", async () => {
+				const fontSize = 25;
+				const areaSize = fontSize * 5;
+				const fill     = 0xFF0000FF;
+				const ctx      = addCanvas(areaSize);
+				ctx.font       = `${fontSize}px canvas-test`;
+				ctx.fillStyle  = "#f00";
+				
+				drawTextArea(ctx, "AB a");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "a", fontSize, fill, 3, 0);
+				clearCanvas(ctx);
+				
+				drawTextArea(ctx, "AB abc");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "a", fontSize, fill, 0, 1);
+				assertGlyph(ctx, "b", fontSize, fill, 1, 1);
+				assertGlyph(ctx, "c", fontSize, fill, 2, 1);
+				clearCanvas(ctx);
+				
+				drawTextArea(ctx, "ABC ab c");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "C", fontSize, fill, 2, 0);
+				assertGlyph(ctx, "a", fontSize, fill, 0, 1);
+				assertGlyph(ctx, "b", fontSize, fill, 1, 1);
+				assertGlyph(ctx, "c", fontSize, fill, 3, 1);
+				clearCanvas(ctx);
+				
+				drawTextArea(ctx, "ABC ab cd");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 1, 0);
+				assertGlyph(ctx, "C", fontSize, fill, 2, 0);
+				assertGlyph(ctx, "a", fontSize, fill, 0, 1);
+				assertGlyph(ctx, "b", fontSize, fill, 1, 1);
+				assertGlyph(ctx, "c", fontSize, fill, 0, 2);
+				assertGlyph(ctx, "d", fontSize, fill, 1, 2);
+				clearCanvas(ctx);
+			});
+			
+			// FIXME: Why is this not hyphenating?
+			it.skip("splits words that don't fit on one line", async () => {
+				const fontSize = 25;
+				const areaSize = fontSize * 4 + 5;
+				const fill     = 0x7F0000FF;
+				const ctx      = addCanvas(areaSize);
+				ctx.font       = `${fontSize}px canvas-test`;
+				ctx.fillStyle  = `#${fill.toString(16)}`;
+				
+				drawTextArea(ctx, "AABBCC");
+				assertGlyph(ctx, "A", fontSize, fill, 0, 0); // -> AAB-
+				assertGlyph(ctx, "A", fontSize, fill, 1, 0); //    BCC
+				assertGlyph(ctx, "B", fontSize, fill, 2, 0);
+				assertGlyph(ctx, "-", fontSize, fill, 3, 0);
+				assertGlyph(ctx, "B", fontSize, fill, 0, 1);
+				assertGlyph(ctx, "C", fontSize, fill, 1, 1);
+				assertGlyph(ctx, "C", fontSize, fill, 2, 1);
+			});
+		});
+	});
+
+	describe("getCanvasFont()", () => {
+		const {getCanvasFont} = utils;
+		
+		it("returns a context's current font-style", () => {
+			const ctx = addCanvas(25);
+			ctx.font  = "24px monospace";
+			expect(getCanvasFont(ctx)).to.eql({
+				fontFamily:  "monospace",
+				fontSize:    "24px",
+				fontStyle:   "normal",
+				fontVariant: "normal",
+				fontWeight:  "400",
+				lineHeight:  "normal",
+			});
+		});
+		
+		it("isn't affected by external styling", () => {
+			const style = document.createElement("style");
+			document.head.appendChild(style);
+			style.innerHTML = utils.deindent `
+				body > :not(#mocha) div, canvas, canvas *{
+					font: 10px serif !important;
+				}`;
+			const ctx = addCanvas(25);
+			ctx.font  = "bold italic 32px sans-serif";
+			expect(getCanvasFont(ctx)).to.eql({
+				fontFamily:  "sans-serif",
+				fontSize:    "32px",
+				fontStyle:   "italic",
+				fontVariant: "normal",
+				fontWeight:  "700",
+				lineHeight:  "normal",
+			});
 		});
 	});
 });
