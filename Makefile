@@ -1,4 +1,4 @@
-all: hooks lint types test
+all: install lint types test
 
 
 # Generate TypeScript declarations from JSDoc
@@ -12,6 +12,24 @@ index.d.ts: index.mjs lib/*.mjs
 	cat lib/*.d.ts | sort | uniq > $@
 	rm  lib/*.d.ts
 	npx jg lint -t
+
+
+# Install or symlink dependencies needed for build-tasks
+install: hooks node_modules
+
+node_modules:
+	npm install >/dev/null \
+		--ignore-scripts \
+		--link \
+		--no-audit \
+		--no-bin-links \
+		--no-fund \
+		--no-optional \
+		--no-package-lock \
+		--no-save \
+		--no-shrinkwrap
+	git checkout -- package.json
+	rm -f package-lock.json
 
 
 # Symlink pre-commit script
@@ -71,7 +89,7 @@ coverage/index.html: index.mjs lib/*.mjs test/*.mjs
 # Regenerate a base64-encoded list of PNG fixtures
 pngs = test/fixtures/rgba/*.png
 test/fixtures/base64/rgba.json:
-	@ command -v base64 2>&1 >/dev/null || { echo "base64 command not found"; exit 1; };
+	@ $(require) base64 perl
 	printf \{ > $@
 	for i in $(pngs); do \
 		printf '\n\t"%s": "%s",' "$${i#test/fixtures/}" `base64 $$i` >> $@; \
@@ -82,11 +100,18 @@ test/fixtures/base64/rgba.json:
 # Regenerate font used for testing HTML <canvas> rendering
 font = test/browser/fonts/canvas-test
 canvas-font: $(font).woff2
-$(font).woff2: $(font).ttf
-	@ command 2>&1 >/dev/null -v woff2_compress || { echo "woff2_compress not found"; exit 1; }
-	woff2_compress $^
-	rm -f $^
+$(font).woff2: $(font).svg
+	@ $(require) fontforge woff2_compress
+	fontforge 2>/dev/null -lang=ff -c 'Open("$(font).svg"); Generate("$(font).ttf");'
+	woff2_compress $(font).ttf
+	rm -f $(font).ttf
 
-$(font).ttf: $(font).svg
-	@ command 2>&1 >/dev/null -v fontforge || { echo "FontForge is required"; exit 1; }
-	fontforge 2>/dev/null -lang=ff -c 'Open("$^"); Generate("$@");'
+
+# Declare a list of programs as recipe dependencies
+require = \
+	require(){ \
+		while [ $$\# -gt 0 ]; do command 2>&1 >/dev/null -v "$$1" || { \
+			printf >&2 'Required command `%s` not found\n' "$$1"; \
+			return 1; \
+		}; shift; done; \
+	}; require
