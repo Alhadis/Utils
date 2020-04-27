@@ -1,4 +1,5 @@
 import * as utils from "../index.mjs";
+import {endianness} from "os";
 
 describe("Miscellaneous functions", () => {
 	const htmlAllFn = "function HTMLAllCollection() { [native code] }";
@@ -219,6 +220,12 @@ describe("Miscellaneous functions", () => {
 			expect(isByteArray(true)).to.be.false;
 			expect(isByteArray(undefined)).to.be.false;
 		});
+	});
+	
+	describe("isLittleEndian()", () => {
+		const {isLittleEndian} = utils;
+		it("accurately identifies the host's endianness", () =>
+			isLittleEndian() === ("LE" === endianness()));
 	});
 	
 	describe("isPrimitive()", () => {

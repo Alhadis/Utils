@@ -90,6 +90,7 @@ export declare function isBrowser(): boolean;
 export declare function isByteArray(input: any): boolean;
 export declare function isFixedWidth(font: string): boolean;
 export declare function isIE(version: string, operand: string): boolean;
+export declare function isLittleEndian(): boolean;
 export declare function isPrimitive(input: any): boolean;
 export declare function isString(input: any): boolean;
 export declare function isTypedArray(input: any): boolean;
