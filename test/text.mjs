@@ -897,6 +897,86 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("mark()", () => {
+		const {mark, deindent, deindent: HTML} = utils;
+		it("demarcates regions of text", () => {
+			expect(mark("abc123xyz", [[3, 6, "<", ">"]])).to.equal("abc<123>xyz");
+			expect(mark("aBcdEf",    [[1, 2, "<", ">"], [4, 5, "<", ">"]])).to.equal("a<B>cd<E>f");
+			expect(mark("nBn",       [[1, 2, "<b>", "</b>"]])).to.equal("n<b>B</b>n");
+		});
+		it("keeps delimiter pairs balanced", () => {
+			expect(mark("abc123xyz", [[3, 6, "<", ">"], [1, 4, "[", "]"]])).to.equal("a[bc<1]23>xyz");
+			const regions = [[3, 18, "<", ">"], [6, 14, "<", ">"], [9, 12, "<", ">"]];
+			expect(mark("00011122233322111100", regions)).to.equal("000<111<222<333>22>1111>00");
+			regions[1][3] = "}";
+			regions[2][3] = ")";
+			expect(mark("00011122233322111100", regions)).to.equal("000<111<222<333)22}1111>00");
+		});
+		it("sorts ranges in a logical order", () => {
+			const ranges = [
+				[251, 255, "<!--",     "-->"],
+				[0,   488, "<body>",   "</body>"],
+				[0,   5,   "<h1>",     "</h1>"],
+				[5,   8,   "<!--",     "-->"],
+				[8,   472, "<main>",   "</main>"],
+				[8,   15,  "<h2>",     "</h2>"],
+				[17,  251, "<p>",      "</p>"],
+				[474, 487, "<footer>", "</footer>"],
+				[143, 382, "<mark>",   "</mark>"],
+				[255, 470, "<p>",      "</p>"],
+				[474, 480, "<h3>",     "</h3>"],
+			];
+			const input = deindent `
+			TITLE
+
+				HEADING
+				Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+				incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+				nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+				
+				Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
+				eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+				sunt in culpa qui officia deserunt mollit anim id est laborum.
+				
+				FOOTER
+				Stuff
+			` + "\n";
+			const output = HTML `
+			<body><h1>TITLE</h1><!--
+
+				--><main><h2>HEADING</h2>
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+				incididunt ut labore et dolore magna aliqua. <mark>Ut enim ad minim veniam, quis
+				nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p><!--
+				
+				--><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
+				eu fugiat nulla pariatur. Excepteur sint occaecat</mark> cupidatat non proident,
+				sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+				</main>
+				<footer><h3>FOOTER</h3>
+				Stuff</footer>
+			</body>`;
+			expect(mark(input, ranges)).to.equal(output);
+		});
+		it("ignores zero-length ranges", () => {
+			expect(mark("ABC", [[1, 1, "<", ">"]])).to.equal("ABC");
+		});
+		it("treats an integer as an ANSI colour sequence", () => {
+			expect(mark("RED",   1)).to.equal("\x1B[38;5;1mRED\x1B[39m");
+			expect(mark("GREEN", 2)).to.equal("\x1B[38;5;2mGREEN\x1B[39m");
+		});
+		it("treats a string as a raw ANSI sequence", () => {
+			expect(mark("ANNOYING", "\x1B[5m")).to.equal("\x1B[5mANNOYING\x1B[0m");
+		});
+		it("treats 2-string arrays as enclosing the entire input", () => {
+			expect(mark("RED", ["\x1B[38;5;1m", "\x1B[39m"])).to.equal("\x1B[38;5;1mRED\x1B[39m");
+		});
+		it("defaults to marking text with inverse video", () => {
+			expect(mark("ABC",  [1, 2])) .to.equal("A\x1B[7mB\x1B[27mC");
+			expect(mark("ABC", [[1, 2]])).to.equal("A\x1B[7mB\x1B[27mC");
+		});
+	});
+	
 	describe("ordinalSuffix()", () => {
 		const {ordinalSuffix} = utils;
 		const th = "th", st = "st", nd = "nd", rd = "rd";
