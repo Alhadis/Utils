@@ -225,7 +225,36 @@ describe("Miscellaneous functions", () => {
 	describe("isLittleEndian()", () => {
 		const {isLittleEndian} = utils;
 		it("accurately identifies the host's endianness", () =>
-			isLittleEndian() === ("LE" === endianness()));
+			expect(isLittleEndian()).to.equal("LE" === endianness()));
+	});
+	
+	describe("isNegativeNaN()", () => {
+		const {isNegativeNaN} = utils;
+		
+		it("returns true if `-NaN` contains a sign bit", () => {
+			// NB: Results ultimately depend on the engine's implementation details
+			const view = new DataView(new ArrayBuffer(8));
+			const sNaN = -NaN;
+			view.setFloat64(0, sNaN);
+			const isSigned = 0xFF === view.getUint8(0);
+			expect(isNegativeNaN(sNaN)).to.equal(isSigned);
+		});
+		
+		it("returns false for `NaN`", () =>
+			expect(isNegativeNaN(NaN)).to.be.false);
+		
+		it("returns false for other numbers", () => {
+			expect(isNegativeNaN(45)).to.be.false;
+			expect(isNegativeNaN(-4)).to.be.false;
+			expect(isNegativeNaN(Infinity)).to.be.false;
+			expect(isNegativeNaN(-Infinity)).to.be.false;
+			expect(isNegativeNaN(-0)).to.be.false;
+		});
+		
+		it("returns false for non-numeric values", () => {
+			expect(isNegativeNaN("foo")).to.be.false;
+			expect(isNegativeNaN({})).to.be.false;
+		});
 	});
 	
 	describe("isPrimitive()", () => {
