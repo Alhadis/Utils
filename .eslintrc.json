@@ -5,6 +5,9 @@
 		"files": ["lib/{binary,text}.mjs"],
 		"rules": {"multiline-ternary": 0}
 	},{
+		"files": ["lib/*.mjs"],
+		"rules": {"no-console": "error"}
+	},{
 		"files": ["index.mjs", "test/{binary,shell}.mjs"],
 		"parser": "babel-eslint"
 	},{
