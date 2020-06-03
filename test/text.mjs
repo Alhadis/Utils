@@ -1099,6 +1099,217 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("parseDuration()", () => {
+		const {parseDuration} = utils;
+		const SEC  = 1000;
+		const MIN  = 60000;
+		const HOUR = 3600000;
+		const DAY  = 86400000;
+		const WEEK = DAY * 7;
+		const YEAR = DAY * 365.242198781;
+		
+		it("converts non-string values", () => {
+			expect(parseDuration(0))    .to.equal(0);
+			expect(parseDuration(4))    .to.equal(4);
+			expect(parseDuration(4n))   .to.equal(4);
+			expect(parseDuration(true)) .to.equal(1);
+			expect(parseDuration(false)).to.equal(0);
+			expect(parseDuration(null)) .to.equal(0);
+			expect(parseDuration({valueOf(){ return 10; }})).to.equal(10);
+			expect(parseDuration({valueOf(){ return 65; }})).to.equal(65);
+		});
+		
+		it("converts temporal CSS units", () => {
+			const seconds      = {[Symbol.toStringTag]: "CSSUnitValue", unit: "s"};
+			const milliseconds = {[Symbol.toStringTag]: "CSSUnitValue", unit: "ms"};
+			expect(parseDuration({...seconds,      value: 1}))  .to.equal(1000);
+			expect(parseDuration({...seconds,      value: 2.5})).to.equal(2500);
+			expect(parseDuration({...milliseconds, value: 1}))  .to.equal(1);
+			expect(parseDuration({...milliseconds, value: 4.5})).to.equal(4.5);
+			expect(parseDuration({...milliseconds, value: 200})).to.equal(200);
+		});
+		
+		describe("ISO 8601 durations", () => {
+			it("parses days", () => {
+				expect(parseDuration("P1D")).to.equal(DAY * 1);
+				expect(parseDuration("P2D")).to.equal(DAY * 2);
+				expect(parseDuration("P3D")).to.equal(DAY * 3);
+			});
+			
+			it("parses months", () => {
+				const threshold = 0.000005;
+				expect(parseDuration("P1M"))  .to.be.closeTo(YEAR / 12, threshold);
+				expect(parseDuration("P2M"))  .to.be.closeTo(YEAR / 6,  threshold);
+				expect(parseDuration("P3M"))  .to.be.closeTo(YEAR / 4,  threshold);
+				expect(parseDuration("P6M"))  .to.be.closeTo(YEAR / 2,  threshold);
+				expect(parseDuration("P12M")) .to.be.closeTo(YEAR / 1,  threshold);
+				expect(parseDuration("P1M1D")).to.be.closeTo(YEAR / 12 + DAY * 1, threshold);
+				expect(parseDuration("P1M2D")).to.be.closeTo(YEAR / 12 + DAY * 2, threshold);
+				expect(parseDuration("P2M1D")).to.be.closeTo(YEAR / 6  + DAY * 1, threshold);
+				expect(parseDuration("P2M2D")).to.be.closeTo(YEAR / 6  + DAY * 2, threshold);
+				expect(parseDuration("P6M3D")).to.be.closeTo(YEAR / 2  + DAY * 3, threshold);
+			});
+			
+			it("parses years", () => {
+				const threshold = 0.00005;
+				expect(parseDuration("P1Y"))    .to.equal(YEAR * 1);
+				expect(parseDuration("P2Y"))    .to.equal(YEAR * 2);
+				expect(parseDuration("P3Y"))    .to.equal(YEAR * 3);
+				expect(parseDuration("P1Y1D"))  .to.equal(YEAR * 1 + DAY * 1);
+				expect(parseDuration("P2Y2D"))  .to.equal(YEAR * 2 + DAY * 2);
+				expect(parseDuration("P3Y6D"))  .to.equal(YEAR * 3 + DAY * 6);
+				expect(parseDuration("P1Y6M"))  .to.be.closeTo(YEAR * 1 + YEAR / 2, threshold);
+				expect(parseDuration("P2Y6M"))  .to.be.closeTo(YEAR * 2 + YEAR / 2, threshold);
+				expect(parseDuration("P3Y4M"))  .to.be.closeTo(YEAR * 3 + YEAR / 3, threshold);
+				expect(parseDuration("P1Y6M1D")).to.be.closeTo(YEAR * 1 + DAY * 1 + YEAR / 2, threshold);
+				expect(parseDuration("P2Y6M2D")).to.be.closeTo(YEAR * 2 + DAY * 2 + YEAR / 2, threshold);
+				expect(parseDuration("P3Y4M6D")).to.be.closeTo(YEAR * 3 + DAY * 6 + YEAR / 3, threshold);
+			});
+			
+			it("parses hours", () => {
+				for(let i = 1; i <= 24; expect(parseDuration(`PT${i}H`))  .to.equal(HOUR * i++));
+				for(let i = 1; i <= 24; expect(parseDuration(`P1DT${i}H`)).to.equal(HOUR * i++ + DAY * 1));
+				for(let i = 1; i <= 24; expect(parseDuration(`P8DT${i}H`)).to.equal(HOUR * i++ + DAY * 8));
+			});
+			
+			it("parses minutes", () => {
+				for(let i = 1; i <= 60; expect(parseDuration(`PT${i}M`))    .to.equal(MIN * i++));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT1H${i}M`))  .to.equal(MIN * i++ + HOUR * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT6H${i}M`))  .to.equal(MIN * i++ + HOUR * 6));
+				for(let i = 1; i <= 60; expect(parseDuration(`P1DT1H${i}M`)).to.equal(MIN * i++ + HOUR * 1 + DAY * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`P8DT6H${i}M`)).to.equal(MIN * i++ + HOUR * 6 + DAY * 8));
+				expect(parseDuration("P1MT1H1M")).to.be.closeTo(MIN * 1 + HOUR * 1 + YEAR / 12, 0.00005);
+				expect(parseDuration("P2MT6H2M")).to.be.closeTo(MIN * 2 + HOUR * 6 + YEAR / 6,  0.00005);
+			});
+			
+			it("parses seconds", () => {
+				for(let i = 1; i <= 60; expect(parseDuration(`PT${i}S`))    .to.equal(SEC * i++));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT1M${i}S`))  .to.equal(SEC * i++ + MIN  * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT5M${i}S`))  .to.equal(SEC * i++ + MIN  * 5));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT1H${i}S`))  .to.equal(SEC * i++ + HOUR * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT6H${i}S`))  .to.equal(SEC * i++ + HOUR * 6));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT1H1M${i}S`)).to.equal(SEC * i++ + HOUR * 1 + MIN * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`PT6H5M${i}S`)).to.equal(SEC * i++ + HOUR * 6 + MIN * 5));
+				for(let i = 1; i <= 60; expect(parseDuration(`P1DT1H${i}S`)).to.equal(SEC * i++ + HOUR * 1 + DAY * 1));
+				for(let i = 1; i <= 60; expect(parseDuration(`P8DT6H${i}S`)).to.equal(SEC * i++ + HOUR * 6 + DAY * 8));
+				expect(parseDuration("P1MT1H1S")).to.be.closeTo(SEC * 1 + HOUR * 1 + YEAR / 12, 0.00005);
+				expect(parseDuration("P2MT6H2S")).to.be.closeTo(SEC * 2 + HOUR * 6 + YEAR / 6,  0.00005);
+			});
+			
+			it("parses weeks", () => {
+				expect(parseDuration("P1W")).to.equal(WEEK * 1);
+				expect(parseDuration("P2W")).to.equal(WEEK * 2);
+				expect(parseDuration("P3W")).to.equal(WEEK * 3);
+			});
+			
+			it("parses fractional values", () => {
+				expect(parseDuration("P0.5Y")) .to.equal(YEAR * 0.5);
+				expect(parseDuration("P0.05Y")).to.equal(YEAR * 0.05);
+				expect(parseDuration("P0.5W")) .to.equal(WEEK * 0.5);
+				expect(parseDuration("P1.5W")) .to.equal(WEEK * 1.5);
+				expect(parseDuration("P1.25Y")).to.equal(YEAR * 1.25);
+				expect(parseDuration("P0.05D")).to.equal(DAY  * 0.05);
+				expect(parseDuration("P1.25D")).to.equal(DAY  * 1.25);
+				expect(parseDuration("PT0.5H")).to.equal(HOUR * 0.5);
+				expect(parseDuration("PT2.6H")).to.equal(HOUR * 2.6);
+				expect(parseDuration("PT0.5M")).to.equal(MIN  * 0.5);
+				expect(parseDuration("PT1.2M")).to.equal(MIN  * 1.2);
+				expect(parseDuration("PT0.5S")).to.equal(SEC  * 0.5);
+				expect(parseDuration("PT1.5S")).to.equal(SEC  * 1.5);
+				expect(parseDuration("P0.5M")) .to.be.closeTo((YEAR / 12) * 0.5, 0.00005);
+				expect(parseDuration("P1.3M")) .to.be.closeTo((YEAR / 12) * 1.3, 0.00005);
+			});
+			
+			it("parses empty values", () => {
+				expect(parseDuration("P0Y"))     .to.equal(0);
+				expect(parseDuration("P0W"))     .to.equal(0);
+				expect(parseDuration("P0M"))     .to.equal(0);
+				expect(parseDuration("P0D"))     .to.equal(0);
+				expect(parseDuration("PT0H"))    .to.equal(0);
+				expect(parseDuration("PT0M"))    .to.equal(0);
+				expect(parseDuration("PT0S"))    .to.equal(0);
+				expect(parseDuration("P0.0YT0S")).to.equal(0);
+				expect(parseDuration("P0.0MT0S")).to.equal(0);
+				expect(parseDuration("P0.0DT0S")).to.equal(0);
+				expect(parseDuration("P0DT0.0H")).to.equal(0);
+				expect(parseDuration("P0DT0.0M")).to.equal(0);
+				expect(parseDuration("P0DT0.0S")).to.equal(0);
+			});
+			
+			it("rejects missing values", () => {
+				expect(parseDuration("PY"))  .to.be.NaN;
+				expect(parseDuration("PW"))  .to.be.NaN;
+				expect(parseDuration("P1YM")).to.be.NaN;
+				expect(parseDuration("P2YD")).to.be.NaN;
+				expect(parseDuration("P1DT")).to.be.NaN;
+				expect(parseDuration("P1MT")).to.be.NaN;
+				expect(parseDuration("P1YT")).to.be.NaN;
+			});
+			
+			it("parses case-insensitively", () => {
+				expect(parseDuration("p1d")) .to.equal(DAY);
+				expect(parseDuration("P1d")) .to.equal(DAY);
+				expect(parseDuration("pT1S")).to.equal(SEC);
+				expect(parseDuration("Pt1s")).to.equal(SEC);
+				expect(parseDuration("p1W")) .to.equal(WEEK);
+				expect(parseDuration("P1w")) .to.equal(WEEK);
+			});
+		});
+	
+		describe("English quantities", function(){
+			this.slow(500);
+			const test = (units, power, fuzz = 0) => {
+				units.push(...units.filter(x => "Ms" !== x && x.length > 1).map(x => x + "s"));
+				for(const unit of units)
+				for(const name of [unit, unit.toLowerCase(), unit.toUpperCase()])
+				for(let s = ""; s.length < 4; s += " ")
+				for(let i = 0; i <= 100; ++i){
+					const str = i + s + name;
+					const exp = i * power;
+					const msg = `Expected "${str}" to be parsed as ${exp}`;
+					fuzz
+						? expect(parseDuration(str), msg).to.be.closeTo(exp, fuzz)
+						: expect(parseDuration(str), msg).to.equal(exp);
+				}
+			};
+			it("parses milliseconds",   () => test(["Ms", "Millisecond"],  1));
+			it("parses seconds",        () => test(["S", "Sec", "Second"], SEC));
+			it("parses minutes",        () => test(["M", "Min", "Minute"], MIN));
+			it("parses hours",          () => test(["H", "Hr",  "Hour"],   HOUR));
+			it("parses days",           () => test(["D", "Da",  "Day"],    DAY));
+			it("parses weeks",          () => test(["W", "Wk",  "Week"],   DAY * 7));
+			it("parses months",         () => test(["Month"],              YEAR / 12));
+			it("parses years",          () => test(["Y", "Yr",  "Year"],   YEAR));
+			it("parses fortnights",     () => test(["Fortnight"],          DAY * 14));
+			it("rejects unknown units", () => {
+				expect(parseDuration("1xyz")).to.be.NaN;
+				expect(parseDuration("2sz")) .to.be.NaN;
+				expect(parseDuration("3msz")).to.be.NaN;
+			});
+			it("rejects unitless values", () => {
+				expect(parseDuration("0")) .to.be.NaN;
+				expect(parseDuration("40")).to.be.NaN;
+			});
+			it("accepts multiple values", () => {
+				expect(parseDuration("1 min 2 sec"))        .to.equal(MIN  + SEC * 2);
+				expect(parseDuration("1 min, 2 sec"))       .to.equal(MIN  + SEC * 2);
+				expect(parseDuration("1 min; 2 sec"))       .to.equal(MIN  + SEC * 2);
+				expect(parseDuration("1 minute 2 seconds")) .to.equal(MIN  + SEC * 2);
+				expect(parseDuration("1 minute, 2 seconds")).to.equal(MIN  + SEC * 2);
+				expect(parseDuration("1 hour, 43 seconds")) .to.equal(HOUR + SEC * 43);
+				expect(parseDuration("3 hours and 1 day"))  .to.equal(DAY  + HOUR * 3);
+				expect(parseDuration("1 day, 2 hours, 3s")) .to.equal(DAY  + HOUR * 2 + SEC * 3);
+				expect(parseDuration("1 hour; 1m, 4 sec"))  .to.equal(MIN  + HOUR * 1 + SEC * 4);
+				expect(parseDuration("1m, , 4 seconds"))    .to.equal(MIN  + SEC * 4);
+			});
+			it("trims whitespace", () => {
+				expect(parseDuration(" 1 min")).to.equal(MIN);
+				expect(parseDuration("1 min ")).to.equal(MIN);
+				expect(parseDuration(" 1min ")).to.equal(MIN);
+			});
+		});
+	});
+	
 	describe("parsePrimitive()", () => {
 		const {parsePrimitive} = utils;
 		const parse = (input, expected, at) => expect(parsePrimitive(input, at)).to.eql(expected);

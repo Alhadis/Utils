@@ -106,7 +106,7 @@ export declare function nearest(subject: Node, selector: string, ignoreSelf?: bo
 export declare function nerf(fn: Function, context?: object): Function;
 export declare function normalise(value: number): number[];
 export declare function ordinalSuffix(n: number): string;
-export declare function parseCSSDuration(value: string): number;
+export declare function parseDuration(value: string | CSSUnitValue): number;
 export declare function parseHTMLFragment(input: string): Node[];
 export declare function parseKeywords(keywords: string | string[]): {[key: string]: boolean};
 export declare function parsePrimitive(input: string, useDoubleAt?: boolean): ParsedPrimitive;
