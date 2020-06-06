@@ -49,7 +49,6 @@ export declare function collectStrings(input: any[] | string, refs?: WeakSet<obj
 export declare function collectTextNodes(el: Element, filter?: string): CharacterData[];
 export declare function cookie(name: string, value?: string, attr?: {expires?: string; path?: string; domain?: string; secure?: boolean}): string;
 export declare function crc32(data: number[]): number;
-export declare function cycle(input: string, list: string | Array<(string|Array<string>)>, steps?: number): string;
 export declare function deCasteljau(points: Point[], position?: number): Point[];
 export declare function debounce(fn: Function, limit?: number, asap?: boolean): Function;
 export declare function deepest(el: Element): Node;
@@ -126,6 +125,7 @@ export declare function rgbToHSV(input: RGBColour): HSVColour;
 export declare function rgbToHex(input: RGBColour, asString?: boolean): string | number;
 export declare function rgba(r: number, g: number, b: number, a: number): number[];
 export declare function rmrf(paths: string | string[], ignoreErrors?: boolean): Promise<void>;
+export declare function rotate(input: string, list: string | Array<(string|Array<string>)>, steps?: number): string;
 export declare function rotl(value: number, count: number): number;
 export declare function rotr(value: number, count: number): number;
 export declare function roundTiesToAway(input: number): number;

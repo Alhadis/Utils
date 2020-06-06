@@ -76,86 +76,6 @@ describe("Text-related functions", () => {
 		});
 	});
 	
-	describe("cycle()", () => {
-		const {cycle} = utils;
-		describe("Rotation queue", () => {
-			it("cycles single characters", () => {
-				expect(cycle("\"A\"'B'`C`", "\"'`")).to.equal("'A'`B`\"C\"");
-				expect(cycle("\"\"'\"\"",   "\"'")) .to.equal("''\"''");
-				expect(cycle("That's it?",  "'’"))  .to.equal("That’s it?");
-			});
-			
-			it("cycles paired characters", () => {
-				expect(cycle("[A](B){C}", ["[]", "()", "{}"])).to.equal("(A){B}[C]");
-				expect(cycle("[[(A)]]",   ["[]", "()"]))      .to.equal("(([A]))");
-				expect(cycle("(] [)",     ["(]", "[)"]))      .to.equal("[) (]");
-			});
-			
-			it("cycles paired strings", () => {
-				const cmdSubst = [["$(", ")"], "``"];
-				expect(cycle("$(a `b`)",    cmdSubst)).to.equal("`a $(b)`");
-				expect(cycle("$(a $(b) c)", cmdSubst)).to.equal("`a `b` c`");
-			});
-			
-			it("cycles arbitrary strings", () => {
-				const input  = "<b>&quot;A&apos;ight&quot;</b>";
-				const output = "<b>&apos;A&quot;ight&apos;</b>";
-				expect(cycle(input, [["&quot;"],     ["&apos;"]]))    .to.equal(output);
-				expect(cycle(input, [["&quot;", ""], ["&apos;", ""]])).to.equal(output);
-				expect(cycle(input, [["", "&quot;"], ["", "&apos;"]])).to.equal(output);
-			});
-			
-			it("cycles mixed-format strings", () => {
-				const input  = "[ABC [[[XYZ]]] 123] ${456} (789)";
-				const output = "(ABC (((XYZ))) 123) [456] ${789}";
-				const chars  = [["[", "]"], "()", ["${", "}"]];
-				expect(cycle(input, chars)).to.equal(output);
-			});
-			
-			it("ignores empty string pairs", () => {
-				expect(cycle("[]", ""))                    .to.equal("[]");
-				expect(cycle("[]", [""]))                  .to.equal("[]");
-				expect(cycle("[]", ["", ""]))              .to.equal("[]");
-				expect(cycle("[]", [[]]))                  .to.equal("[]");
-				expect(cycle("[]", [[], []]))              .to.equal("[]");
-				expect(cycle("[]", [[""], [""]]))          .to.equal("[]");
-				expect(cycle("[]", [["", ""], ["", ""]]))  .to.equal("[]");
-				expect(cycle("[]", [["[", "]"], ""]))      .to.equal("[]");
-				expect(cycle("[]", [["[", "]"], ["", ""]])).to.equal("[]");
-			});
-		});
-		
-		describe("Offsets", () => {
-			const shadeChars = "<░▒▓█▓▒░>";
-			const shadeLines = `
-				<░▒▓█▓▒░>
-				░▒▓█▓█▓▒<
-				▒▓█▓▒▓█▓░
-				▓█▓▒░▒▓█▒
-				█▓▒░>░▒▓▓
-				▓▒░><>░▒█
-				▒░><░<>░▓
-				░><░▒░<>▒
-				><░▒▓▒░<░
-				<░▒▓█▓▒░>
-			`.trim().split(/\s+/);
-			
-			it("cycles by arbitrary offsets", () => {
-				const lines = [];
-				for(let i = 0; i <= shadeChars.length; ++i)
-					lines.push(cycle(shadeChars, shadeChars, i));
-				expect(lines).to.eql(shadeLines);
-			});
-			
-			it("cycles in reverse", () => {
-				const lines = [];
-				for(let i = 0; i <= shadeChars.length; ++i)
-					lines.push(cycle(shadeChars, shadeChars, -i));
-				expect(lines).to.eql([...shadeLines].reverse());
-			});
-		});
-	});
-	
 	describe("deindent()", () => {
 		const {deindent} = utils;
 		describe("String literals", () => {
@@ -2084,6 +2004,86 @@ describe("Text-related functions", () => {
 			expect(parseURL("//usr/share/man/whatis?a=b"))    .to.eql({...result, query: "?a=b"});
 			expect(parseURL("//usr/share/man/whatis#foo"))    .to.eql({...result, fragment: "#foo"});
 			expect(parseURL("//usr/share/man/whatis?a=b#foo")).to.eql({...result, query: "?a=b", fragment: "#foo"});
+		});
+	});
+	
+	describe("rotate()", () => {
+		const {rotate} = utils;
+		describe("Character lists", () => {
+			it("rotates single characters", () => {
+				expect(rotate("\"A\"'B'`C`", "\"'`")).to.equal("'A'`B`\"C\"");
+				expect(rotate("\"\"'\"\"",   "\"'")) .to.equal("''\"''");
+				expect(rotate("That's it?",  "'’"))  .to.equal("That’s it?");
+			});
+			
+			it("rotates paired characters", () => {
+				expect(rotate("[A](B){C}", ["[]", "()", "{}"])).to.equal("(A){B}[C]");
+				expect(rotate("[[(A)]]",   ["[]", "()"]))      .to.equal("(([A]))");
+				expect(rotate("(] [)",     ["(]", "[)"]))      .to.equal("[) (]");
+			});
+			
+			it("rotates paired strings", () => {
+				const cmdSubst = [["$(", ")"], "``"];
+				expect(rotate("$(a `b`)",    cmdSubst)).to.equal("`a $(b)`");
+				expect(rotate("$(a $(b) c)", cmdSubst)).to.equal("`a `b` c`");
+			});
+			
+			it("rotates arbitrary strings", () => {
+				const input  = "<b>&quot;A&apos;ight&quot;</b>";
+				const output = "<b>&apos;A&quot;ight&apos;</b>";
+				expect(rotate(input, [["&quot;"],     ["&apos;"]]))    .to.equal(output);
+				expect(rotate(input, [["&quot;", ""], ["&apos;", ""]])).to.equal(output);
+				expect(rotate(input, [["", "&quot;"], ["", "&apos;"]])).to.equal(output);
+			});
+			
+			it("rotates mixed-format strings", () => {
+				const input  = "[ABC [[[XYZ]]] 123] ${456} (789)";
+				const output = "(ABC (((XYZ))) 123) [456] ${789}";
+				const chars  = [["[", "]"], "()", ["${", "}"]];
+				expect(rotate(input, chars)).to.equal(output);
+			});
+			
+			it("ignores empty string pairs", () => {
+				expect(rotate("[]", ""))                    .to.equal("[]");
+				expect(rotate("[]", [""]))                  .to.equal("[]");
+				expect(rotate("[]", ["", ""]))              .to.equal("[]");
+				expect(rotate("[]", [[]]))                  .to.equal("[]");
+				expect(rotate("[]", [[], []]))              .to.equal("[]");
+				expect(rotate("[]", [[""], [""]]))          .to.equal("[]");
+				expect(rotate("[]", [["", ""], ["", ""]]))  .to.equal("[]");
+				expect(rotate("[]", [["[", "]"], ""]))      .to.equal("[]");
+				expect(rotate("[]", [["[", "]"], ["", ""]])).to.equal("[]");
+			});
+		});
+		
+		describe("Offsets", () => {
+			const shadeChars = "<░▒▓█▓▒░>";
+			const shadeLines = `
+				<░▒▓█▓▒░>
+				░▒▓█▓█▓▒<
+				▒▓█▓▒▓█▓░
+				▓█▓▒░▒▓█▒
+				█▓▒░>░▒▓▓
+				▓▒░><>░▒█
+				▒░><░<>░▓
+				░><░▒░<>▒
+				><░▒▓▒░<░
+				<░▒▓█▓▒░>
+			`.trim().split(/\s+/);
+			
+			it("rotates by arbitrary offsets", () => {
+				const lines = [];
+				for(let i = 0; i <= shadeChars.length; ++i)
+					lines.push(rotate(shadeChars, shadeChars, i));
+				expect(lines).to.eql(shadeLines);
+			});
+			
+			it("rotates in reverse", () => {
+				const lines = [];
+				for(let i = 0; i <= shadeChars.length; ++i)
+					lines.push(rotate(shadeChars, shadeChars, -i));
+				expect(lines).to.eql([...shadeLines].reverse());
+			});
 		});
 	});
 	
