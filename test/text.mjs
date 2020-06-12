@@ -1222,6 +1222,12 @@ describe("Text-related functions", () => {
 				expect(parseDuration("1 hour; 1m, 4 sec"))  .to.equal(MIN  + HOUR * 1 + SEC * 4);
 				expect(parseDuration("1m, , 4 seconds"))    .to.equal(MIN  + SEC * 4);
 			});
+			it("accepts negative values", () => {
+				expect(parseDuration("-30ms"))     .to.equal(-30);
+				expect(parseDuration("-4s"))       .to.equal(-SEC * 4);
+				expect(parseDuration("-1 minute")) .to.equal(-MIN);
+				expect(parseDuration("1 hour;-2s")).to.equal(HOUR + -SEC * 2);
+			});
 			it("trims whitespace", () => {
 				expect(parseDuration(" 1 min")).to.equal(MIN);
 				expect(parseDuration("1 min ")).to.equal(MIN);
