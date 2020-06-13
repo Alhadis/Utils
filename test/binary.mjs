@@ -31,6 +31,15 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	describe("ascii85Encode()", () => {
+		const {ascii85Encode} = utils;
+		it("encodes 1 byte",  () => expect(ascii85Encode([0x41])).to.equal("5l"));
+		it("encodes 2 bytes", () => expect(ascii85Encode([0x41, 0x5A])).to.equal("6!="));
+		it("encodes 3 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F])).to.equal("7W32"));
+		it("encodes 4 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F, 0x2E])).to.equal("7W32t"));
+		it("encodes 8 bytes", () => expect(ascii85Encode([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65])).to.equal("9jqo^F*2M7"));
+	});
+	
 	describe("base64Decode()", () => {
 		const {base64Decode} = utils;
 		it("decodes ASCII",   () => expect(base64Decode("Rm9vQmFy")).to.eql([0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72]));
