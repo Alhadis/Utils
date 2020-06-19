@@ -31,6 +31,35 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	describe("ascii85Decode()", () => {
+		const {ascii85Decode} = utils;
+		it("decodes 1 byte",       () => expect(ascii85Decode("5l")).to.eql([0x41]));
+		it("decodes 2 bytes",      () => expect(ascii85Decode("6!=")).to.eql([0x41, 0x5A]));
+		it("decodes 3 bytes",      () => expect(ascii85Decode("7W32")).to.eql([0x46, 0x6F, 0x6F]));
+		it("decodes 4 bytes",      () => expect(ascii85Decode("7W32t")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
+		it("decodes 8 bytes",      () => expect(ascii85Decode("9jqo^F*2M7")).to.eql([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65]));
+		it("ignores whitespace",   () => expect(ascii85Decode("7\rW\n3 \t2\ft")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
+		it("skips a leading `<~`", () => expect(ascii85Decode("<~5l")).to.eql([0x41]));
+		it("stops parsing at `~`", () => expect(ascii85Decode("7W32~t")).to.eql([0x46, 0x6F, 0x6F]));
+		it("expands `z` into null-bytes", () => {
+			expect(ascii85Decode("z"))   .to.eql(new Array(4).fill(0));
+			expect(ascii85Decode("zz"))  .to.eql(new Array(8).fill(0));
+			expect(ascii85Decode("zzz")) .to.eql(new Array(12).fill(0));
+			expect(ascii85Decode("z6!=")).to.eql([0, 0, 0, 0, 0x41, 0x5A]);
+		});
+		it("throws an exception for illegal characters", () => {
+			expect(() => ascii85Decode("v"))  .to.throw(SyntaxError, 'Unexpected character "v"');
+			expect(() => ascii85Decode("ax")) .to.throw(SyntaxError, 'Unexpected character "x"');
+			expect(() => ascii85Decode("aby")).to.throw(SyntaxError, 'Unexpected character "y"');
+		});
+		it("throws an exception for misplaced `z` symbols", () => {
+			const err = [SyntaxError, "Unexpected `z` shorthand"];
+			expect(() => ascii85Decode("5z"))  .to.throw(...err);
+			expect(() => ascii85Decode("5lz")) .to.throw(...err);
+			expect(() => ascii85Decode("6!=z")).to.throw(...err);
+		});
+	});
+	
 	describe("ascii85Encode()", () => {
 		const {ascii85Encode} = utils;
 		it("encodes 1 byte",  () => expect(ascii85Encode([0x41])).to.equal("5l"));
@@ -38,6 +67,7 @@ describe("Byte-level functions", () => {
 		it("encodes 3 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F])).to.equal("7W32"));
 		it("encodes 4 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F, 0x2E])).to.equal("7W32t"));
 		it("encodes 8 bytes", () => expect(ascii85Encode([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65])).to.equal("9jqo^F*2M7"));
+		it("encodes 4 null-bytes as `z`", () => expect(ascii85Encode([0, 0, 0, 0])).to.equal("z"));
 	});
 	
 	describe("base64Decode()", () => {

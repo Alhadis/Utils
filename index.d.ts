@@ -24,6 +24,8 @@ export declare function addTo(parent: Node): Function;
 export declare function adler32(bytes: number[]): number;
 export declare function alignText(input: string, width: number, axis?: number, char?: string): string;
 export declare function angleTo(a: Point, b: Point): number;
+export declare function ascii85Decode(input: string): number[];
+export declare function ascii85Encode(bytes: number[]): string;
 export declare function base64Decode(data: string): number[];
 export declare function base64Encode(bytes: number[]): string;
 export declare function bindMethods(subject: object): object;
