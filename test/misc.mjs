@@ -717,6 +717,32 @@ describe("Miscellaneous functions", () => {
 			expect(resolveProperty("foo.name", null))     .to.equal(undefined);
 		});
 	});
+	
+	describe("sortForRegExp()", () => {
+		const {sortForRegExp: sort} = utils;
+		it("sorts case-sensitively by default", () => expect(sort(["X", "a", "A", "x"])).to.eql(["A", "X", "a", "x"]));
+		it("supports case-insensitive sorting", () => expect(sort(["AB", "abc"], true)) .to.eql(["abc", "AB"]));
+		it("can handle identical values",       () => expect(sort(["BA", "A", "A"]))    .to.eql(["A", "A", "BA"]));
+		it("picks longer strings when tied",    () => {
+			expect(sort(["foo", "foobar"])) .to.eql(["foobar", "foo"]);
+			expect(sort(["ab", "a", "abc"])).to.eql(["abc", "ab", "a"]);
+			expect(sort(["abc", "A", "ab"])).to.eql(["A", "abc", "ab"]);
+		});
+		it("breaks strings into lines before sorting", () => {
+			expect(sort("a\nab\nabc"))   .to.eql(["abc", "ab", "a"]);
+			expect(sort("AB\nabc", true)).to.eql(["abc", "AB"]);
+		});
+		it("filters empty lines when sorting strings", () => {
+			expect(sort("a\n\nabc",      false)).to.eql(["abc", "a"]);
+			expect(sort("\nXYZ\n\nabc\n", true)).to.eql(["abc", "XYZ"]);
+		});
+		it("stringifies anything that isn't an array", () => {
+			let calls = 0;
+			const obj = {toString(){ ++calls; return "X\nXY\nXYZ"; }};
+			expect(sort(obj)).to.eql(["XYZ", "XY", "X"]);
+			expect(calls).to.equal(1);
+		});
+	});
 
 	describe("sortn()", () => {
 		const {sortn} = utils;

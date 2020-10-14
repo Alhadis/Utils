@@ -138,6 +138,7 @@ export declare function roundTowardPositive(input: number): number;
 export declare function sha1(input: number[]): string;
 export declare function sip(file: string, length?: number, offset?: number, raw?: boolean): Promise<(string|Uint8Array)>;
 export declare function slug(name: string): string;
+export declare function sortForRegExp(input: string | any[], caseInsensitive?: boolean): any[];
 export declare function sortn(a: string, b: string): number;
 export declare function splitOptions(argv: Array<Array<string>>, niladicShort?: string, monadicShort?: string, monadicLong?: string): string[];
 export declare function splitStrings(input: string, options?: {delimiters?: string; quoteChars?: string; escapeChars?: string; keepQuotes?: boolean; keepEscapes?: boolean}): string[];
