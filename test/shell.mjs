@@ -240,7 +240,7 @@ describe("Shell-specific functions", () => {
 			}));
 		
 		it("can pipe input to the first command", async () =>
-			expect(await execChain([["sed", "s/foo/bar/"]], "<foo>")).to.eql({
+			expect(await execChain([["sed", "s/foo/bar/"]], "<foo>\n")).to.eql({
 				code: 0,
 				stderr: "",
 				stdout: "<bar>\n",
