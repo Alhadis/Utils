@@ -38,14 +38,18 @@ describe("Byte-level functions", () => {
 		it("decodes 3 bytes",      () => expect(ascii85Decode("7W32")).to.eql([0x46, 0x6F, 0x6F]));
 		it("decodes 4 bytes",      () => expect(ascii85Decode("7W32t")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
 		it("decodes 8 bytes",      () => expect(ascii85Decode("9jqo^F*2M7")).to.eql([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65]));
+		it("decodes all 32-bits",  () => expect(ascii85Decode("J=:u^")).to.eql([0x80, 0x9A, 0x7F, 0xF7]));
 		it("ignores whitespace",   () => expect(ascii85Decode("7\rW\n3 \t2\ft")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
 		it("skips a leading `<~`", () => expect(ascii85Decode("<~5l")).to.eql([0x41]));
 		it("stops parsing at `~`", () => expect(ascii85Decode("7W32~t")).to.eql([0x46, 0x6F, 0x6F]));
-		it("expands `z` into null-bytes", () => {
+		it("expands `z` into null-bytes", async () => {
 			expect(ascii85Decode("z"))   .to.eql(new Array(4).fill(0));
 			expect(ascii85Decode("zz"))  .to.eql(new Array(8).fill(0));
 			expect(ascii85Decode("zzz")) .to.eql(new Array(12).fill(0));
 			expect(ascii85Decode("z6!=")).to.eql([0, 0, 0, 0, 0x41, 0x5A]);
+			const json = JSON.parse(String.fromCharCode(...file("ascii85.json")));
+			for(const [encoded, bytes] of Object.entries(json))
+				expect(ascii85Decode(encoded)).to.eql(bytes);
 		});
 		it("throws an exception for illegal characters", () => {
 			expect(() => ascii85Decode("v"))  .to.throw(SyntaxError, 'Unexpected character "v"');
@@ -68,6 +72,12 @@ describe("Byte-level functions", () => {
 		it("encodes 4 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F, 0x2E])).to.equal("7W32t"));
 		it("encodes 8 bytes", () => expect(ascii85Encode([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65])).to.equal("9jqo^F*2M7"));
 		it("encodes 4 null-bytes as `z`", () => expect(ascii85Encode([0, 0, 0, 0])).to.equal("z"));
+		it("unsets the sign-bit when encoding", () => expect(ascii85Encode([0x80, 0x9A, 0x7F, 0xF7])).to.equal("J=:u^"));
+		it("correctly truncates null-bytes", () => {
+			const json = JSON.parse(String.fromCharCode(...file("ascii85.json")));
+			for(const [encoded, bytes] of Object.entries(json))
+				expect(ascii85Encode(bytes)).to.equal(encoded);
+		});
 	});
 	
 	describe("base64Decode()", () => {
