@@ -318,7 +318,7 @@ describe("Shell-specific functions", () => {
 			let expected, result;
 			
 			before("Loading fixtures", async () => {
-				const paths = ".gitignore file.1 file.2 subdir.1".split(" ");
+				const paths = ".gitattributes .gitignore file.1 file.2 subdir.1".split(" ");
 				expected = new Map(paths.map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]));
 				stripTimestamps(expected);
 				unlink(lnk);
@@ -375,7 +375,7 @@ describe("Shell-specific functions", () => {
 			let linked = [];
 			
 			before("Loading fixtures", async () => {
-				const paths = ".gitignore file.1 file.2".split(" ");
+				const paths = ".gitattributes .gitignore file.1 file.2".split(" ");
 				levels.push([...paths, "subdir.1"]);
 				for(let s = "", i = 1; i < 5; ++i){
 					s += `subdir.${i}`;
@@ -487,7 +487,7 @@ describe("Shell-specific functions", () => {
 			
 			it("ignores paths matching a regular expression", async () => {
 				const files = ["subdir.1", ".gitignore"].map(x => [x = path.join(fixtures, x), fs.lstatSync(x)]);
-				const list = stripTimestamps(await ls(fixtures, {ignore: /file\.[12]$/}));
+				const list = stripTimestamps(await ls(fixtures, {ignore: /file\.[12]$|\.gitattributes$/}));
 				assert.deepStrictEqual(list, stripTimestamps(new Map(files)));
 			});
 			
@@ -510,6 +510,7 @@ describe("Shell-specific functions", () => {
 				const result = await ls(fixtures, {recurse: -1, ignore});
 				expect([...result.keys()]).not.to.include(path.join(fixtures, "subdir.1", "subdir.2"));
 				expect(scanned.sort()).to.eql(`
+					.gitattributes
 					.gitignore
 					file.1
 					file.2
