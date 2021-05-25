@@ -30,6 +30,7 @@ node_modules:
 		--no-shrinkwrap
 	git checkout -- package.json
 	rm -f package-lock.json
+	tools/fix-chai-exports.sed -i.bak $@/chai/package.json
 
 
 # Symlink pre-commit script
