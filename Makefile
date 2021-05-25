@@ -4,7 +4,7 @@ all: install lint types test
 # Generate TypeScript declarations from JSDoc
 types: index.d.ts
 index.d.ts: index.mjs lib/*.mjs
-	npx jg typewrite \
+	"`npx jg -p typewrite`" \
 		--exclude BlendModes \
 		--declare const BlendModes '{[key: string]: (...args: number[]) => number};' \
 		--header '// Generated file; run `make types` to update.' \
