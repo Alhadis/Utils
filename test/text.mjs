@@ -39,40 +39,187 @@ describe("Text-related functions", () => {
 		});
 	});
 	
-	describe("camelToKebabCase()", () => {
-		const {camelToKebabCase} = utils;
-		it("converts camelCased segments", () => {
-			expect(camelToKebabCase("fooB")).to.equal("foo-b");
-			expect(camelToKebabCase("fBar")).to.equal("f-bar");
-			expect(camelToKebabCase("fooBar")).to.equal("foo-bar");
-			expect(camelToKebabCase("fooBarBaz")).to.equal("foo-bar-baz");
+	describe("camelise()", () => {
+		const {camelise} = utils;
+		it("converts alphabetic input", () => {
+			expect(camelise("foo")).to.equal("foo");
+			expect(camelise("foo_bar")).to.equal("fooBar");
+			expect(camelise("foo-bar")).to.equal("fooBar");
+			expect(camelise("foo_bar_baz")).to.equal("fooBarBaz");
+			expect(camelise("foo-bar-baz")).to.equal("fooBarBaz");
+			expect(camelise("FOO_BAR_BAZ")).to.equal("fooBarBaz");
+			expect(camelise("FOO-BAR-BAZ")).to.equal("fooBarBaz");
 		});
-		it("converts segments with numbers", () => {
-			expect(camelToKebabCase("foo1Bar")).to.equal("foo1-bar");
-			expect(camelToKebabCase("fooBar1")).to.equal("foo-bar1");
-			expect(camelToKebabCase("fooBar1Baz")).to.equal("foo-bar1-baz");
+		it("converts alphanumeric input", () => {
+			expect(camelise("foo1-bar")).to.equal("foo1Bar");
+			expect(camelise("foo-1bar")).to.equal("foo1Bar");
+			expect(camelise("foo1-bar2-baz")).to.equal("foo1Bar2Baz");
+			expect(camelise("foo-1bar-2baz")).to.equal("foo1Bar2Baz");
+			expect(camelise("foo12-bar34-baz")).to.equal("foo12Bar34Baz");
+			expect(camelise("foo-12bar-34baz")).to.equal("foo12Bar34Baz");
+			expect(camelise("foo_bar3_baz")).to.equal("fooBar3Baz");
+			expect(camelise("foo_bar_3baz")).to.equal("fooBar3Baz");
+			expect(camelise("fOO_bAR_3bAZ")).to.equal("fooBar3Baz");
+			expect(camelise("foo_bar_3_baz")).to.equal("fooBar3Baz");
+			expect(camelise("F0O_BAR_3_BAZ")).to.equal("f0oBar3Baz");
+			expect(camelise("123_foo_456")).to.equal("123Foo456");
 		});
-		it("converts segments with acronyms", () => {
-			expect(camelToKebabCase("fooHTML")).to.equal("foo-html");
-			expect(camelToKebabCase("fooHTMLBar")).to.equal("foo-html-bar");
-			expect(camelToKebabCase("fooBarHTML")).to.equal("foo-bar-html");
-			expect(camelToKebabCase("fooBarHTMLBaz")).to.equal("foo-bar-html-baz");
-			expect(camelToKebabCase("fooHTMLBarBaz")).to.equal("foo-html-bar-baz");
-			expect(camelToKebabCase("fooHTML1")).to.equal("foo-html1");
-			expect(camelToKebabCase("foo1HTML")).to.equal("foo1-html");
-			expect(camelToKebabCase("foo1HTML2")).to.equal("foo1-html2");
-			expect(camelToKebabCase("foo10HTML20")).to.equal("foo10-html20");
-			expect(camelToKebabCase("foo1H2ML3")).to.equal("foo1-h2ml3");
-			expect(camelToKebabCase("f01oH2ML3")).to.equal("f01o-h2ml3");
+		it("converts input with non-alphanumeric separators", () => {
+			expect(camelise("ABC.XYZ")).to.equal("abcXyz");
+			expect(camelise("fOO BAr bAz")).to.equal("fooBarBaz");
+			expect(camelise("Get URL Of XML file")).to.equal("getUrlOfXmlFile");
 		});
-		it("only converts camelCased strings", () => {
-			expect(camelToKebabCase("Foo")).to.equal("Foo");
-			expect(camelToKebabCase("foo_bar")).to.equal("foo_bar");
-			expect(camelToKebabCase("foo_barBaz")).to.equal("foo_barBaz");
-			expect(camelToKebabCase("1FooBar")).to.equal("1FooBar");
-			expect(camelToKebabCase("1-fooBar")).to.equal("1-fooBar");
-			expect(camelToKebabCase("fooBar-Baz")).to.equal("fooBar-Baz");
-			expect(camelToKebabCase("PascalCase")).to.equal("PascalCase");
+		it("converts arrays of strings", () => {
+			expect(camelise(["ABC", "XYZ"])).to.equal("abcXyz");
+			expect(camelise(["Foo", "Bar", "Baz"])).to.equal("fooBarBaz");
+			expect(camelise([{toString(){ return "Foo"; }}, "BAr"])).to.equal("fooBar");
+			expect(camelise([])).to.equal("");
+		});
+		it("converts to PascalCase", () => {
+			const opts = {pascalCase: true};
+			expect(camelise("FOO BAR", opts)).to.equal("FooBar");
+			expect(camelise("a BC Xyz", opts)).to.equal("ABcXyz");
+			expect(camelise("ab C Xyz", opts)).to.equal("AbCXyz");
+			expect(camelise(["fOO", "Bar"], opts)).to.equal("FooBar");
+		});
+		it("can handle contiguous separators", () => {
+			expect(camelise("foo----bar")).to.equal("fooBar");
+			expect(camelise("foo---bar--baz")).to.equal("fooBarBaz");
+		});
+		describe("When `preserveCaps` is enabled", () => {
+			it("preserves casing of wholly-uppercase segments", () => {
+				const opts = {preserveCaps: true};
+				expect(camelise("A-URL", opts)).to.equal("AURL");
+				expect(camelise("A-Value", opts)).to.equal("AValue");
+				expect(camelise("XML-URL", opts)).to.equal("XMLURL");
+				expect(camelise("xML-URL", opts)).to.equal("xmlURL");
+				expect(camelise("Get-URL-Of-XML-file", opts)).to.equal("getURLOfXMLFile");
+				expect(camelise("GEt-URL-Of-XML-file", opts)).to.equal("getURLOfXMLFile");
+				expect(camelise("GET-URL-Of-XML-file", opts)).to.equal("GETURLOfXMLFile");
+			});
+			it('lowercases initial segments if set to "except-first"', () => {
+				const opts = {preserveCaps: "except-first"};
+				expect(camelise("A-URL", opts)).to.equal("aURL");
+				expect(camelise("A-Value", opts)).to.equal("aValue");
+				expect(camelise("Xml-URL", opts)).to.equal("xmlURL");
+				expect(camelise("XMl-URL", opts)).to.equal("xmlURL");
+				expect(camelise("XML-URL", opts)).to.equal("xmlURL");
+			});
+			it("doesn't conflict with the `pascalCase` option", () => {
+				const opts = {pascalCase: true, preserveCaps: true};
+				expect(camelise("foo-URL-Bar", opts)).to.equal("FooURLBar");
+				expect(camelise("XML-URL-foo", opts)).to.equal("XMLURLFoo");
+				expect(camelise("XMl-URL-Bar", opts)).to.equal("XmlURLBar");
+				opts.preserveCaps = "except-first";
+				expect(camelise("foo-URL-Bar", opts)).to.equal("FooURLBar");
+				expect(camelise("XML-URL-foo", opts)).to.equal("XmlURLFoo");
+				expect(camelise("XMl-URL-Bar", opts)).to.equal("XmlURLBar");
+			});
+		});
+	});
+	
+	describe("decamelise()", () => {
+		const {decamelise} = utils;
+		it("converts alphabetic input", () => {
+			expect(decamelise("fooB")).to.equal("foo-b");
+			expect(decamelise("fBar")).to.equal("f-bar");
+			expect(decamelise("fooBar")).to.equal("foo-bar");
+			expect(decamelise("fooBarBaz")).to.equal("foo-bar-baz");
+			expect(decamelise("<tagName>")).to.equal("<tag-name>");
+			expect(decamelise("FooBar")).to.equal("foo-bar");
+			expect(decamelise("IFooBar")).to.equal("i-foo-bar");
+			expect(decamelise("aBbCcDd")).to.equal("a-bb-cc-dd");
+			expect(decamelise("Foo.barBaz")).to.equal("foo.bar-baz");
+			expect(decamelise("fooBarBazQ")).to.equal("foo-bar-baz-q");
+			expect(decamelise("transformOriginX")).to.equal("transform-origin-x");
+			expect(decamelise("HTML")).to.equal("html");
+			expect(decamelise("F")).to.equal("f");
+			expect(decamelise("F.")).to.equal("f.");
+		});
+		it("converts alphanumeric input", () => {
+			expect(decamelise("foo1Bar")).to.equal("foo1-bar");
+			expect(decamelise("fooBar1")).to.equal("foo-bar1");
+			expect(decamelise("fooBar1Baz")).to.equal("foo-bar1-baz");
+			expect(decamelise("fooBar1Baz20")).to.equal("foo-bar1-baz20");
+			expect(decamelise("foo1Bar23Baz")).to.equal("foo1-bar23-baz");
+			expect(decamelise("foo1Bar23baz")).to.equal("foo1-bar23baz");
+			expect(decamelise("transformOriginY1")).to.equal("transform-origin-y1");
+			expect(decamelise("1Foo")).to.equal("1-foo");
+			expect(decamelise("1foo")).to.equal("1foo");
+			expect(decamelise("1FooBar")).to.equal("1-foo-bar");
+			expect(decamelise("1fooBar")).to.equal("1foo-bar");
+			expect(decamelise("A4Paper")).to.equal("a4-paper");
+			expect(decamelise("is50Bucks")).to.equal("is50-bucks");
+			expect(decamelise("3DModelFile")).to.equal("3d-model-file");
+		});
+		it("converts input containing acronyms", () => {
+			expect(decamelise("fooHTML")).to.equal("foo-html");
+			expect(decamelise("fooHTML1")).to.equal("foo-html1");
+			expect(decamelise("fooHTMLBar")).to.equal("foo-html-bar");
+			expect(decamelise("fooHTMLBarBaz")).to.equal("foo-html-bar-baz");
+			expect(decamelise("getURLOfPage")).to.equal("get-url-of-page");
+			expect(decamelise("HTMLElement.fooBar")).to.equal("html-element.foo-bar");
+			expect(decamelise("foo1HTML")).to.equal("foo1-html");
+			expect(decamelise("foo1HTML2")).to.equal("foo1-html2");
+			expect(decamelise("foo1H2ML3")).to.equal("foo1-h2ml3");
+			expect(decamelise("fooBarHTML")).to.equal("foo-bar-html");
+			expect(decamelise("fooBarHTMLBaz")).to.equal("foo-bar-html-baz");
+			expect(decamelise("foo10HTML20")).to.equal("foo10-html20");
+			expect(decamelise("f01oH2ML3")).to.equal("f01o-h2ml3");
+			expect(decamelise("isHTML5")).to.equal("is-html5");
+			expect(decamelise("isHTML5?")).to.equal("is-html5?");
+			expect(decamelise("isHTML5Tag")).to.equal("is-html5-tag");
+			expect(decamelise("IsHTML5Tag")).to.equal("is-html5-tag");
+		});
+		it("allows different separators to be used", () => {
+			expect(decamelise("fooBar", "_")).to.equal("foo_bar");
+			expect(decamelise("fooHTMLBar", "_")).to.equal("foo_html_bar");
+			expect(decamelise("FooBar_Baz", "_")).to.equal("foo_bar_baz");
+			expect(decamelise("Foo_BarBaz", ".")).to.equal("foo_bar.baz");
+			expect(decamelise("fooBarBaz", "->")).to.equal("foo->bar->baz");
+		});
+		it("retains casing of alphabetic separators", () => {
+			expect(decamelise("fooBar", "I")).to.equal("fooIbar");
+			expect(decamelise("fooBarHTML", " OR ")).to.equal("foo OR bar OR html");
+		});
+		it("retains casing if `preserveCase` is enabled", () => {
+			expect(decamelise("fooBar", false, true)).to.equal("foo-Bar");
+			expect(decamelise("FooBar", false, true)).to.equal("Foo-Bar");
+			expect(decamelise("A4Paper", false, true)).to.equal("A4-Paper");
+			expect(decamelise("<XYZ>", false, true)).to.equal("<XYZ>");
+			expect(decamelise("fooBarHTML", false, true)).to.equal("foo-Bar-HTML");
+			expect(decamelise("PascalCase", "-", false, true)).to.equal("Pascal-Case");
+			expect(decamelise("PascalCase", ".", false, true)).to.equal("Pascal.Case");
+			expect(decamelise("NOT_CAMEL_CASE.iKnow", "-", false, true)).to.equal("NOT_CAMEL_CASE.i-Know");
+		});
+		describe("When `strict` is enabled", () => {
+			it("converts well-formed camelCase", () => {
+				expect(decamelise("foo", true)).to.equal("foo");
+				expect(decamelise("fooBar", true)).to.equal("foo-bar");
+				expect(decamelise("fooBar2", "_", true)).to.equal("foo_bar2");
+				expect(decamelise("fooBar2HTML", true, true)).to.equal("foo-Bar2-HTML");
+			});
+			it("converts well-formed PascalCase", () => {
+				expect(decamelise("Foo", true)).to.equal("foo");
+				expect(decamelise("FooBar", true)).to.equal("foo-bar");
+				expect(decamelise("FooBar2", "_", true, true)).to.equal("Foo_Bar2");
+			});
+			it("doesn't convert input beginning with a digit", () => {
+				expect(decamelise("1fooBar", true)).to.equal("1fooBar");
+				expect(decamelise("1FooBar", true)).to.equal("1FooBar");
+				expect(decamelise("3D", true)).to.equal("3D");
+			});
+			it("doesn't convert input containing non-alphanumerics", () => {
+				expect(decamelise("foo\0", true)).to.equal("foo\0");
+				expect(decamelise("foo_bar", true)).to.equal("foo_bar");
+				expect(decamelise("foo_barBaz", true)).to.equal("foo_barBaz");
+				expect(decamelise("fooBar-Baz", true)).to.equal("fooBar-Baz");
+				expect(decamelise("<tagName>", true)).to.equal("<tagName>");
+				expect(decamelise("1-fooBar", true)).to.equal("1-fooBar");
+				expect(decamelise("HTMLElement.fooBar", true)).to.equal("HTMLElement.fooBar");
+				expect(decamelise("foo_barBaz", true)).to.equal("foo_barBaz");
+				expect(decamelise("fooBar-Baz", true)).to.equal("fooBar-Baz");
+			});
 		});
 	});
 	
@@ -867,33 +1014,6 @@ describe("Text-related functions", () => {
 		it("implicitly works with array-type arguments", () => {
 			expect(isValidCCNumber([1234, 4567, 1245,   2553])).to.be.true;
 			expect(isValidCCNumber([1234, 4567, "N0PE", 2553])).to.be.false;
-		});
-	});
-	
-	describe("kebabToCamelCase()", () => {
-		const {kebabToCamelCase} = utils;
-		it("converts kebab-case to camelCase", () => {
-			expect(kebabToCamelCase("foo"))            .to.equal("foo");
-			expect(kebabToCamelCase("foo-bar"))        .to.equal("fooBar");
-			expect(kebabToCamelCase("foo-bar-baz"))    .to.equal("fooBarBaz");
-		});
-		it("converts segments ending in numbers", () => {
-			expect(kebabToCamelCase("foo1-bar"))       .to.equal("foo1Bar");
-			expect(kebabToCamelCase("foo1-bar2-baz"))  .to.equal("foo1Bar2Baz");
-			expect(kebabToCamelCase("foo12-bar34-baz")).to.equal("foo12Bar34Baz");
-		});
-		it("converts segments starting with numbers", () => {
-			expect(kebabToCamelCase("foo-1bar"))       .to.equal("foo1bar");
-			expect(kebabToCamelCase("foo-1bar-2baz"))  .to.equal("foo1bar2baz");
-			expect(kebabToCamelCase("foo-12bar-34baz")).to.equal("foo12bar34baz");
-		});
-		it("collapses contiguous dashes into one", () => {
-			expect(kebabToCamelCase("foo----bar"))     .to.equal("fooBar");
-			expect(kebabToCamelCase("foo---bar--baz")) .to.equal("fooBarBaz");
-		});
-		it("lowercases input before converting it", () => {
-			expect(kebabToCamelCase("fooBar-baz"))     .to.equal("foobarBaz");
-			expect(kebabToCamelCase("fooBar-bazQux"))  .to.equal("foobarBazqux");
 		});
 	});
 	
