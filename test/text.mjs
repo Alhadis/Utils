@@ -2133,86 +2133,6 @@ describe("Text-related functions", () => {
 		});
 	});
 	
-	describe("rotate()", () => {
-		const {rotate} = utils;
-		describe("Character lists", () => {
-			it("rotates single characters", () => {
-				expect(rotate("\"A\"'B'`C`", "\"'`")).to.equal("'A'`B`\"C\"");
-				expect(rotate("\"\"'\"\"",   "\"'")) .to.equal("''\"''");
-				expect(rotate("That's it?",  "'’"))  .to.equal("That’s it?");
-			});
-			
-			it("rotates paired characters", () => {
-				expect(rotate("[A](B){C}", ["[]", "()", "{}"])).to.equal("(A){B}[C]");
-				expect(rotate("[[(A)]]",   ["[]", "()"]))      .to.equal("(([A]))");
-				expect(rotate("(] [)",     ["(]", "[)"]))      .to.equal("[) (]");
-			});
-			
-			it("rotates paired strings", () => {
-				const cmdSubst = [["$(", ")"], "``"];
-				expect(rotate("$(a `b`)",    cmdSubst)).to.equal("`a $(b)`");
-				expect(rotate("$(a $(b) c)", cmdSubst)).to.equal("`a `b` c`");
-			});
-			
-			it("rotates arbitrary strings", () => {
-				const input  = "<b>&quot;A&apos;ight&quot;</b>";
-				const output = "<b>&apos;A&quot;ight&apos;</b>";
-				expect(rotate(input, [["&quot;"],     ["&apos;"]]))    .to.equal(output);
-				expect(rotate(input, [["&quot;", ""], ["&apos;", ""]])).to.equal(output);
-				expect(rotate(input, [["", "&quot;"], ["", "&apos;"]])).to.equal(output);
-			});
-			
-			it("rotates mixed-format strings", () => {
-				const input  = "[ABC [[[XYZ]]] 123] ${456} (789)";
-				const output = "(ABC (((XYZ))) 123) [456] ${789}";
-				const chars  = [["[", "]"], "()", ["${", "}"]];
-				expect(rotate(input, chars)).to.equal(output);
-			});
-			
-			it("ignores empty string pairs", () => {
-				expect(rotate("[]", ""))                    .to.equal("[]");
-				expect(rotate("[]", [""]))                  .to.equal("[]");
-				expect(rotate("[]", ["", ""]))              .to.equal("[]");
-				expect(rotate("[]", [[]]))                  .to.equal("[]");
-				expect(rotate("[]", [[], []]))              .to.equal("[]");
-				expect(rotate("[]", [[""], [""]]))          .to.equal("[]");
-				expect(rotate("[]", [["", ""], ["", ""]]))  .to.equal("[]");
-				expect(rotate("[]", [["[", "]"], ""]))      .to.equal("[]");
-				expect(rotate("[]", [["[", "]"], ["", ""]])).to.equal("[]");
-			});
-		});
-		
-		describe("Offsets", () => {
-			const shadeChars = "<░▒▓█▓▒░>";
-			const shadeLines = `
-				<░▒▓█▓▒░>
-				░▒▓█▓█▓▒<
-				▒▓█▓▒▓█▓░
-				▓█▓▒░▒▓█▒
-				█▓▒░>░▒▓▓
-				▓▒░><>░▒█
-				▒░><░<>░▓
-				░><░▒░<>▒
-				><░▒▓▒░<░
-				<░▒▓█▓▒░>
-			`.trim().split(/\s+/);
-			
-			it("rotates by arbitrary offsets", () => {
-				const lines = [];
-				for(let i = 0; i <= shadeChars.length; ++i)
-					lines.push(rotate(shadeChars, shadeChars, i));
-				expect(lines).to.eql(shadeLines);
-			});
-			
-			it("rotates in reverse", () => {
-				const lines = [];
-				for(let i = 0; i <= shadeChars.length; ++i)
-					lines.push(rotate(shadeChars, shadeChars, -i));
-				expect(lines).to.eql([...shadeLines].reverse());
-			});
-		});
-	});
-	
 	describe("slug()", () => {
 		const {slug} = utils;
 		it("converts input to lowercase",      () => expect(slug("Foo")).to.equal("foo"));
@@ -2498,6 +2418,86 @@ describe("Text-related functions", () => {
 			
 			it("does nothing if input terminates early", () =>
 				expect(splitStrings("foo \\")).to.eql(["foo"]));
+		});
+	});
+	
+	describe("swap()", () => {
+		const {swap} = utils;
+		describe("Character lists", () => {
+			it("swaps single characters", () => {
+				expect(swap("\"A\"'B'`C`", "\"'`")).to.equal("'A'`B`\"C\"");
+				expect(swap("\"\"'\"\"",   "\"'")) .to.equal("''\"''");
+				expect(swap("That's it?",  "'’"))  .to.equal("That’s it?");
+			});
+			
+			it("swaps paired characters", () => {
+				expect(swap("[A](B){C}", ["[]", "()", "{}"])).to.equal("(A){B}[C]");
+				expect(swap("[[(A)]]",   ["[]", "()"]))      .to.equal("(([A]))");
+				expect(swap("(] [)",     ["(]", "[)"]))      .to.equal("[) (]");
+			});
+			
+			it("swaps paired strings", () => {
+				const cmdSubst = [["$(", ")"], "``"];
+				expect(swap("$(a `b`)",    cmdSubst)).to.equal("`a $(b)`");
+				expect(swap("$(a $(b) c)", cmdSubst)).to.equal("`a `b` c`");
+			});
+			
+			it("swaps arbitrary strings", () => {
+				const input  = "<b>&quot;A&apos;ight&quot;</b>";
+				const output = "<b>&apos;A&quot;ight&apos;</b>";
+				expect(swap(input, [["&quot;"],     ["&apos;"]]))    .to.equal(output);
+				expect(swap(input, [["&quot;", ""], ["&apos;", ""]])).to.equal(output);
+				expect(swap(input, [["", "&quot;"], ["", "&apos;"]])).to.equal(output);
+			});
+			
+			it("swaps mixed-format strings", () => {
+				const input  = "[ABC [[[XYZ]]] 123] ${456} (789)";
+				const output = "(ABC (((XYZ))) 123) [456] ${789}";
+				const chars  = [["[", "]"], "()", ["${", "}"]];
+				expect(swap(input, chars)).to.equal(output);
+			});
+			
+			it("ignores empty string pairs", () => {
+				expect(swap("[]", ""))                    .to.equal("[]");
+				expect(swap("[]", [""]))                  .to.equal("[]");
+				expect(swap("[]", ["", ""]))              .to.equal("[]");
+				expect(swap("[]", [[]]))                  .to.equal("[]");
+				expect(swap("[]", [[], []]))              .to.equal("[]");
+				expect(swap("[]", [[""], [""]]))          .to.equal("[]");
+				expect(swap("[]", [["", ""], ["", ""]]))  .to.equal("[]");
+				expect(swap("[]", [["[", "]"], ""]))      .to.equal("[]");
+				expect(swap("[]", [["[", "]"], ["", ""]])).to.equal("[]");
+			});
+		});
+		
+		describe("Offsets", () => {
+			const shadeChars = "<░▒▓█▓▒░>";
+			const shadeLines = `
+				<░▒▓█▓▒░>
+				░▒▓█▓█▓▒<
+				▒▓█▓▒▓█▓░
+				▓█▓▒░▒▓█▒
+				█▓▒░>░▒▓▓
+				▓▒░><>░▒█
+				▒░><░<>░▓
+				░><░▒░<>▒
+				><░▒▓▒░<░
+				<░▒▓█▓▒░>
+			`.trim().split(/\s+/);
+			
+			it("rotates by arbitrary offsets", () => {
+				const lines = [];
+				for(let i = 0; i <= shadeChars.length; ++i)
+					lines.push(swap(shadeChars, shadeChars, i));
+				expect(lines).to.eql(shadeLines);
+			});
+			
+			it("rotates in reverse", () => {
+				const lines = [];
+				for(let i = 0; i <= shadeChars.length; ++i)
+					lines.push(swap(shadeChars, shadeChars, -i));
+				expect(lines).to.eql([...shadeLines].reverse());
+			});
 		});
 	});
 
