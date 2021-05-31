@@ -10,6 +10,22 @@ describe("Miscellaneous functions", () => {
 		htmlAllFn   === Function.prototype.toString.call(window.HTMLAllCollection)
 	);
 	
+	describe("collapseRanges()", () => {
+		const {collapseRanges} = utils;
+		it("collapses numeric ranges",   () => expect(collapseRanges([1, 4, 5, 6, 9, 10])) .to.eql([1, [4, 6], [9, 10]]));
+		it("collapses character ranges", () => expect(collapseRanges(["A", "B", "C", "X"])).to.eql([["A", "C"], "X"]));
+		it("returns sorted results",     () => expect(collapseRanges([9, 1, 3, 6, 2, 8]))  .to.eql([[1, 3], 6, [8, 9]]));
+		it("returns unique values",      () => expect(collapseRanges([1, 1, "1", "1", -1])).to.eql([-1, 1, "1"]));
+		it("groups results by type",     () => expect(collapseRanges([1, 2, 3, "1", "2"])) .to.eql([[1, 3], ["1", "2"]]));
+		it("splits strings into characters", () => {
+			expect(collapseRanges("0"))           .to.eql(["0"]);
+			expect(collapseRanges("0123456789"))  .to.eql([["0", "9"]]);
+			expect(collapseRanges(["ABC"]))       .to.eql([["A", "C"]]);
+			expect(collapseRanges(["ABC", "X"]))  .to.eql([["A", "C"], "X"]);
+			expect(collapseRanges(["ABC", "XYZ"])).to.eql([["A", "C"], ["X", "Z"]]);
+		});
+	});
+	
 	describe("collectStrings()", () => {
 		const {collectStrings} = utils;
 		it("splits strings by whitespace", () => {

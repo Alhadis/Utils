@@ -47,6 +47,7 @@ export declare function cmyToCMYK(input: CMYColour): CMYKColour;
 export declare function cmyToRGB(input: CMYColour): RGBColour;
 export declare function cmykToCMY(input: CMYKColour): CMYColour;
 export declare function cmykToRGB(input: CMYKColour): RGBColour;
+export declare function collapseRanges(input: (number|string)[] | string): Array<(number|string|Array<number>)>;
 export declare function collectStrings(input: any[] | string, refs?: WeakSet<object>): string[];
 export declare function collectTextNodes(el: Element, filter?: string): CharacterData[];
 export declare function cookie(name: string, value?: string, attr?: {expires?: string; path?: string; domain?: string; secure?: boolean}): string;
