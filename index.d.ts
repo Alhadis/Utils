@@ -50,6 +50,7 @@ export declare function cmykToRGB(input: CMYKColour): RGBColour;
 export declare function collapseRanges(input: (number|string)[] | string): Array<(number|string|Array<number>)>;
 export declare function collectStrings(input: any[] | string, refs?: WeakSet<object>): string[];
 export declare function collectTextNodes(el: Element, filter?: string): CharacterData[];
+export declare function convertBase(value: string | number, toRadix?: number, fromRadix?: number, digits?: string): string | number[];
 export declare function cookie(name: string, value?: string, attr?: {expires?: string; path?: string; domain?: string; secure?: boolean}): string;
 export declare function crc32(data: number[]): number;
 export declare function deCasteljau(points: Point[], position?: number): Point[];

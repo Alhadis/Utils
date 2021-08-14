@@ -51,6 +51,120 @@ describe("Mathematical functions", () => {
 		});
 	});
 	
+	describe("convertBase()", () => {
+		const {convertBase} = utils;
+		describe("Output radix", () => {
+			it("converts unary", () => {
+				expect(convertBase(3,    1)).to.equal("111");
+				expect(convertBase("3",  1)).to.equal("111");
+				expect(convertBase(-4,   1)).to.equal("-1111");
+				expect(convertBase("-5", 1)).to.equal("-11111");
+				expect(convertBase(0,    1)).to.equal("");
+			});
+			it("converts binary", () => {
+				expect(convertBase("35",  2)).to.equal("100011");
+				expect(convertBase(35,    2)).to.equal("100011");
+				expect(convertBase("+15", 2)).to.equal("1111");
+				expect(convertBase("-29", 2)).to.equal("-11101");
+				expect(convertBase(-0,    2)).to.equal("-0");
+				expect(convertBase(0,     2)).to.equal("0");
+			});
+			it("converts octal", () => {
+				expect(convertBase("31", 8)).to.equal("37");
+				expect(convertBase(511,  8)).to.equal("777");
+				expect(convertBase(438,  8)).to.equal("666");
+				expect(convertBase(-8,   8)).to.equal("-10");
+			});
+			it("converts hexadecimal", () => {
+				expect(convertBase(255,   16)).to.equal("FF");
+				expect(convertBase("255", 16)).to.equal("FF");
+				expect(convertBase(-127,  16)).to.equal("-7F");
+				expect(convertBase(1,     16)).to.equal("1");
+			});
+			it("converts hexatrigesimal", () => {
+				expect(convertBase(17,     36)).to.equal("H");
+				expect(convertBase(35,     36)).to.equal("Z");
+				expect(convertBase("36",   36)).to.equal("10");
+				expect(convertBase(35 * 2, 36)).to.equal("1Y");
+				expect(convertBase(-13368, 36)).to.equal("-ABC");
+			});
+		});
+		describe("Input radix", () => {
+			it("converts unary", () => {
+				expect(convertBase(111,      10, 1)).to.equal("3");
+				expect(convertBase("111",    10, 1)).to.equal("3");
+				expect(convertBase(-1111,    10, 1)).to.equal("-4");
+				expect(convertBase("-11111", 10, 1)).to.equal("-5");
+				expect(convertBase(0,        10, 1)).to.equal("0");
+			});
+			it("converts binary", () => {
+				expect(convertBase("100011", 10, 2)).to.equal("35");
+				expect(convertBase("+1111",  10, 2)).to.equal("15");
+				expect(convertBase(100011,   10, 2)).to.equal("35");
+				expect(convertBase("-11101", 10, 2)).to.equal("-29");
+			});
+			it("converts octal", () => {
+				expect(convertBase("37", 10, 8)).to.equal("31");
+				expect(convertBase(777,  10, 8)).to.equal("511");
+				expect(convertBase(666,  10, 8)).to.equal("438");
+				expect(convertBase(-10,  10, 8)).to.equal("-8");
+			});
+			it("converts hexadecimal", () => {
+				expect(convertBase("-FF", 10, 16)).to.equal("-255");
+				expect(convertBase("-7f", 10, 16)).to.equal("-127");
+				expect(convertBase("+05", 10, 16)).to.equal("5");
+				expect(convertBase("1",   10, 16)).to.equal("1");
+			});
+			it("converts hexatrigesimal", () => {
+				expect(convertBase("H",    10, 36)).to.equal("17");
+				expect(convertBase("Z",    10, 36)).to.equal("35");
+				expect(convertBase(10,     10, 36)).to.equal("36");
+				expect(convertBase("1Y",   10, 36)).to.equal("70");
+				expect(convertBase("-ABC", 10, 36)).to.equal("-13368");
+			});
+		});
+		describe("Digit set", () => {
+			it("returns raw digit values if `null`", () => {
+				expect(convertBase(256,  16, 10, null)).to.eql([1, 0, 0]);
+				expect(convertBase("FF", 16, 16, null)).to.eql([15, 15]);
+				expect(convertBase("7",  2,  10, null)).to.eql([1, 1, 1]);
+				expect(convertBase(111,  2,  2,  null)).to.eql([1, 1, 1]);
+				expect(convertBase(-111, 10, 2,  null)).to.eql([-7]);
+				expect(convertBase(-2,   1,  10, null)).to.eql([-1, -1]);
+				expect(convertBase(3,    1,  10, null)).to.eql([1, 1, 1]);
+			});
+			it("supports custom digit characters", () => {
+				expect(convertBase("255", 16, 10, "0123456789abcdef")).to.equal("ff");
+				expect(convertBase(0xDEF, 16, 10, "0123456789𝑎𝑏𝑐𝑑𝑒𝑓")) .to.equal("𝑑𝑒𝑓");
+				expect(convertBase("-Ed", 10, 16, "0123456789AbcdEf")).to.equal("-237");
+				expect(convertBase(2,     1,  10, "⓪①")).to.equal("①①");
+				expect(convertBase(3,     1,  10, "𒁹")).to.equal("𒁹𒁹𒁹");
+			});
+			it("uses multiple digits for out-of-bounds values", () =>
+				expect(convertBase(3, 10, 10, "01")).to.equal("11"));
+		});
+		describe("Error-handling", () => {
+			it("throws an error for unrecognised digits", () => {
+				expect(() => convertBase("12345A%Z67890"))     .to.throw(TypeError, "Invalid digit: %");
+				expect(() => convertBase("A2Z", 10, 10, "ABC")).to.throw(TypeError, "Invalid digit: 2");
+				expect(() => convertBase("-23", 10, 10, "012")).to.throw(TypeError, "Invalid digit: 3");
+			});
+			const radixError = "Radix must be a positive, non-zero integer";
+			it("throws an error for negative radices", () => {
+				expect(() => convertBase(20, -1))    .to.throw(RangeError, radixError);
+				expect(() => convertBase(20, 10, -1)).to.throw(RangeError, radixError);
+			});
+			it("throws an error for fractional radices", () => {
+				expect(() => convertBase(20, 10.5))    .to.throw(RangeError, radixError);
+				expect(() => convertBase(20, 10, 10.5)).to.throw(RangeError, radixError);
+			});
+			it("throws an error for radices of zero", () => {
+				expect(() => convertBase(20, 0))    .to.throw(RangeError, radixError);
+				expect(() => convertBase(20, 10, 0)).to.throw(RangeError, radixError);
+			});
+		});
+	});
+	
 	describe("degToRad() / radToDeg()", () => {
 		const {degToRad, radToDeg} = utils;
 		it("converts degrees to radians", () => expect(degToRad(180)).to.equal(Math.PI));
