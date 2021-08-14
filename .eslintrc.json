@@ -8,9 +8,6 @@
 		"files": ["lib/*.mjs"],
 		"rules": {"no-console": "error"}
 	},{
-		"files": ["index.mjs", "test/{binary,shell}.mjs"],
-		"parser": "babel-eslint"
-	},{
 		"files": ["lib/{dom,misc,shell}.mjs"],
 		"rules": {"brace-style": 0}
 	},{
