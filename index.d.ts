@@ -73,6 +73,7 @@ export declare function execString(input: string): Promise<string>;
 export declare function expandEscapes(input: string, all?: boolean, ignoreUnknown?: boolean): string;
 export declare function extractTableData(table: HTMLTableElement): object[];
 export declare function findBasePath(paths: string[]): string;
+export declare function findPrefix(strings: string[]): string;
 export declare function findSequence(input: any[] | TypedArray, seq: any[] | TypedArray, startIndex?: number): number;
 export declare function formatBytes(bytes: number): string;
 export declare function formatTime(input: number): string;

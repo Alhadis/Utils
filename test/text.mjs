@@ -801,6 +801,27 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("findPrefix()", () => {
+		const {findPrefix} = utils;
+		it("returns the longest common prefix", () => {
+			expect(findPrefix(["git-config", "git"])).to.equal("git");
+			expect(findPrefix(["git", "git-config"])).to.equal("git");
+			const buzzWords = "technically technical technician technique technology".split(" ");
+			expect(findPrefix(buzzWords)).to.equal("techn");
+			buzzWords.pop();
+			expect(findPrefix(buzzWords)).to.equal("techni");
+		});
+		it("returns early if not enough strings are given", () => {
+			let didCall = false;
+			const input = {get length(){ didCall = true; return 3; }};
+			expect(findPrefix([]))     .to.equal("");
+			expect(findPrefix([input])).to.equal(input);
+			expect(didCall).to.be.false;
+			expect(input.length).to.equal(3);
+			expect(didCall).to.be.true;
+		});
+	});
+	
 	describe("formatBytes()", () => {
 		const {formatBytes} = utils;
 		const KB = 1024;
