@@ -5,6 +5,9 @@
 		"files": ["lib/{binary,text}.mjs"],
 		"rules": {"multiline-ternary": 0}
 	},{
+		"files": ["lib/misc.mjs"],
+		"rules": {"spaced-comment": ["error", "always", {"markers": ["@cc_on"]}]}
+	},{
 		"files": ["lib/*.mjs"],
 		"rules": {"no-console": "error"}
 	},{
