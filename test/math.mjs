@@ -178,6 +178,115 @@ describe("Mathematical functions", () => {
 		it("measures empty distances",    () => expect(distance([32, 4], [32, 4])).to.equal(0));
 	});
 	
+	describe("mean()", () => {
+		const {mean} = utils;
+		it("averages sorted values", () => {
+			expect(mean(1, 2, 3)).to.equal(2);
+			expect(mean(0, 10))  .to.equal(5);
+			expect(mean(-5, 5))  .to.equal(0);
+			expect(mean(1n, 5n)) .to.equal(3);
+			expect(mean(1, 10n)) .to.equal(5.5);
+		});
+		it("averages unsorted values", () => {
+			expect(mean(3, 1, 2)) .to.equal(2);
+			expect(mean(1024, 0)) .to.equal(512);
+			expect(mean(5, -5, 6)).to.equal(2);
+			expect(mean(6, 11, 7)).to.equal(8);
+			expect(mean(50n, 25n)).to.equal(37.5);
+			expect(mean(512n, 0)) .to.equal(256);
+		});
+		it("accepts numeric strings as input", () => {
+			expect(mean("1", "3"))  .to.equal(2);
+			expect(mean(1, "100"))  .to.equal(50.5);
+			expect(mean(-1n, "1"))  .to.equal(0);
+			expect(mean("-5", 0))   .to.equal(-2.5);
+			expect(mean(0n, "5", 7)).to.equal(4);
+		});
+	});
+	
+	describe("median()", () => {
+		const {median} = utils;
+		const oddLists = [
+			[[3, 5, 12], 5],
+			[[3, 5, 7, 12, 13, 14, 21, 23, 23, 23, 23, 29, 39, 40, 56], 23],
+			[[10, 11, 13, 15, 16, 23, 26], 15],
+		];
+		const evenLists = [
+			[[1, 2], 1.5],
+			[[1, 3, 4, 5], 3.5],
+			[[3, 5, 7, 12, 13, 14, 21, 23, 23, 23, 23, 29, 40, 56], 22],
+			[[0, 50, 60, 100], 55],
+			[[23.5, 24], 23.75],
+		];
+		it("retrieves an odd-sized list's middle value", () => {
+			for(const [input, expected] of oddLists)
+				expect(median(...numSort(input))).to.equal(expected);
+		});
+		it("averages an even-sized list's two middlemost values", () => {
+			for(const [input, expected] of evenLists)
+				expect(median(...numSort(input))).to.equal(expected);
+		});
+		it("doesn't require lists to be pre-sorted", () => {
+			for(const [input, expected] of oddLists.concat(evenLists)){
+				const i = Math.round(input.length / 2);
+				const a = input.slice(0, i).reverse();
+				const b = input.slice(i)   .reverse();
+				expect(median(...b.concat(a))).to.equal(expected);
+			}
+		});
+		it("coerces non-numeric values", () => {
+			let calls = 0;
+			const num = 0xBABEFACE;
+			const obj = {
+				__proto__: null,
+				toString: () => "Invalid number",
+				valueOf:  () => (++calls, num),
+			};
+			expect(median(...[obj, 0, num * 2])).to.equal(num);
+			expect(calls).to.equal(1);
+		});
+	});
+	
+	describe("mode()", () => {
+		const {mode} = utils;
+		const lists = {
+			__proto__: null,
+			unimodal: [
+				[[1, 2, 3, 1], 1],
+				[[6, 3, 9, 6, 6, 5, 9, 3], 6],
+				[[3, 7, 5, 13, 20, 23, 39, 23, 40, 23, 14, 12, 56, 23, 29], 23],
+				[[19, 8, 29, 35, 19, 28, 15], 19],
+			],
+			bimodal: [
+				[[1, 3, 3, 3, 4, 4, 6, 6, 6, 9], [3, 6]],
+				[[7, 2, 15, 11, 15, 9, 13, 0, 10, 1, 12, 2, 0, 5, 15, 5, 2, 3], [2, 15]],
+			],
+			multimodal: [
+				[[1, 3, 3, 7, 7, 7, 3, 1, 0, 1], [1, 3, 7]],
+				[[
+					2.4, 7, 3.2, -3.5, 0.8, 0.9, 2.6, -5.4, 7, 5.3, 3.4, 0.7, -1.2, 6.4,
+					7, 2.3, 1.3, -0.9, 4.1, 5.4, 2.5, 3.7, 0.5, 3.4, 2.3, 0.5, -1.4, 3.6,
+					0.8, -3.9, 0.5, -0.3, 1.5, 0.8,
+				], [0.5, 0.8, 7]],
+			],
+		};
+		for(const type of ["unimodal", "bimodal", "multimodal"])
+		for(const sort of ["sorted", "unsorted"])
+			it(`isolates ${type} distributions from ${sort} lists`, () => {
+				for(let [input, expected] of lists[type]){
+					if("sorted" === sort)            input = numSort(input);
+					if("number" === typeof expected) expected = [expected];
+					expect(mode(...input)).to.eql(expected);
+				}
+			});
+		it("returns modes in a predictable order", () => {
+			const input = [-10, 8, 8, 8, 0.1, 0.1, 0.1, 7, 7, 7, 10];
+			const expected = [0.1, 7, 8];
+			expect(mode(...input)).to.eql(expected);
+			expect(mode(...numSort(input))).to.eql(expected);
+		});
+	});
+	
 	describe("normalise()", () => {
 		const {normalise} = utils;
 		const cmp = (input, expected) => {
@@ -480,4 +589,15 @@ describe("Mathematical functions", () => {
 			expect(sum(-4, 2n)).to.equal(-2);
 		});
 	});
+
+	/**
+	 * Return a copy of an array with entries sorted numerically.
+	 * @example numSort([3, 200, 10]) == [3, 10, 200];
+	 * @param {Array} list
+	 * @return {Array}
+	 * @internal
+	 */
+	function numSort(list){
+		return list.slice().sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+	}
 });
