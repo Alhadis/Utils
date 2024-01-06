@@ -105,6 +105,7 @@ export declare function isTypedArray(input: any): boolean;
 export declare function isValidCCNumber(input: string): boolean;
 export declare function isplit(input: string, pattern?: RegExp | string): string[];
 export declare function keyGrep(subject: object, pattern: RegExp | string): object;
+export declare function lerp(a: number | Iterable, b: number | Iterable, t?: number): number | number[];
 export declare function ls(paths?: string[], options?: {filter?: RegExp | Function; ignore?: RegExp | Function; recurse?: number; followSymlinks?: boolean}): Promise<Map<string, fs.Stats>>;
 export declare function mark(input: string, ranges: any[][] | any[] | string | number): string;
 export declare function mean(...values: number[] | bigint[]): number;

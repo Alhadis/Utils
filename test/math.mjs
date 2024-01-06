@@ -177,6 +177,144 @@ describe("Mathematical functions", () => {
 		it("measures negative distances", () => expect(distance([0, 40], [30, 0])).to.equal(50));
 		it("measures empty distances",    () => expect(distance([32, 4], [32, 4])).to.equal(0));
 	});
+
+	describe("lerp()", () => {
+		const {lerp} = utils;
+		describe("Simple values", () => {
+			const cmp = (start, end, expected) => {
+				expect(lerp(start, end, 0)).to.equal(start);
+				expect(lerp(start, end, 1)).to.equal(end);
+				for(const t in expected)
+					expect(lerp(start, end, t)).to.equal(expected[t]);
+			};
+			it("interpolates positive ranges", () => {
+				cmp(0,   100,  {.5: 50,    .25: 25,     .75: 75});
+				cmp(2,   6,    {.5: 4,     .25: 3,      .75: 5});
+				cmp(2.5, 8.25, {.5: 5.375, .25: 3.9375, .75: 6.8125});
+			});
+			it("interpolates negative ranges", () => {
+				cmp(-100,  0,    {.5: -50,    .25: -75,     .75: -25});
+				cmp(-6,    -2,   {.5: -4,     .25: -5,      .75: -3});
+				cmp(-8.25, -2.5, {.5: -5.375, .25: -6.8125, .75: -3.9375});
+			});
+			it("interpolates mixed-sign ranges", () => {
+				cmp(-4,   6,   {.5: 1,  .25: -1.5, .75: 3.5});
+				cmp(-2.5, 3.5, {.5: .5, .25: -1,   .75: 2});
+			});
+			it("returns identical endpoints", () => {
+				cmp(0,  0,  {.5: 0});
+				cmp(1,  1,  {.5: 1});
+				cmp(-0, -0, {.5: 0});
+				cmp(5,  5,  {1: 5});
+				cmp(-5, -5, {0: -5});
+			});
+			it("extrapolates out-of-bound values", () => {
+				expect(lerp(0, 100, +1.5)) .to.equal(150);
+				expect(lerp(0, 100, -0.5)) .to.equal(-50);
+				expect(lerp(-100, 0, -1.5)).to.equal(-250);
+				expect(lerp(-256, 512, 4)) .to.equal(2816);
+			});
+		});
+		describe("Complex values", () => {
+			const cmp = (start, end, t, expected) => {
+				for(let i = 0; i < 3; ++i){
+					switch(i){
+						case 2: end   = Float64Array.from(end);
+						case 1: start = Float64Array.from(start);
+					}
+					expect(lerp(start, end, 0)).to.eql([...start]);
+					expect(lerp(start, end, 1)).to.eql([...end]);
+					expect(lerp(start, end, t)).to.eql(expected);
+				}
+			};
+			it("interpolates 1-dimensional vectors", () => {
+				cmp([0],   [128], 0.25, [32]);
+				cmp([-10], [-5],  0.5,  [-7.5]);
+				cmp([100], [-50], 0.3,  [55]);
+				cmp([-55], [858], 0.78, [657.14]);
+			});
+			it("interpolates 2-dimensional vectors", () => {
+				cmp([0,   0],   [512,   256], 0.5,    [256,      128]);
+				cmp([0,   0],   [100,   50],  0.25,   [25,       12.5]);
+				cmp([20,  60],  [309,   27],  0.6332, [202.9948, 39.1044]);
+				cmp([-20, 5.6], [352.4, 256], 0.5,    [166.2,    130.8]);
+				cmp([-48, -20], [-8.62, -64], 0.2,    [-40.124,  -28.8]);
+			});
+			it("interpolates 3-dimensional vectors", () => {
+				cmp([0,  0,  0],   [100, 100, 100], 0.5, [50, 50, 50]);
+				cmp([10, 64, 50],  [20,  64,  100], 0.5, [15, 64, 75]);
+				cmp([50, 50, 100], [50,  100, 0],   0.5, [50, 75, 50]);
+			});
+			it("interpolates vectors of arbitrary length", () => {
+				for(let i = 4; i < 24; ++i){
+					const start = new Array(i).fill(0);
+					const end   = new Array(i).fill(100);
+					cmp(start, end, 0.5,  new Array(i).fill(50));
+					cmp(start, end, 0.25, new Array(i).fill(25));
+					cmp(start, end, 0.75, new Array(i).fill(75));
+				}
+			});
+			it("converts iterable objects to vectors", () => {
+				const numbers = [45, 27.5, -23.6];
+				let index = 0;
+				expect(lerp([90, 55, -47.8], {
+					[Symbol.iterator]: () => ({next(){
+						const value = numbers[index++];
+						return value ? {value} : {done: true};
+					}}),
+				}, 0.5)).to.eql([67.5, 41.25, -35.7]);
+				expect(index).to.be.greaterThan(numbers.length);
+			});
+			it("converts iterable functions to vectors", () => {
+				const mkfn = numbers => Object.assign(() => true, {
+					[Symbol.iterator]: () => ({index: 0, next(){
+						const value = numbers[this.index++];
+						return value ? {value} : {done: true};
+					}}),
+				});
+				const a = mkfn([192, 255, 87]);
+				const b = mkfn([79, 84.35, -20]);
+				expect(lerp(a, b, 0.5)).to.eql([135.5, 169.675, 33.5]);
+			});
+			it("extrapolates out-of-bound vectors", () => {
+				expect(lerp([0, 0, 0],    [100, 100, 100], +1.5)).to.eql([150, 150, 150]);
+				expect(lerp([0, 0, 0],    [100, 100, 100], -0.5)).to.eql([-50, -50, -50]);
+				expect(lerp([-100, -50],  [0, 0],          -1.5)).to.eql([-250, -125]);
+				expect(lerp([-256, -256], [512, 512],      +4))  .to.eql([2816, 2816]);
+			});
+		});
+		describe("Error handling", () => {
+			it("requires endpoints to be of matching types", () => {
+				const msg = "Cannot interpolate values of mismatching types";
+				expect(() => lerp(0, [1])).to.throw(TypeError, msg);
+				expect(() => lerp([2], 3)).to.throw(TypeError, msg);
+			});
+			it("requires object-like arguments to be iterable", () => {
+				const msg = "Cannot interpolate non-iterable object";
+				expect(() => lerp({value: 1}, [2])).to.throw(TypeError, msg);
+				expect(() => lerp([0], {value: 9})).to.throw(TypeError, msg);
+				expect(() => lerp(() => true, [3])).to.throw(TypeError, msg);
+				expect(() => lerp([1], () => true)).to.throw(TypeError, msg);
+			});
+			it("requires vectors to be of matching cardinality", () => {
+				const msg = "Cannot interpolate vectors of differing rank";
+				expect(() => lerp([1],    [1, 2]))   .to.throw(TypeError, msg);
+				expect(() => lerp([1, 2], [1]))      .to.throw(TypeError, msg);
+				expect(() => lerp([1, 2], [3, 4, 5])).to.throw(TypeError, msg);
+				expect(() => lerp([3, 4, 5], [1, 2])).to.throw(TypeError, msg);
+			});
+			it("raises an exception if given a null value", () => {
+				const msg = "Cannot interpolate null value";
+				expect(() => lerp(0, null))   .to.throw(TypeError, msg);
+				expect(() => lerp(null, 0))   .to.throw(TypeError, msg);
+				expect(() => lerp(null, null)).to.throw(TypeError, msg);
+			});
+			it("raises an exception for unsupported value types", () => {
+				expect(() => lerp(true, false)).to.throw(TypeError, "Cannot interpolate boolean");
+				expect(() => lerp(undefined))  .to.throw(TypeError, "Cannot interpolate undefined");
+			});
+		});
+	});
 	
 	describe("mean()", () => {
 		const {mean} = utils;

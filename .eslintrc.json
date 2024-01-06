@@ -35,6 +35,9 @@
 		"files": ["test/canvas.mjs"],
 		"rules": {"spaced-comment": 0}
 	},{
+		"files": ["test/math.mjs"],
+		"rules": {"no-fallthrough": 0}
+	},{
 		"files": ["test/misc.mjs"],
 		"rules": {"comma-spacing": 0}
 	}]
