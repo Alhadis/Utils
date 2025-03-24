@@ -178,6 +178,38 @@ describe("Mathematical functions", () => {
 		it("measures empty distances",    () => expect(distance([32, 4], [32, 4])).to.equal(0));
 	});
 
+	describe("isLeapYear()", () => {
+		const {isLeapYear} = utils;
+		const test = (input, result = false) => {
+			expect(isLeapYear(input))                     .to.equal(result);
+			expect(isLeapYear(String(input)))             .to.equal(result);
+			expect(isLeapYear(BigInt(input)))             .to.equal(result);
+			expect(isLeapYear(new Date(`${input}-06-01`))).to.equal(result);
+		};
+		it("returns true for years divisible by 4",      () => test(1984, true));
+		it("returns false for years not divisible by 4", () => test(1987, false));
+		it("exempts centurial years not divisible by 400", () => {
+			test(2000, true);
+			test(2100, false);
+			test(2200, false);
+			test(2300, false);
+			test(2400, true);
+		});
+		it("defaults to the current year", () => {
+			expect(isLeapYear()).to.equal(isLeapYear(new Date()));
+		});
+		it("returns false for non-finite values", () => {
+			expect(isLeapYear(NaN))      .to.be.false;
+			expect(isLeapYear(+Infinity)).to.be.false;
+			expect(isLeapYear(-Infinity)).to.be.false;
+		});
+		it("returns false for invalid dates", () => {
+			const date = new Date(NaN);
+			expect(date.toString()).to.equal("Invalid Date");
+			expect(isLeapYear(date)).to.be.false;
+		});
+	});
+
 	describe("lerp()", () => {
 		const {lerp} = utils;
 		describe("Simple values", () => {
