@@ -349,10 +349,10 @@ describe("Shell-specific functions", () => {
 				const file2 = path.join(fixtures, "file.2");
 				const list1 = stripTimestamps(await ls(file1));
 				const list2 = stripTimestamps(await ls([file1, file2]));
-				expect(list1).to.eql(new Map([
+				assert.deepStrictEqual(list1, new Map([
 					[file1, expected.get(file1)],
 				]));
-				expect(list2).to.eql(new Map([
+				assert.deepStrictEqual(list2, new Map([
 					[file1, expected.get(file1)],
 					[file2, expected.get(file2)],
 				]));
@@ -406,9 +406,9 @@ describe("Shell-specific functions", () => {
 			
 			it("recurses indefinitely", async () => {
 				const all = levels[levels.length - 1];
-				expect(stripTimestamps(await ls(fixtures, {recurse: -1}))).to.eql(all);
-				expect(stripTimestamps(await ls(fixtures, {recurse: Infinity}))).to.eql(all);
-				expect(stripTimestamps(await ls(fixtures, {recurse: -Infinity}))).to.eql(all);
+				assert.deepStrictEqual(stripTimestamps(await ls(fixtures, {recurse: -1})), all);
+				assert.deepStrictEqual(stripTimestamps(await ls(fixtures, {recurse: Infinity})), all);
+				assert.deepStrictEqual(stripTimestamps(await ls(fixtures, {recurse: -Infinity})), all);
 			});
 			
 			it("follows symbolic links", async () => {
@@ -439,7 +439,7 @@ describe("Shell-specific functions", () => {
 				all.set(sub,   stripTimestamps(fs.lstatSync(sub)));
 				all.set(link1, stripTimestamps(fs.lstatSync(link1)));
 				all.set(link3, stripTimestamps(fs.lstatSync(link3)));
-				expect(stripTimestamps(await ls(fixtures, {recurse: -1, followSymlinks: true}))).to.eql(all);
+				assert.deepStrictEqual(stripTimestamps(await ls(fixtures, {recurse: -1, followSymlinks: true})), all);
 			});
 		});
 		
