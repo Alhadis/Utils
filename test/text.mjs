@@ -2442,6 +2442,162 @@ describe("Text-related functions", () => {
 		});
 	});
 	
+	describe("strtok()", () => {
+		const {strtok} = utils;
+		const assertGenerator = input => {
+			expect(input).to.have.property("next")  .that.is.a("function").with.lengthOf(1);
+			expect(input).to.have.property("return").that.is.a("function").with.lengthOf(1);
+			expect(input).to.have.property("throw") .that.is.a("function").with.lengthOf(1);
+			expect(input).to.have.property(Symbol.toStringTag).that.equals("Generator");
+			expect(input).to.have.property(Symbol.iterator);
+		};
+		const assertDone = input => {
+			assertGenerator(input);
+			expect(input.next()).to.eql({done: true, value: undefined});
+		};
+		const testToken = (input, text, number, offset) => {
+			assertGenerator(input);
+			expect(input.next()).to.eql({done: false, value: {number, offset, text}});
+		};
+
+		describe("Signature", () => {
+			const GeneratorFunction = (function*(){})().constructor;
+			it("is a generator function",    () => expect(Object.getPrototypeOf(strtok)).to.equal(GeneratorFunction));
+			it("requires an argument",       () => expect(strtok).to.have.lengthOf.at.least(1));
+			it("returns a generator object", () => assertGenerator(strtok()));
+		});
+		
+		describe("Tokenisation", () => {
+			it("yields sequential string segments", () => {
+				const result = strtok("name");
+				testToken(result, "name", 0, 0);
+				assertDone(result);
+			});
+			it("yields stringifiable tokens", () => {
+				const result = strtok("name");
+				const token  = result.next();
+				expect(token).to.eql({done: false, value: {number: 0, offset: 0, text: "name"}});
+				expect(token.value).to.have.own.property("toString").that.is.a("function");
+				expect(token.value.toString()).to.equal("name");
+			});
+			
+			describe("Delimiters", () => {
+				it("delimits segments using spaces by default", () => {
+					const result = strtok("name age dob");
+					testToken(result, "name", 0, 0);
+					testToken(result, "age",  1, 5);
+					testToken(result, "dob",  2, 9);
+					assertDone(result);
+				});
+				it("delimits segments using custom delimiters", () => {
+					const result = strtok("x:y:z:width:length:height", ":");
+					testToken(result, "x",      0, 0);
+					testToken(result, "y",      1, 2);
+					testToken(result, "z",      2, 4);
+					testToken(result, "width",  3, 6);
+					testToken(result, "length", 4, 12);
+					testToken(result, "height", 5, 19);
+					assertDone(result);
+				});
+				it("supports multi-character delimiters", () => {
+					const result = strtok("A[...]Z", "[...]");
+					testToken(result, "A", 0, 0);
+					testToken(result, "Z", 1, 6);
+					assertDone(result);
+				});
+				it("rejects zero-length delimiters", () => {
+					const fn = () => strtok("xyz", "").next();
+					expect(fn).to.throw(TypeError, "Token separator cannot be empty");
+				});
+				it("includes delimiters when `inclusive` is enabled", () => {
+					const result = strtok("radius:colour:id", ":", true);
+					testToken(result, "radius:", 0, 0);
+					testToken(result, "colour:", 1, 7);
+					testToken(result, "id",      2, 14);
+					assertDone(result);
+				});
+			});
+			
+			describe("Zero-length segments", () => {
+				it("retains empty segments", () => {
+					const result = strtok("a::z", ":");
+					testToken(result, "a", 0, 0);
+					testToken(result, "",  1, 2);
+					testToken(result, "z", 2, 3);
+					assertDone(result);
+				});
+				it("retains leading empty segments", () => {
+					const result = strtok(":a", ":");
+					testToken(result, "",  0, 0);
+					testToken(result, "a", 1, 1);
+					assertDone(result);
+				});
+				it("ignores the last empty segment", () => {
+					// … so trailing newlines don't create empty records
+					let result = strtok("a:", ":");
+					testToken(result, "a", 0, 0);
+					assertDone(result);
+					
+					// We don't ignore multiple trailing blanks, however
+					result = strtok("a::", ":");
+					testToken(result, "a", 0, 0);
+					testToken(result, "",  1, 2);
+					assertDone(result);
+				});
+			});
+		});
+		
+		describe("Type-handling", () => {
+			const decode = str => new Uint8Array([...str].map(char => char.codePointAt(0)));
+			const iniData = "[root]\r\nOS=Win32\r\n";
+			it("accepts arrays as input", () => {
+				const junk = ["AAA", "BBB", "CCC", "\0", "XXX", "YYY", "ZZZZZ", "\0", "123"];
+				const result = strtok(junk, "\0");
+				testToken(result, ["AAA", "BBB", "CCC"],   0, 0);
+				testToken(result, ["XXX", "YYY", "ZZZZZ"], 1, 4);
+				testToken(result, ["123"], 2, 8);
+				assertDone(result);
+			});
+			it("accepts Uint8Arrays as input", () => {
+				let result = strtok(decode("A\0B\0C"), 0);
+				testToken(result, Uint8Array.of(0x41), 0, 0);
+				testToken(result, Uint8Array.of(0x42), 1, 2);
+				testToken(result, Uint8Array.of(0x43), 2, 4);
+				assertDone(result);
+				result = strtok(decode("abc:xyz:123"), 0x3A);
+				testToken(result, new Uint8Array([0x61, 0x62, 0x63]), 0, 0);
+				testToken(result, new Uint8Array([0x78, 0x79, 0x7A]), 1, 4);
+				testToken(result, new Uint8Array([0x31, 0x32, 0x33]), 2, 8);
+				assertDone(result);
+			});
+			it("short-circuits on empty string input",  () => assertDone(strtok("")));
+			it("treats `null` as an empty string",      () => assertDone(strtok(null)));
+			it("treats `undefined` as an empty string", () => assertDone(strtok(undefined)));
+			it("stringifies every other type of input", () => {
+				let result = strtok(false);
+				testToken(result, "false", 0, 0);
+				assertDone(result);
+				
+				let calls = 0;
+				result = strtok({toString: () => (++calls, iniData)}, "\r\n");
+				testToken(result, "[root]",   0, 0);
+				testToken(result, "OS=Win32", 1, 8);
+				assertDone(result);
+				expect(calls).to.equal(1);
+			});
+			it("stringifies delimiters for string-type input", () => {
+				let eol = "\r\n", calls = 0;
+				const delimiter = {toString: () => (++calls, eol)};
+				const result = strtok(iniData, delimiter);
+				testToken(result, "[root]", 0, 0);
+				eol = "\n";
+				testToken(result, "OS=Win32", 1, 8);
+				assertDone(result);
+				expect(calls).to.equal(1);
+			});
+		});
+	});
+	
 	describe("swap()", () => {
 		const {swap} = utils;
 		describe("Character lists", () => {
