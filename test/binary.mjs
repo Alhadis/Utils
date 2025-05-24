@@ -6,7 +6,7 @@ import * as utils      from "../index.mjs";
 
 describe("Byte-level functions", () => {
 	const dir  = dirname(fileURLToPath(import.meta.url));
-	const file = path => [...readFileSync(join(dir, "fixtures", ...path.split("/")), {encoding: null})];
+	const file = path => Uint8Array.from([...readFileSync(join(dir, "fixtures", ...path.split("/")), {encoding: null})]);
 	
 	describe("adler32()", () => {
 		const {adler32} = utils;
@@ -33,23 +33,26 @@ describe("Byte-level functions", () => {
 	
 	describe("ascii85Decode()", () => {
 		const {ascii85Decode} = utils;
-		it("decodes 1 byte",       () => expect(ascii85Decode("5l")).to.eql([0x41]));
-		it("decodes 2 bytes",      () => expect(ascii85Decode("6!=")).to.eql([0x41, 0x5A]));
-		it("decodes 3 bytes",      () => expect(ascii85Decode("7W32")).to.eql([0x46, 0x6F, 0x6F]));
-		it("decodes 4 bytes",      () => expect(ascii85Decode("7W32t")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
-		it("decodes 8 bytes",      () => expect(ascii85Decode("9jqo^F*2M7")).to.eql([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65]));
-		it("decodes all 32-bits",  () => expect(ascii85Decode("J=:u^")).to.eql([0x80, 0x9A, 0x7F, 0xF7]));
-		it("ignores whitespace",   () => expect(ascii85Decode("7\rW\n3 \t2\ft")).to.eql([0x46, 0x6F, 0x6F, 0x2E]));
-		it("skips a leading `<~`", () => expect(ascii85Decode("<~5l")).to.eql([0x41]));
-		it("stops parsing at `~`", () => expect(ascii85Decode("7W32~t")).to.eql([0x46, 0x6F, 0x6F]));
-		it("expands `z` into null-bytes", async () => {
-			expect(ascii85Decode("z"))   .to.eql(new Array(4).fill(0));
-			expect(ascii85Decode("zz"))  .to.eql(new Array(8).fill(0));
-			expect(ascii85Decode("zzz")) .to.eql(new Array(12).fill(0));
-			expect(ascii85Decode("z6!=")).to.eql([0, 0, 0, 0, 0x41, 0x5A]);
+		const decode = (input, expected) =>
+			expect(ascii85Decode(input)).to.eql(new Uint8Array(expected));
+
+		it("decodes 1 byte",       () => decode("5l", [0x41]));
+		it("decodes 2 bytes",      () => decode("6!=", [0x41, 0x5A]));
+		it("decodes 3 bytes",      () => decode("7W32", [0x46, 0x6F, 0x6F]));
+		it("decodes 4 bytes",      () => decode("7W32t", [0x46, 0x6F, 0x6F, 0x2E]));
+		it("decodes 8 bytes",      () => decode("9jqo^F*2M7", [0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65]));
+		it("decodes all 32-bits",  () => decode("J=:u^", [0x80, 0x9A, 0x7F, 0xF7]));
+		it("ignores whitespace",   () => decode("7\rW\n3 \t2\ft", [0x46, 0x6F, 0x6F, 0x2E]));
+		it("skips a leading `<~`", () => decode("<~5l", [0x41]));
+		it("stops parsing at `~`", () => decode("7W32~t", [0x46, 0x6F, 0x6F]));
+		it("expands `z` into null-bytes", () => {
+			decode("z",    new Array(4).fill(0));
+			decode("zz",   new Array(8).fill(0));
+			decode("zzz",  new Array(12).fill(0));
+			decode("z6!=", [0, 0, 0, 0, 0x41, 0x5A]);
 			const json = JSON.parse(String.fromCharCode(...file("ascii85.json")));
-			for(const [encoded, bytes] of Object.entries(json))
-				expect(ascii85Decode(encoded)).to.eql(bytes);
+			for(const entry of Object.entries(json))
+				decode(...entry);
 		});
 		it("throws an exception for illegal characters", () => {
 			expect(() => ascii85Decode("v"))  .to.throw(SyntaxError, 'Unexpected character "v"');
@@ -66,37 +69,52 @@ describe("Byte-level functions", () => {
 	
 	describe("ascii85Encode()", () => {
 		const {ascii85Encode} = utils;
-		it("encodes 1 byte",  () => expect(ascii85Encode([0x41])).to.equal("5l"));
-		it("encodes 2 bytes", () => expect(ascii85Encode([0x41, 0x5A])).to.equal("6!="));
-		it("encodes 3 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F])).to.equal("7W32"));
-		it("encodes 4 bytes", () => expect(ascii85Encode([0x46, 0x6F, 0x6F, 0x2E])).to.equal("7W32t"));
-		it("encodes 8 bytes", () => expect(ascii85Encode([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65])).to.equal("9jqo^F*2M7"));
-		it("encodes 4 null-bytes as `z`", () => expect(ascii85Encode([0, 0, 0, 0])).to.equal("z"));
-		it("unsets the sign-bit when encoding", () => expect(ascii85Encode([0x80, 0x9A, 0x7F, 0xF7])).to.equal("J=:u^"));
+		const encode = (input, expected) => {
+			expect(ascii85Encode([...input])).to.equal(expected);
+			expect(ascii85Encode(new Uint8Array(input))).to.equal(expected);
+			expect(ascii85Encode(new Uint8ClampedArray(input))).to.equal(expected);
+			expect(ascii85Encode(Buffer.from(input))).to.equal(expected);
+		};
+		it("encodes 1 byte",  () => encode([0x41], "5l"));
+		it("encodes 2 bytes", () => encode([0x41, 0x5A], "6!="));
+		it("encodes 3 bytes", () => encode([0x46, 0x6F, 0x6F], "7W32"));
+		it("encodes 4 bytes", () => encode([0x46, 0x6F, 0x6F, 0x2E], "7W32t"));
+		it("encodes 8 bytes", () => encode([0x4D, 0x61, 0x6E, 0x20, 0x73, 0x75, 0x72, 0x65], "9jqo^F*2M7"));
+		it("encodes 4 null-bytes as `z`", () => encode([0, 0, 0, 0], "z"));
+		it("unsets the sign-bit when encoding", () => encode([0x80, 0x9A, 0x7F, 0xF7], "J=:u^"));
 		it("correctly truncates null-bytes", () => {
 			const json = JSON.parse(String.fromCharCode(...file("ascii85.json")));
-			for(const [encoded, bytes] of Object.entries(json))
-				expect(ascii85Encode(bytes)).to.equal(encoded);
+			for(const entry of Object.entries(json))
+				encode(...entry.reverse());
 		});
 	});
 	
 	describe("base64Decode()", () => {
 		const {base64Decode} = utils;
-		it("decodes ASCII",   () => expect(base64Decode("Rm9vQmFy")).to.eql([0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72]));
-		it("decodes Latin-1", () => expect(base64Decode("Y+Fm6WLhYuk=")).to.eql([0x63, 0xE1, 0x66, 0xE9, 0x62, 0xE1, 0x62, 0xE9]));
-		it("decodes binary",  () => expect(base64Decode("iQEAj//+AA==")).to.eql([0x89, 0x01, 0x00, 0x8F, 0xFF, 0xFE, 0x00]));
-		it("decodes UTF-8",   () => expect(base64Decode("8J+Ygg==")).to.eql([0xF0, 0x9F, 0x98, 0x82]));
+		const decode = (input, expected) =>
+			expect(base64Decode(input)).to.eql(new Uint8Array(expected));
+
+		it("decodes ASCII",   () => decode("Rm9vQmFy", [0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72]));
+		it("decodes Latin-1", () => decode("Y+Fm6WLhYuk=", [0x63, 0xE1, 0x66, 0xE9, 0x62, 0xE1, 0x62, 0xE9]));
+		it("decodes binary",  () => decode("iQEAj//+AA==", [0x89, 0x01, 0x00, 0x8F, 0xFF, 0xFE, 0x00]));
+		it("decodes UTF-8",   () => decode("8J+Ygg==", [0xF0, 0x9F, 0x98, 0x82]));
 	});
 	
 	describe("base64Encode()", () => {
 		const {base64Encode} = utils;
-		it("encodes ASCII",   () => expect(base64Encode([0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72])).to.equal("Rm9vQmFy"));
-		it("encodes Latin-1", () => expect(base64Encode([0x63, 0xE1, 0x66, 0xE9, 0x62, 0xE1, 0x62, 0xE9])).to.equal("Y+Fm6WLhYuk="));
-		it("encodes binary",  () => expect(base64Encode([0x89, 0x01, 0x00, 0x8F, 0xFF, 0xFE, 0x00])).to.equal("iQEAj//+AA=="));
+		const encode = (input, expected) => {
+			expect(base64Encode([...input])).to.equal(expected);
+			expect(base64Encode(new Uint8Array(input))).to.equal(expected);
+			expect(base64Encode(new Uint8ClampedArray(input))).to.equal(expected);
+			expect(base64Encode(Buffer.from(input))).to.equal(expected);
+		};
+		it("encodes ASCII",   () => encode([0x46, 0x6F, 0x6F, 0x42, 0x61, 0x72], "Rm9vQmFy"));
+		it("encodes Latin-1", () => encode([0x63, 0xE1, 0x66, 0xE9, 0x62, 0xE1, 0x62, 0xE9], "Y+Fm6WLhYuk="));
+		it("encodes binary",  () => encode([0x89, 0x01, 0x00, 0x8F, 0xFF, 0xFE, 0x00], "iQEAj//+AA=="));
 		it("encodes PNGs",    () => {
 			const json = JSON.parse(String.fromCharCode(...file("base64/rgba.json")));
 			for(const [png, encoded] of Object.entries(json))
-				expect(base64Encode(file(png))).to.equal(encoded);
+				encode(file(png), encoded);
 		});
 	});
 	
@@ -1087,6 +1105,7 @@ describe("Byte-level functions", () => {
 		const {utf8Decode} = utils;
 		
 		function decode(input, expected){
+			expected = new Uint8Array(expected);
 			const bytes = expected.map(n => n.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 			let message = `Expected "${input}" to be decoded as <${bytes}>`;
 			const result = utf8Decode(input);
@@ -1253,17 +1272,20 @@ describe("Byte-level functions", () => {
 		});
 		
 		it("returns an empty array for empty input", () => {
-			assert.deepStrictEqual(utf16Decode(""), []);
-			assert.deepStrictEqual(utf16Decode([]), []);
+			const empty = new Uint8Array();
+			assert.deepStrictEqual(utf16Decode(""), empty);
+			assert.deepStrictEqual(utf16Decode([]), empty);
 		});
 		
 		describe("Big-endian sequences", () => {
 			function decode(input, expected){
+				expected = new Uint8Array(expected);
 				const codes = [...input].map(x => x.codePointAt(0));
 				assert.deepStrictEqual(utf16Decode(input), expected);
 				assert.deepStrictEqual(utf16Decode(codes), expected);
-				assert.deepStrictEqual(utf16Decode(input, false, true), [0xFE, 0xFF, ...expected]);
-				assert.deepStrictEqual(utf16Decode(codes, false, true), [0xFE, 0xFF, ...expected]);
+				expected = new Uint8Array([0xFE, 0xFF, ...expected]);
+				assert.deepStrictEqual(utf16Decode(input, false, true), expected);
+				assert.deepStrictEqual(utf16Decode(codes, false, true), expected);
 			}
 			
 			it("decodes 8-bit characters", () => {
@@ -1303,11 +1325,13 @@ describe("Byte-level functions", () => {
 		
 		describe("Little-endian sequences", () => {
 			function decode(input, expected){
+				expected = new Uint8Array(expected);
 				const codes = [...input].map(x => x.codePointAt(0));
 				assert.deepStrictEqual(utf16Decode(input, true), expected);
 				assert.deepStrictEqual(utf16Decode(codes, true), expected);
-				assert.deepStrictEqual(utf16Decode(input, true, true), [0xFF, 0xFE, ...expected]);
-				assert.deepStrictEqual(utf16Decode(codes, true, true), [0xFF, 0xFE, ...expected]);
+				expected = new Uint8Array([0xFF, 0xFE, ...expected]);
+				assert.deepStrictEqual(utf16Decode(input, true, true), expected);
+				assert.deepStrictEqual(utf16Decode(codes, true, true), expected);
 			}
 			
 			it("decodes 8-bit characters", () => {
@@ -1558,17 +1582,20 @@ describe("Byte-level functions", () => {
 		});
 		
 		it("returns an empty array for empty input", () => {
-			assert.deepStrictEqual(utf32Decode(""), []);
-			assert.deepStrictEqual(utf32Decode([]), []);
+			const empty = new Uint8Array();
+			assert.deepStrictEqual(utf32Decode(""), empty);
+			assert.deepStrictEqual(utf32Decode([]), empty);
 		});
 		
 		describe("Big-endian sequences", () => {
 			function decode(input, expected){
+				expected = new Uint8Array(expected);
 				const codes = [...input].map(x => x.codePointAt(0));
 				assert.deepStrictEqual(utf32Decode(input), expected);
 				assert.deepStrictEqual(utf32Decode(codes), expected);
-				assert.deepStrictEqual(utf32Decode(input, false, true), [0, 0, 0xFE, 0xFF, ...expected]);
-				assert.deepStrictEqual(utf32Decode(codes, false, true), [0, 0, 0xFE, 0xFF, ...expected]);
+				expected = new Uint8Array([0, 0, 0xFE, 0xFF, ...expected]);
+				assert.deepStrictEqual(utf32Decode(input, false, true), expected);
+				assert.deepStrictEqual(utf32Decode(codes, false, true), expected);
 			}
 			
 			it("decodes 8-bit characters", () => {
@@ -1605,11 +1632,13 @@ describe("Byte-level functions", () => {
 		
 		describe("Little-endian sequences", () => {
 			function decode(input, expected){
+				expected = new Uint8Array(expected);
 				const codes = [...input].map(x => x.codePointAt(0));
 				assert.deepStrictEqual(utf32Decode(input, true), expected);
 				assert.deepStrictEqual(utf32Decode(codes, true), expected);
-				assert.deepStrictEqual(utf32Decode(input, true, true), [0xFF, 0xFE, 0, 0, ...expected]);
-				assert.deepStrictEqual(utf32Decode(codes, true, true), [0xFF, 0xFE, 0, 0, ...expected]);
+				expected = new Uint8Array([0xFF, 0xFE, 0, 0, ...expected]);
+				assert.deepStrictEqual(utf32Decode(input, true, true), expected);
+				assert.deepStrictEqual(utf32Decode(codes, true, true), expected);
 			}
 			
 			it("decodes 8-bit characters", () => {
