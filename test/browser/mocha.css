@@ -19,7 +19,8 @@ body{ right: 50%; }
 #mocha{
 	overflow-y: auto;
 	box-shadow: 0 0 1.5em #000;
-	background: #fff;
+	background: light-dark(#fff, #333);
+	color-scheme: light dark;
 	left: 50%;
 	z-index: 2;
 }

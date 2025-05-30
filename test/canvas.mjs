@@ -1,14 +1,9 @@
 import * as utils from "../index.mjs";
-import {addCanvas, clearCanvas, loadFont, matchPixel, matchPixels, resetDOM} from "./browser/helpers.mjs";
+import {addCanvas, clearCanvas, loadFont, matchPixel, matchPixels, setupHooks} from "./browser/helpers.mjs";
 
 // Skip suite unless running in a browser
 utils.isBrowser() && describe("Canvas-drawing functions", () => {
-	afterEach(function(){
-		if("failed" === this.currentTest.state
-		&& "#debug" === document.location.hash)
-			debugger;
-		resetDOM();
-	});
+	setupHooks();
 	
 	describe("drawHTML()", () => {
 		const {drawHTML} = utils;

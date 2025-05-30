@@ -26,7 +26,7 @@
 		"files": ["test/fixtures/ints/run-tests.mjs"],
 		"rules": {"import/no-unresolved": 0}
 	},{
-		"files": ["test/{canvas,dom}.mjs"],
+		"files": ["test/browser/helpers.mjs"],
 		"rules": {"no-debugger": 0}
 	},{
 		"files": ["test/{binary,math}.mjs"],

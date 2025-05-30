@@ -132,3 +132,18 @@ export function resetDOM(){
 		if(style.ownerNode instanceof HTMLStyleElement)
 			style.ownerNode.remove();
 }
+
+
+/**
+ * Configure Mocha lifecycle hooks common to all DOM tests.
+ * @return {void}
+ * @internal
+ */
+export function setupHooks(){
+	afterEach(function(){
+		if("failed" === this.currentTest.state
+		&& "#debug" === document.location.hash)
+			debugger;
+		resetDOM();
+	});
+}

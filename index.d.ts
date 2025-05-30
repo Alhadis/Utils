@@ -32,7 +32,7 @@ export declare function base64Decode(data: string): Uint8Array;
 export declare function base64Encode(bytes: Bytes): string;
 export declare function bindMethods(subject: object): object;
 export declare function bitmapToRGBA(bitmap: Bitmap, width?: number, height?: number, colour?: number): Uint8ClampedArray;
-export declare function buildDict(dl: HTMLDListElement, valueKey?: boolean, filter?: Function | RegExp): object;
+export declare function buildDict(dl: HTMLDListElement, valueKey?: string | symbol, filter?: Function | RegExp): object;
 export declare function byteCount(value: number, byteSize?: number): number;
 export declare function bytesToFloat32(bytes: Bytes, littleEndian?: boolean): Float32Array;
 export declare function bytesToFloat64(bytes: Bytes, littleEndian?: boolean): Float64Array;

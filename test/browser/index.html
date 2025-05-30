@@ -11,9 +11,11 @@
 <script>
 	"use strict";
 	globalThis.expect = chai.expect;
-	document.addEventListener("DOMContentLoaded", () => {
+	document.addEventListener("DOMContentLoaded", async () => {
 		mocha.setup({ui: "bdd", slow: 1000});
-		import("../canvas.mjs").then(() => mocha.run());
+		await import("../canvas.mjs");
+		await import("../dom.mjs");
+		mocha.run();
 	});
 </script>
 </head>
