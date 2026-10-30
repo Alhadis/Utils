@@ -78,7 +78,7 @@ export declare function extractTableData(table: HTMLTableElement): object[];
 export declare function findBasePath(paths: string[]): string;
 export declare function findPrefix(strings: string[]): string;
 export declare function findSeq(haystack: any[] | TypedArray | string, needle: any[] | TypedArray | string, offset?: number, cmp?: Comparator): number;
-export declare function formatBytes(bytes: number): string;
+export declare function formatBytes(bytes: number, precision?: number, trimZeroes?: boolean): string;
 export declare function formatTime(input: number): string;
 export declare function getCanvasFont(context: CanvasRenderingContext2D): FontStyle;
 export declare function getProperties(subject: object): Map<(string|symbol), PropertyDescriptor>;

@@ -824,91 +824,162 @@ describe("Text-related functions", () => {
 	
 	describe("formatBytes()", () => {
 		const {formatBytes} = utils;
-		const KB = 1024;
-		const MB = KB * 1024;
-		const GB = MB * 1024;
-		const TB = GB * 1024;
-		const PB = TB * 1024;
-		const EB = PB * 1024;
-		const ZB = EB * 1024;
-		const YB = ZB * 1024;
-		it("formats bytes", () => {
-			expect(formatBytes(1)).to.equal("1 B");
-			expect(formatBytes(127)).to.equal("127 B");
-			expect(formatBytes(1023)).to.equal("1023 B");
+		describe("Unit selection", () => {
+			const KB = 1024;
+			const MB = KB * 1024;
+			const GB = MB * 1024;
+			const TB = GB * 1024;
+			const PB = TB * 1024;
+			const EB = PB * 1024;
+			const ZB = EB * 1024;
+			const YB = ZB * 1024;
+			const RB = YB * 1024;
+			const QB = RB * 1024;
+			it("formats bytes", () => {
+				expect(formatBytes(1)).to.equal("1 B");
+				expect(formatBytes(127)).to.equal("127 B");
+				expect(formatBytes(1023)).to.equal("1023 B");
+			});
+			it("formats kilobytes", () => {
+				expect(formatBytes(KB *    1)).to.equal("1 KB");
+				expect(formatBytes(KB * 1.25)).to.equal("1.25 KB");
+				expect(formatBytes(KB * 1.50)).to.equal("1.5 KB");
+				expect(formatBytes(KB * 3.75)).to.equal("3.75 KB");
+				expect(formatBytes(KB *   50)).to.equal("50 KB");
+				expect(formatBytes(KB *  359)).to.equal("359 KB");
+				expect(formatBytes(KB * 1023)).to.equal("1023 KB");
+			});
+			it("formats megabytes", () => {
+				expect(formatBytes(MB *    1)).to.equal("1 MB");
+				expect(formatBytes(MB * 1.25)).to.equal("1.25 MB");
+				expect(formatBytes(MB * 1.50)).to.equal("1.5 MB");
+				expect(formatBytes(MB * 3.75)).to.equal("3.75 MB");
+				expect(formatBytes(MB *   50)).to.equal("50 MB");
+				expect(formatBytes(MB *  359)).to.equal("359 MB");
+				expect(formatBytes(MB * 1023)).to.equal("1023 MB");
+				expect(formatBytes(3524959))  .to.equal("3.36 MB");
+			});
+			it("formats gigabytes", () => {
+				expect(formatBytes(GB *    1)).to.equal("1 GB");
+				expect(formatBytes(GB * 1.25)).to.equal("1.25 GB");
+				expect(formatBytes(GB * 1.50)).to.equal("1.5 GB");
+				expect(formatBytes(GB * 3.75)).to.equal("3.75 GB");
+				expect(formatBytes(GB *   50)).to.equal("50 GB");
+				expect(formatBytes(GB *  359)).to.equal("359 GB");
+				expect(formatBytes(GB * 1023)).to.equal("1023 GB");
+			});
+			it("formats terabytes", () => {
+				expect(formatBytes(TB *    1)).to.equal("1 TB");
+				expect(formatBytes(TB * 1.25)).to.equal("1.25 TB");
+				expect(formatBytes(TB * 1.50)).to.equal("1.5 TB");
+				expect(formatBytes(TB * 3.75)).to.equal("3.75 TB");
+				expect(formatBytes(TB *   50)).to.equal("50 TB");
+				expect(formatBytes(TB *  359)).to.equal("359 TB");
+				expect(formatBytes(TB * 1023)).to.equal("1023 TB");
+			});
+			it("formats petabytes", () => {
+				expect(formatBytes(PB *    1)).to.equal("1 PB");
+				expect(formatBytes(PB * 1.25)).to.equal("1.25 PB");
+				expect(formatBytes(PB * 1.50)).to.equal("1.5 PB");
+				expect(formatBytes(PB * 3.75)).to.equal("3.75 PB");
+				expect(formatBytes(PB *   50)).to.equal("50 PB");
+				expect(formatBytes(PB *  359)).to.equal("359 PB");
+				expect(formatBytes(PB * 1023)).to.equal("1023 PB");
+			});
+			it("formats exabytes", () => {
+				expect(formatBytes(EB *    1)).to.equal("1 EB");
+				expect(formatBytes(EB * 1.25)).to.equal("1.25 EB");
+				expect(formatBytes(EB * 1.50)).to.equal("1.5 EB");
+				expect(formatBytes(EB * 3.75)).to.equal("3.75 EB");
+				expect(formatBytes(EB *   50)).to.equal("50 EB");
+				expect(formatBytes(EB *  359)).to.equal("359 EB");
+				expect(formatBytes(EB * 1023)).to.equal("1023 EB");
+			});
+			it("formats zettabytes", () => {
+				expect(formatBytes(ZB *    1)).to.equal("1 ZB");
+				expect(formatBytes(ZB * 1.25)).to.equal("1.25 ZB");
+				expect(formatBytes(ZB * 1.50)).to.equal("1.5 ZB");
+				expect(formatBytes(ZB * 3.75)).to.equal("3.75 ZB");
+				expect(formatBytes(ZB *   50)).to.equal("50 ZB");
+				expect(formatBytes(ZB *  359)).to.equal("359 ZB");
+				expect(formatBytes(ZB * 1023)).to.equal("1023 ZB");
+			});
+			it("formats yottabytes", () => {
+				expect(formatBytes(YB *    1)).to.equal("1 YB");
+				expect(formatBytes(YB * 1.25)).to.equal("1.25 YB");
+				expect(formatBytes(YB * 1.50)).to.equal("1.5 YB");
+				expect(formatBytes(YB * 3.75)).to.equal("3.75 YB");
+				expect(formatBytes(YB *   50)).to.equal("50 YB");
+				expect(formatBytes(YB *  359)).to.equal("359 YB");
+				expect(formatBytes(YB * 1023)).to.equal("1023 YB");
+			});
+			it("formats ronnabytes", () => {
+				expect(formatBytes(RB *    1)).to.equal("1 RB");
+				expect(formatBytes(RB * 1.25)).to.equal("1.25 RB");
+				expect(formatBytes(RB * 1.50)).to.equal("1.5 RB");
+				expect(formatBytes(RB * 3.75)).to.equal("3.75 RB");
+				expect(formatBytes(RB *   50)).to.equal("50 RB");
+				expect(formatBytes(RB *  359)).to.equal("359 RB");
+				expect(formatBytes(RB * 1023)).to.equal("1023 RB");
+			});
+			it("formats quettabytes", () => {
+				expect(formatBytes(QB *    1)).to.equal("1 QB");
+				expect(formatBytes(QB * 1.25)).to.equal("1.25 QB");
+				expect(formatBytes(QB * 1.50)).to.equal("1.5 QB");
+				expect(formatBytes(QB * 3.75)).to.equal("3.75 QB");
+				expect(formatBytes(QB *   50)).to.equal("50 QB");
+				expect(formatBytes(QB *  359)).to.equal("359 QB");
+				expect(formatBytes(QB * 1023)).to.equal("1023 QB");
+			});
 		});
-		it("formats kilobytes", () => {
-			expect(formatBytes(KB *    1)).to.equal("1 KB");
-			expect(formatBytes(KB * 1.25)).to.equal("1.25 KB");
-			expect(formatBytes(KB * 1.50)).to.equal("1.5 KB");
-			expect(formatBytes(KB * 3.75)).to.equal("3.75 KB");
-			expect(formatBytes(KB *   50)).to.equal("50 KB");
-			expect(formatBytes(KB *  359)).to.equal("359 KB");
-			expect(formatBytes(KB * 1023)).to.equal("1023 KB");
+		describe("Precision", () => {
+			const fraction = (input, expected, ...opts) => {
+				expect(formatBytes(input,         ...opts)).to.equal(`${expected} KB`);
+				expect(formatBytes(input *= 1024, ...opts)).to.equal(`${expected} MB`);
+				expect(formatBytes(input *= 1024, ...opts)).to.equal(`${expected} GB`);
+			};
+			it("limits results to 2 fractional digits by default", () => {
+				fraction(1360, "1.33");
+				fraction(1360, "1.33", 2);
+			});
+			it("allows users to specify other fraction lengths", () => {
+				fraction(1360, "1.3",      1);
+				fraction(1360, "1.328",    3);
+				fraction(1360, "1.3281",   4);
+				fraction(1360, "1.32813",  5);
+				fraction(1360, "1.328125", 6);
+			});
+			it("trims superfluous trailing zeroes", () => {
+				fraction(1536, "1.5");
+				fraction(1280, "1.25", 3);
+				fraction(1024, "1");
+				fraction(1024, "1", 3);
+			});
+			it("retains zeroes if `trimZeroes` is false", () => {
+				fraction(1536, "1.50",   2, false);
+				fraction(1280, "1.250",  3, false);
+				fraction(1280, "1.2500", 4, false);
+				fraction(1024, "1.00",   2, false);
+				fraction(1024, "1.00",   2, false);
+			});
 		});
-		it("formats megabytes", () => {
-			expect(formatBytes(MB *    1)).to.equal("1 MB");
-			expect(formatBytes(MB * 1.25)).to.equal("1.25 MB");
-			expect(formatBytes(MB * 1.50)).to.equal("1.5 MB");
-			expect(formatBytes(MB * 3.75)).to.equal("3.75 MB");
-			expect(formatBytes(MB *   50)).to.equal("50 MB");
-			expect(formatBytes(MB *  359)).to.equal("359 MB");
-			expect(formatBytes(MB * 1023)).to.equal("1023 MB");
-			expect(formatBytes(3524959))  .to.equal("3.36 MB");
-		});
-		it("formats gigabytes", () => {
-			expect(formatBytes(GB *    1)).to.equal("1 GB");
-			expect(formatBytes(GB * 1.25)).to.equal("1.25 GB");
-			expect(formatBytes(GB * 1.50)).to.equal("1.5 GB");
-			expect(formatBytes(GB * 3.75)).to.equal("3.75 GB");
-			expect(formatBytes(GB *   50)).to.equal("50 GB");
-			expect(formatBytes(GB *  359)).to.equal("359 GB");
-			expect(formatBytes(GB * 1023)).to.equal("1023 GB");
-		});
-		it("formats terabytes", () => {
-			expect(formatBytes(TB *    1)).to.equal("1 TB");
-			expect(formatBytes(TB * 1.25)).to.equal("1.25 TB");
-			expect(formatBytes(TB * 1.50)).to.equal("1.5 TB");
-			expect(formatBytes(TB * 3.75)).to.equal("3.75 TB");
-			expect(formatBytes(TB *   50)).to.equal("50 TB");
-			expect(formatBytes(TB *  359)).to.equal("359 TB");
-			expect(formatBytes(TB * 1023)).to.equal("1023 TB");
-		});
-		it("formats petabytes", () => {
-			expect(formatBytes(PB *    1)).to.equal("1 PB");
-			expect(formatBytes(PB * 1.25)).to.equal("1.25 PB");
-			expect(formatBytes(PB * 1.50)).to.equal("1.5 PB");
-			expect(formatBytes(PB * 3.75)).to.equal("3.75 PB");
-			expect(formatBytes(PB *   50)).to.equal("50 PB");
-			expect(formatBytes(PB *  359)).to.equal("359 PB");
-			expect(formatBytes(PB * 1023)).to.equal("1023 PB");
-		});
-		it("formats exabytes", () => {
-			expect(formatBytes(EB *    1)).to.equal("1 EB");
-			expect(formatBytes(EB * 1.25)).to.equal("1.25 EB");
-			expect(formatBytes(EB * 1.50)).to.equal("1.5 EB");
-			expect(formatBytes(EB * 3.75)).to.equal("3.75 EB");
-			expect(formatBytes(EB *   50)).to.equal("50 EB");
-			expect(formatBytes(EB *  359)).to.equal("359 EB");
-			expect(formatBytes(EB * 1023)).to.equal("1023 EB");
-		});
-		it("formats zettabytes", () => {
-			expect(formatBytes(ZB *    1)).to.equal("1 ZB");
-			expect(formatBytes(ZB * 1.25)).to.equal("1.25 ZB");
-			expect(formatBytes(ZB * 1.50)).to.equal("1.5 ZB");
-			expect(formatBytes(ZB * 3.75)).to.equal("3.75 ZB");
-			expect(formatBytes(ZB *   50)).to.equal("50 ZB");
-			expect(formatBytes(ZB *  359)).to.equal("359 ZB");
-			expect(formatBytes(ZB * 1023)).to.equal("1023 ZB");
-		});
-		it("formats yottabytes", () => {
-			expect(formatBytes(YB *    1)).to.equal("1 YB");
-			expect(formatBytes(YB * 1.25)).to.equal("1.25 YB");
-			expect(formatBytes(YB * 1.50)).to.equal("1.5 YB");
-			expect(formatBytes(YB * 3.75)).to.equal("3.75 YB");
-			expect(formatBytes(YB *   50)).to.equal("50 YB");
-			expect(formatBytes(YB *  359)).to.equal("359 YB");
-			expect(formatBytes(YB * 1023)).to.equal("1023 YB");
+		describe("Error handling", () => {
+			const msg = "Invalid byte-count: ";
+			it("throws an error for fractional values", () => {
+				expect(() => formatBytes(512.25)).to.throw(TypeError, msg + "512.25");
+				expect(() => formatBytes(512.78)).to.throw(TypeError, msg + "512.78");
+				expect(() => formatBytes(512.5)) .to.throw(TypeError, msg + "512.5");
+			});
+			it("throws an error for negative values", () => {
+				expect(() => formatBytes(-512)) .to.throw(TypeError, msg + "-512");
+				expect(() => formatBytes(-2048)).to.throw(TypeError, msg + "-2048");
+				expect(formatBytes(-0)).to.equal("0 B");
+			});
+			it("throws an error for non-finite values", () => {
+				expect(() => formatBytes(NaN))      .to.throw(TypeError, msg + "NaN");
+				expect(() => formatBytes(Infinity)) .to.throw(TypeError, msg + "Infinity");
+				expect(() => formatBytes(-Infinity)).to.throw(TypeError, msg + "-Infinity");
+			});
 		});
 	});
 	
