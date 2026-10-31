@@ -430,10 +430,10 @@ describe("Miscellaneous functions", () => {
 		it("identifies functions", () => {
 			expect(isPrimitive(function(){ return this; })).to.be.false;
 			expect(isPrimitive(function foo(){ return this; })).to.be.false;
-			expect(isPrimitive(function * foo(){ yield 520; })).to.be.false;
+			expect(isPrimitive(function* foo(){ yield 520; })).to.be.false;
 			expect(isPrimitive(async function(){ return this; })).to.be.false;
 			expect(isPrimitive(async function foo(){ return 86; })).to.be.false;
-			expect(isPrimitive(async function * foo(){ yield 52; })).to.be.false;
+			expect(isPrimitive(async function* foo(){ yield 52; })).to.be.false;
 			expect(isPrimitive(() => 4 + 62 * -150)).to.be.false;
 			expect(isPrimitive(() => { console.log("Foo"); })).to.be.false;
 			expect(isPrimitive(async () => undefined)).to.be.false;
@@ -744,6 +744,113 @@ describe("Miscellaneous functions", () => {
 			expect(resolveProperty("foo",      null))     .to.equal(undefined);
 			expect(resolveProperty("[0].name", null))     .to.equal(undefined);
 			expect(resolveProperty("foo.name", null))     .to.equal(undefined);
+		});
+	});
+	
+	describe("semver()", () => {
+		const {semver} = utils;
+		describe("Return values", () => {
+			it("returns 0 for equal versions", () => {
+				expect(semver("1.0.0", "1.0.0"))  .to.equal(0);
+				expect(semver("v1.0.0", "v1.0.0")).to.equal(0);
+				expect(semver("v1.0.0", "1.0.0")) .to.equal(0);
+				expect(semver("1.0.0", "v1.0.0")) .to.equal(0);
+			});
+			it("returns -1 if the first argument precedes the other", () => {
+				expect(semver("1.0.0", "2.0.0")) .to.equal(-1);
+				expect(semver("1.0.0", "1.1.0")) .to.equal(-1);
+				expect(semver("1.0.0", "1.0.1")) .to.equal(-1);
+				expect(semver("1.1.0", "1.10.0")).to.equal(-1);
+			});
+			it("returns 1 if the first argument succeeds the other", () => {
+				expect(semver("2.0.0", "1.0.0")) .to.equal(1);
+				expect(semver("1.1.0", "1.0.0")) .to.equal(1);
+				expect(semver("1.0.1", "1.0.0")) .to.equal(1);
+				expect(semver("1.10.0", "1.1.0")).to.equal(1);
+			});
+		});
+		describe("Invalid values", () => {
+			it("returns -1 if the first argument is invalid", () => {
+				expect(semver("foo", "1.0.0")).to.equal(-1);
+				expect(semver("2", "1.0.0"))  .to.equal(-1);
+				expect(semver(null, "1.0.0")) .to.equal(-1);
+			});
+			it("returns 1 if the second argument is invalid", () => {
+				expect(semver("1.0.0", "bar")).to.equal(1);
+				expect(semver("2.0.0", "3"))  .to.equal(1);
+				expect(semver("1.0.0", null)) .to.equal(1);
+			});
+			it("returns 0 if both arguments are invalid", () => {
+				expect(semver("foo", "bar")).to.equal(0);
+				expect(semver("1", "2"))    .to.equal(0);
+				expect(semver(null, null))  .to.equal(0);
+			});
+		});
+		describe("Version comparison", () => {
+			it("considers major releases first", () => {
+				expect(semver("2.0.0", "1.5.0")).to.equal(1);
+				expect(semver("1.2.0", "3.1.2")).to.equal(-1);
+				expect(semver("0.1.0", "0.0.0")).to.equal(1);
+				expect(semver("1.0.0", "1.0.0")).to.equal(0);
+			});
+			it("considers minor releases second", () => {
+				expect(semver("1.1.5", "1.2.1")).to.equal(-1);
+				expect(semver("0.5.0", "0.6.0")).to.equal(-1);
+				expect(semver("9.0.2", "9.2.0")).to.equal(-1);
+				expect(semver("7.5.0", "7.5.0")).to.equal(0);
+			});
+			it("considers patch releases third", () => {
+				expect(semver("1.0.1", "1.0.0")).to.equal(1);
+				expect(semver("2.4.8", "2.5.0")).to.equal(-1);
+				expect(semver("0.2.1", "0.2.0")).to.equal(1);
+				expect(semver("0.0.1", "0.0.1")).to.equal(0);
+			});
+			it("considers multi-digit releases to be ≥ 10", () => {
+				expect(semver("12.0.0", "1.0.0"))   .to.equal(1);
+				expect(semver("12.0.0", "10.0.0"))  .to.equal(1);
+				expect(semver("1.15.2", "1.2.2"))   .to.equal(1);
+				expect(semver("1.0.25", "1.0.30"))  .to.equal(-1);
+				expect(semver("10.0.20", "10.0.20")).to.equal(0);
+			});
+			it("ignores build metadata", () => {
+				expect(semver("1.0.0+A", "1.0.0+B"))    .to.equal(0);
+				expect(semver("1.0.0+2", "1.0.0+1"))    .to.equal(0);
+				expect(semver("1.0.0-0+B", "1.0.0-1+A")).to.equal(-1);
+				expect(semver("1.0.0-B+A", "1.0.0-A+B")).to.equal(1);
+			});
+			describe("Pre-release versions", () => {
+				it("considers pre-release versions last", () => {
+					expect(semver("1.0.0-alpha", "1.0.0"))      .to.equal(-1);
+					expect(semver("1.0.0",       "1.0.0-alpha")).to.equal(1);
+					expect(semver("2.5.6-rc1",   "2.5.6-rc2"))  .to.equal(-1);
+					expect(semver("1.2.0-alpha", "1.2.0-beta")) .to.equal(-1);
+					expect(semver("2.0.0-alpha", "1.2.0"))      .to.equal(1);
+				});
+				it("compares pre-releases by dot-separated segments", () => {
+					expect(semver("1.2.3-a.b.c", "1.2.3-a.a.c")).to.equal(1);
+					expect(semver("1.2.3-x.y.z", "1.2.3-z.y.z")).to.equal(-1);
+				});
+				it("compares alphanumeric segments using ASCII sort order", () => {
+					expect(semver("1.2.3-X.Y.Z",    "1.2.3-a.b.c"))   .to.equal(-1);
+					expect(semver("1.2.3-Aa.BB.CC", "1.2.3-AA.BB.CC")).to.equal(1);
+				});
+				it("compares purely-numeric segments numerically", () => {
+					expect(semver("1.2.3-1.0.0",  "1.2.3-1.1.0")).to.equal(-1);
+					expect(semver("1.2.3-12.0.0", "1.2.3-2.0.0")).to.equal(1);
+				});
+				it("considers alphanumeric segments before numeric ones", () => {
+					expect(semver("1.2.3-0",      "1.2.3-A"))     .to.equal(1);
+					expect(semver("1.2.3-dev.1A", "1.2.3-dev.10")).to.equal(-1);
+					expect(semver("1.2.3-dev.1B", "1.2.3-dev.1A")).to.equal(1);
+				});
+				it("considers longer lists when segments compare equal", () => {
+					expect(semver("1.2.3-0",      "1.2.3-0.0"))  .to.equal(1);
+					expect(semver("1.2.3-0.0",    "1.2.3-0"))    .to.equal(-1);
+					expect(semver("1.2.3-A.B",    "1.2.3-A.B.C")).to.equal(1);
+					expect(semver("1.2.3-AB.C.D", "1.2.3-AB.C")) .to.equal(-1);
+					expect(semver("1.2.3-A.B.C",  "1.2.3-A.B.C")).to.equal(0);
+				});
+			});
 		});
 	});
 	

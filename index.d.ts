@@ -19,6 +19,7 @@ declare type ParsedPrimitive = {type?: Function; value: any; name?: string; deli
 declare type ParsedURL = {protocol?: string; auth?: string; username?: string; password?: string; hostname?: string; port?: number; pathname?: string; filename?: string; query?: string; fragment?: string};
 declare type RGBColour = [number, number, number];
 declare type ShellEscapeOptions = {isPath?: boolean; newlines?: NewlineEscapeStrategy; nullBytes?: NullByteEscapeStrategy; quoted?: boolean};
+declare type SortResult = -1 | 0 | 1;
 declare type Token = {interrupted?: boolean; last?: boolean; number: number; offset: number; text: string | Uint8Array};
 declare type WSFrame = {isFinal: boolean; isRSV1: boolean; isRSV2: boolean; isRSV3: boolean; length: bigint; mask?: number; opcode: number; opname: string; payload: Bytes; trailer: Bytes};
 export declare const BlendModes:{[key: string]: (...args: number[]) => number};
@@ -145,6 +146,7 @@ export declare function roundTiesToAway(input: number): number;
 export declare function roundTiesToEven(input: number): number;
 export declare function roundTowardNegative(input: number): number;
 export declare function roundTowardPositive(input: number): number;
+export declare function semver(a: string, b: string): SortResult;
 export declare function sha1(input: Bytes): string;
 export declare function sip(file: string, length?: number, offset?: number, raw?: boolean): Promise<(string|Uint8Array)>;
 export declare function slug(name: string): string;
