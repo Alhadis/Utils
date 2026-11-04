@@ -1002,6 +1002,76 @@ describe("Byte-level functions", () => {
 		});
 	});
 	
+	describe("sha256()", () => {
+		const {sha256} = utils;
+		it("computes checksums of 3-byte messages", () => {
+			expect(sha256([97,  98,  99])) .to.equal("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+			expect(sha256([120, 121, 122])).to.equal("3608bca1e44ea6c4d268eb6db02260269892c0b42b86bbf1e77a6fa16c3c9282");
+			expect(sha256([0x1, 0x2, 0x3])).to.equal("039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
+			expect(sha256([255, 255, 255])).to.equal("5ae7e6a42304dc6e4176210b83c43024f99a0bce9a870c3b6d2c95fc8ebfb74c");
+			expect(sha256([128, 200, 0x7])).to.equal("f11a9ae799a3ba081c76d274ff88d83c9cee220a067776638aff3bbaff905044");
+			expect(sha256([0x0, 0x0, 0x0])).to.equal("709e80c88487a2411e1ee4dfb9f22a861492d20c4765150c0c794abd70f8147c");
+		});
+		it("computes checksums of empty messages", () => {
+			expect(sha256([])).to.equal("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+		});
+		it("computes checksums of pangrams", () => {
+			const $ = s => s.split("").map(x => x.charCodeAt(0));
+			expect(sha256($("Glib jocks quiz nymph to vex dwarf.")))        .to.equal("534be0cc69d4030179ed0cb36bc0c4a4424755ddc0222ecb3be1e7a24e9eda30");
+			expect(sha256($("Sphinx of black quartz, judge my vow.")))      .to.equal("4f4fc351f6f680f8996f02e16dfc564d4fb7eb052a7d027af4ce0ba8d87c48f6");
+			expect(sha256($("How vexingly quick daft zebras jump!")))       .to.equal("3f7282eed1c3cef3efc993275e9b9cc0cfe85927450d6b0e5d73a2c59663232e");
+			expect(sha256($("The five boxing wizards jump quickly.")))      .to.equal("edf1c7a5163fc12092a88cf89efb11783953032dd8d3e76befb8c375727d436d");
+			expect(sha256($("Pack my box with five dozen liquor jugs.")))   .to.equal("23eee52b9f56ea8fe792613ae5a6394c4d779814e2fc07e09dd5968d4aaeddcc");
+			expect(sha256($("The quick brown fox jumps over the lazy dog"))).to.equal("d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592");
+			expect(sha256($("The quick brown fox jumps over the lazy cog"))).to.equal("e4c4d8f3bf76b692de791a173e05321150f7a345b46484fe427f6acc7ecc81be");
+			expect(sha256($("Jived fox nymph grabs quick waltz.")))         .to.equal("6e5e1a93bde78910b0d7c5fd8aba393294d4eca5d3fbf2bfd49100df3d5cc85d");
+		});
+		it("computes checksums of binary blocks", () => {
+			const zeroes = new Uint8Array(1024);
+			const all128 = new Uint8Array(2048).fill(0x80);
+			const all255 = new Uint8Array(3071).fill(0xFF);
+			const latin1 = new Uint8Array(4096).map((n, index) => index % 255);
+			expect(sha256(zeroes)).to.equal("5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef");
+			expect(sha256(all128)).to.equal("88ed1a04cb43fe65827d1cd9ef6d24a736108730b1ce6315d4d3ca79b6a0d140");
+			expect(sha256(all255)).to.equal("826f1a3565e3bc02218c429fd7446a3629425f51b1b6301156301e8499f73ddc");
+			expect(sha256(latin1)).to.equal("99a3abf8c252c37d3631f07a6b9b18b8b39ebed7ef4036f968a1af447321ecc0");
+		});
+		it("computes checksums of PNG fixtures", () => {
+			expect(sha256(file("rgba/00000000.png"))).to.equal("0f0b215e1694d803557cf551a8b578ba1641d9ebfd1d0362afbdacbf02e548e3");
+			expect(sha256(file("rgba/00000040.png"))).to.equal("448e3a389d8dcf7269f6d545ade33993b5cff61314454569cf6192173ad3d0c4");
+			expect(sha256(file("rgba/000000ff.png"))).to.equal("e106fa806ab2f73247115006ad9782d3fb730abd97979ee04bba51374f9b3e53");
+			expect(sha256(file("rgba/00009a89.png"))).to.equal("6971bb19a3a814dad6efedf765bcdbec70419f793f6660d2dee3e42f1894b85e");
+			expect(sha256(file("rgba/0000ff00.png"))).to.equal("9d00713e758f48dff2f373c305601cea9f828e1067a1893c21c31814de073488");
+			expect(sha256(file("rgba/0000ffff.png"))).to.equal("b1183b884f301e67917c32dba56800ccbd96039d7901df8b5b95924109b71fda");
+			expect(sha256(file("rgba/0085003a.png"))).to.equal("c978efb5c4cf9cb0181ffe46628e9255f25e7dd60a001ee83e004c68881b1584");
+			expect(sha256(file("rgba/00ff0000.png"))).to.equal("6d763cc55b119204be7a9ef77115d6bee49c7b68b324475d12d1625490eee83b");
+			expect(sha256(file("rgba/00ff00ff.png"))).to.equal("28fd7e9ebf9dd4f856e2fbf0ad04027f502056f298fef4bdcb2ab731701b26a8");
+			expect(sha256(file("rgba/3a3b3c00.png"))).to.equal("4af8add984515d4d277d5b016af2c2e641827c206dfa43ecf6026a4c7a44cda0");
+			expect(sha256(file("rgba/3a3b3c6f.png"))).to.equal("0581db5a4aa412d141f8b286147aa6502fe1e56434366a7da9a15c255ea3b01e");
+			expect(sha256(file("rgba/7f7f7fff.png"))).to.equal("9c1921d9d84a8911f2c99dcaa7cf9e658aba65c6afe5ba27e679fb5636176a3d");
+			expect(sha256(file("rgba/af000064.png"))).to.equal("8246bd54023effc6c6c1afe5452082f2777887dc4478e6a1e83763964433cc9a");
+			expect(sha256(file("rgba/bbaaff00.png"))).to.equal("ad37f3b9e1fac11424f88340c9a9108fbe9d18571f8583e2d25dc34fff07961e");
+			expect(sha256(file("rgba/bbaaff0a.png"))).to.equal("bd6afaaf89d9d41d6a64d3863423adeda36f494500064d8b891de42e8c67f19c");
+			expect(sha256(file("rgba/bbaaffff.png"))).to.equal("a4e78ae05c23e5dc54a6d44ab4ed8ee34132d98f1c05e34d833d44ee20c7634d");
+			expect(sha256(file("rgba/bbffdd00.png"))).to.equal("dc09df6028eb587cb5a827f512f6d37d89938845019f1b808fc0beb3b6d46a69");
+			expect(sha256(file("rgba/bbffdd30.png"))).to.equal("f9a7e8b2e91fd2a17b3bae4d87f54490eb2d0233c41609deed99ee1be453c3ad");
+			expect(sha256(file("rgba/bbffddff.png"))).to.equal("3c84c4b10fb3e9a30e4799dd38d52f5825ac0ae0993a913a962b6509d266747d");
+			expect(sha256(file("rgba/ff000000.png"))).to.equal("35e0a3b9f4fe3f587a31838aebb2292c7b91b50310745ff00ba0fda14ade2038");
+			expect(sha256(file("rgba/ff0000ff.png"))).to.equal("8f359ec11006e0450ce69fc27895976466337e1292e9827a6fb0527b5289d3fe");
+			expect(sha256(file("rgba/ffffff00.png"))).to.equal("584c62d55b3914dee7fa29672572983e875d67f025b87b57f4e811851c8e2ee9");
+			expect(sha256(file("rgba/ffffff7f.png"))).to.equal("1110574b938fac4306c6fdb559c7810bf9d102b8f81ede5908d273ec286f364d");
+			expect(sha256(file("rgba/ffffffff.png"))).to.equal("5fff6d81e2304188eaf6f2ee2082d342ba33a0ab8d689b00d2090def52427512");
+		});
+		it("throws an error when encountering invalid bytes", () => {
+			const msg = "Invalid byte value: ";
+			expect(() => sha256([1, 256, 2])).to.throw(TypeError, msg + "256");
+			expect(() => sha256([30, -2, 8])).to.throw(TypeError, msg + "-2");
+			expect(() => sha256([255, NaN])) .to.throw(TypeError, msg + "NaN");
+			expect(() => sha256([Infinity])) .to.throw(TypeError, msg + "Infinity");
+			expect(() => sha256([-Infinity])).to.throw(TypeError, msg + "-Infinity");
+		});
+	});
+	
 	describe("uint16ToBytes()", () => {
 		const {uint16ToBytes} = utils;
 		const decode = (input, expected, le = false) => {

@@ -148,6 +148,7 @@ export declare function roundTowardNegative(input: number): number;
 export declare function roundTowardPositive(input: number): number;
 export declare function semver(a: string, b: string): SortResult;
 export declare function sha1(input: Bytes): string;
+export declare function sha256(input: Bytes): string;
 export declare function sip(file: string, length?: number, offset?: number, raw?: boolean): Promise<(string|Uint8Array)>;
 export declare function slug(name: string): string;
 export declare function sortForRegExp(input: string | any[], caseInsensitive?: boolean): any[];
