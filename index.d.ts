@@ -132,6 +132,7 @@ export declare function punch(subject: object, methodName: string, handler: Func
 export declare function radToDeg(value: number): number;
 export declare function random(min?: number, max: number): number;
 export declare function readStdin(encoding?: string): Promise<string>;
+export declare function removeComments(node?: Node): Set<Comment>;
 export declare function resolveProperty(path: string, object: object, usePrevious?: boolean): any;
 export declare function rgbToCMY(input: RGBColour): CMYColour;
 export declare function rgbToCMYK(input: RGBColour): CMYKColour;

@@ -201,4 +201,86 @@ utils.isBrowser() && describe("DOM manipulation", () => {
 			});
 		});
 	});
+
+	describe("removeComments()", () => {
+		const {removeComments} = utils;
+		const html = (...args) => {
+			const el = document.createElement("div");
+			el.insertAdjacentHTML("afterbegin", String.raw(...args));
+			return el;
+		};
+
+		before("Defining custom assertions", () => {
+			const {chai} = globalThis;
+			const {Assertion} = chai;
+			chai.util.addChainableMethod(Assertion.prototype, "comment", function(str){
+				const obj = chai.util.flag(this, "object");
+				new Assertion(obj).to.be.an.instanceOf(Comment).that.has.property("nodeValue").that.equals(str);
+			});
+			chai.util.addChainableMethod(Assertion.prototype, "text", function(str){
+				const obj = chai.util.flag(this, "object");
+				new Assertion(obj).to.be.an.instanceOf(Text).that.has.property("nodeValue").that.equals(str);
+			});
+		});
+
+		it("purges an element of comment nodes", () => {
+			const el = html`<!--A--><div>Child node</div><!--B-->`;
+			expect(el).to.have.property("childNodes").that.has.lengthOf(3);
+			expect(el.childNodes[1]).to.be.an.instanceOf(HTMLDivElement);
+			expect(el.childNodes[0]).to.be.a.comment("A");
+			expect(el.childNodes[2]).to.be.a.comment("B");
+			removeComments(el);
+			expect(el).to.have.property("childNodes").that.has.lengthOf(1);
+			expect(el.childNodes[0]).to.be.an.instanceOf(HTMLDivElement);
+		});
+
+		it("purges an element's children of comment nodes", () => {
+			let el = html`<div><!--A-->Text<!--B--></div>`;
+			expect(el).to.have.property("childNodes").that.has.lengthOf(1);
+			expect(el.childNodes[0]).to.be.an.instanceOf(HTMLDivElement);
+			expect(el.childNodes[0].childNodes).to.have.lengthOf(3);
+			expect(el.childNodes[0].childNodes[0]).to.be.a.comment("A");
+			expect(el.childNodes[0].childNodes[2]).to.be.a.comment("B");
+			expect(el.childNodes[0].childNodes[1]).to.be.text("Text");
+			removeComments(el);
+			expect(el.childNodes[0].childNodes).to.have.lengthOf(1);
+			expect(el.childNodes[0].childNodes[0]).to.be.text("Text");
+			
+			el = html`<div><div><b><!--A--></b></div></div>`;
+			const child = el.childNodes[0].childNodes[0].childNodes[0];
+			const nodes = child.childNodes;
+			expect(nodes).to.have.lengthOf(1);
+			expect(nodes[0]).to.be.a.comment("A");
+			expect(child.innerHTML).to.equal("<!--A-->");
+			removeComments(el);
+			expect(el.contains(child)).to.be.true;
+			expect(nodes).to.have.lengthOf(0);
+			expect(child.innerHTML).to.equal("");
+		});
+
+		it("returns the comment nodes it removes", () => {
+			const el = html`<!--A--><div>Text<!--B--></div><!--C-->`;
+			const c1 = el.childNodes[0];
+			const c2 = el.childNodes[1].childNodes[1];
+			const c3 = el.childNodes[2];
+			expect(el.childNodes).to.have.lengthOf(3);
+			expect(c1).to.be.a.comment("A");
+			expect(c2).to.be.a.comment("B");
+			expect(c3).to.be.a.comment("C");
+			const removed = removeComments(el);
+			expect(removed).to.eql(new Set([c1, c2, c3]));
+			expect(el.contains(c1)).to.be.false;
+			expect(el.contains(c2)).to.be.false;
+			expect(el.contains(c3)).to.be.false;
+			expect(el.innerHTML).to.equal("<div>Text</div>");
+		});
+
+		it("purges the document object by default", () => {
+			const cmnt = document.createComment("Foo");
+			document.body.appendChild(cmnt);
+			expect(document.contains(cmnt)).to.be.true;
+			removeComments();
+			expect(document.contains(cmnt)).to.be.false;
+		});
+	});
 });
