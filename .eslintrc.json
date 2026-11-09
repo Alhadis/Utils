@@ -21,7 +21,7 @@
 		"rules": {"keyword-spacing": 0}
 	},{
 		"files": ["test/*.mjs", "test/**/*.mjs"],
-		"globals": {"expect": "readonly"}
+		"globals": {"expect": "readonly", "when": "readonly"}
 	},{
 		"files": ["test/fixtures/ints/run-tests.mjs"],
 		"rules": {"import/no-unresolved": 0}

@@ -453,7 +453,7 @@ describe("Miscellaneous functions", () => {
 		// NOTE: The following suite contains weird-looking tests, because `document.all`
 		// is impossible to reliably test without a host-provided exotic object (meaning
 		// the function won't be fooled by spoofed or emulated browser globals).
-		describe("When identifying `document.all`", () => {
+		when("identifying `document.all`", () => {
 			if(!haveHTMLAll){
 				before(() => spoofBrowser());
 				after(() => unspoofBrowser());

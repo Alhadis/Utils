@@ -86,7 +86,7 @@ describe("Text-related functions", () => {
 			expect(camelise("foo----bar")).to.equal("fooBar");
 			expect(camelise("foo---bar--baz")).to.equal("fooBarBaz");
 		});
-		describe("When `preserveCaps` is enabled", () => {
+		when("`preserveCaps` is enabled", () => {
 			it("preserves casing of wholly-uppercase segments", () => {
 				const opts = {preserveCaps: true};
 				expect(camelise("A-URL", opts)).to.equal("AURL");
@@ -192,7 +192,7 @@ describe("Text-related functions", () => {
 			expect(decamelise("PascalCase", ".", false, true)).to.equal("Pascal.Case");
 			expect(decamelise("NOT_CAMEL_CASE.iKnow", "-", false, true)).to.equal("NOT_CAMEL_CASE.i-Know");
 		});
-		describe("When `strict` is enabled", () => {
+		when("`strict` is enabled", () => {
 			it("converts well-formed camelCase", () => {
 				expect(decamelise("foo", true)).to.equal("foo");
 				expect(decamelise("fooBar", true)).to.equal("foo-bar");
@@ -515,7 +515,7 @@ describe("Text-related functions", () => {
 				escape("; rm -rf *", "\\;\\ rm\\ -rf\\ \\*");
 			});
 		});
-		describe("When `quotes` is enabled", () => {
+		when("`quotes` is enabled", () => {
 			it("escapes dollar-signs",           () => escape("$",    "\\$",  {quoted: true}));
 			it("escapes backticks",              () => escape("`",    "\\`",  {quoted: true}));
 			it("escapes backslashes",            () => escape("\\",   "\\\\", {quoted: true}));
@@ -3050,14 +3050,14 @@ describe("Text-related functions", () => {
 		
 		describe("Decades", () => {
 			describe("Past intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 decade",  () => expect(timeSince(DEC * 1)).to.equal("A decade ago"));
 					it("formats 2 decades", () => expect(timeSince(DEC * 2)).to.equal("2 decades ago"));
 					it("formats 5 decades", () => expect(timeSince(DEC * 5)).to.equal("5 decades ago"));
 					it("formats 9 decades", () => expect(timeSince(DEC * 9)).to.equal("9 decades ago"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 10 years", () => expect(timeSince(DEC * 1, true)).to.equal("10 years ago"));
 					it("formats 20 years", () => expect(timeSince(DEC * 2, true)).to.equal("20 years ago"));
 					it("formats 50 years", () => expect(timeSince(DEC * 5, true)).to.equal("50 years ago"));
@@ -3066,14 +3066,14 @@ describe("Text-related functions", () => {
 			});
 			
 			describe("Future intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 decade",  () => expect(timeSince(DEC * -1)).to.equal("A decade from now"));
 					it("formats 2 decades", () => expect(timeSince(DEC * -2)).to.equal("2 decades from now"));
 					it("formats 5 decades", () => expect(timeSince(DEC * -5)).to.equal("5 decades from now"));
 					it("formats 9 decades", () => expect(timeSince(DEC * -9)).to.equal("9 decades from now"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 10 years", () => expect(timeSince(DEC * -1, true)).to.equal("10 years from now"));
 					it("formats 20 years", () => expect(timeSince(DEC * -2, true)).to.equal("20 years from now"));
 					it("formats 50 years", () => expect(timeSince(DEC * -5, true)).to.equal("50 years from now"));
@@ -3084,14 +3084,14 @@ describe("Text-related functions", () => {
 		
 		describe("Centuries", () => {
 			describe("Past intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 century",   () => expect(timeSince(CENT * 1)).to.equal("A century ago"));
 					it("formats 2 centuries", () => expect(timeSince(CENT * 2)).to.equal("2 centuries ago"));
 					it("formats 5 centuries", () => expect(timeSince(CENT * 5)).to.equal("5 centuries ago"));
 					it("formats 9 centuries", () => expect(timeSince(CENT * 9.1)).to.equal("9 centuries ago"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 100 years", () => expect(timeSince(CENT * 1, true)).to.equal("100 years ago"));
 					it("formats 200 years", () => expect(timeSince(CENT * 2, true)).to.equal("200 years ago"));
 					it("formats 500 years", () => expect(timeSince(CENT * 5, true)).to.equal("500 years ago"));
@@ -3100,14 +3100,14 @@ describe("Text-related functions", () => {
 			});
 			
 			describe("Future intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 century",   () => expect(timeSince(CENT * -1)).to.equal("A century from now"));
 					it("formats 2 centuries", () => expect(timeSince(CENT * -2)).to.equal("2 centuries from now"));
 					it("formats 5 centuries", () => expect(timeSince(CENT * -5)).to.equal("5 centuries from now"));
 					it("formats 9 centuries", () => expect(timeSince(CENT * -9.1)).to.equal("9 centuries from now"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 100 years", () => expect(timeSince(CENT * -1, true)).to.equal("100 years from now"));
 					it("formats 200 years", () => expect(timeSince(CENT * -2, true)).to.equal("200 years from now"));
 					it("formats 500 years", () => expect(timeSince(CENT * -5, true)).to.equal("500 years from now"));
@@ -3118,7 +3118,7 @@ describe("Text-related functions", () => {
 		
 		describe("Millennia", () => {
 			describe("Past intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 millennium",  () => expect(timeSince(MILL * 1)).to.equal("A millennium ago"));
 					it("formats 2 millennia",   () => expect(timeSince(MILL * 2)).to.equal("2 millennia ago"));
 					it("formats 5 millennia",   () => expect(timeSince(MILL * 5)).to.equal("5 millennia ago"));
@@ -3127,7 +3127,7 @@ describe("Text-related functions", () => {
 					it("formats 100 millennia", () => expect(timeSince(MILL * 100.1)).to.equal("100 millennia ago"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 1000 years",   () => expect(timeSince(MILL * 1, true)).to.equal("1000 years ago"));
 					it("formats 2000 years",   () => expect(timeSince(MILL * 2, true)).to.equal("2000 years ago"));
 					it("formats 5000 years",   () => expect(timeSince(MILL * 5, true)).to.equal("5000 years ago"));
@@ -3138,7 +3138,7 @@ describe("Text-related functions", () => {
 			});
 			
 			describe("Future intervals", () => {
-				describe("When `maxYear = false`", () => {
+				when("`maxYear = false`", () => {
 					it("formats 1 millennium",  () => expect(timeSince(MILL * -1)).to.equal("A millennium from now"));
 					it("formats 2 millennia",   () => expect(timeSince(MILL * -2)).to.equal("2 millennia from now"));
 					it("formats 5 millennia",   () => expect(timeSince(MILL * -5)).to.equal("5 millennia from now"));
@@ -3147,7 +3147,7 @@ describe("Text-related functions", () => {
 					it("formats 100 millennia", () => expect(timeSince(MILL * -100.1)).to.equal("100 millennia from now"));
 				});
 				
-				describe("When `maxYear = true`", () => {
+				when("`maxYear = true`", () => {
 					it("formats 1000 years",   () => expect(timeSince(MILL * -1, true)).to.equal("1000 years from now"));
 					it("formats 2000 years",   () => expect(timeSince(MILL * -2, true)).to.equal("2000 years from now"));
 					it("formats 5000 years",   () => expect(timeSince(MILL * -5, true)).to.equal("5000 years from now"));
