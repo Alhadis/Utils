@@ -152,6 +152,25 @@ describe("Shell-specific functions", () => {
 		describe("Environment", () => {
 			const echoEnv = ["-e", "process.stdout.write(JSON.stringify(process.env))"];
 			const randomKey = "foo" + Date.now() + Math.random(1e10).toString(16);
+			const isNYCVar = key => /^NYC_[A-Z_]+$/.test(key);
+			let nycVars;
+			
+			before("Deleting NYC-related environment variables", () => {
+				nycVars = {__proto__: null};
+				for(const [key, value] of Object.entries(process.env))
+					if(isNYCVar(key)){
+						nycVars[key] = value;
+						delete process.env[key];
+					}
+			});
+			
+			after("Restoring NYC-related environment variables", () => {
+				for(const [key, value] of Object.entries(nycVars))
+					if(isNYCVar(key)){
+						process.env[key] = value;
+						delete isNYCVar[key];
+					}
+			});
 			
 			it("makes the caller's environment visible to the subprocess", async () =>
 				expect(JSON.parse((await exec("node", echoEnv)).stdout)).to.eql(process.env));
