@@ -118,7 +118,7 @@ utils.isBrowser() && describe("DOM manipulation", () => {
 			}));
 		});
 	
-		describe("Stringication", () => {
+		describe("Stringification", () => {
 			before("Attaching stylesheet", () => {
 				const style = document.createElement("style");
 				document.head.appendChild(style);
